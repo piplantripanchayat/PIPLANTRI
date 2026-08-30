@@ -272,17 +272,24 @@
                         <option value="62">भाग 62 - पिपलांत्री बायां</option>
                     </select>
 
-                    <select id="filterSection" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[160px]">
+                    <select id="filterSection" onchange="onSectionFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[160px]">
                         <option value="">सभी अनुभाग (Anubhag)</option>
                     </select>
 
-                    <input 
-                        type="text" 
-                        id="filterHouseInput" 
-                        oninput="applyFilters()" 
-                        placeholder="मकान नं." 
-                        class="w-24 py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none placeholder-slate-400"
-                    >
+                    <!-- SEARCHABLE & DROPDOWN HOUSE FILTER -->
+                    <div class="relative min-w-[140px]">
+                        <input 
+                            type="text" 
+                            id="filterHouseInput" 
+                            list="houseListOptions"
+                            oninput="applyFilters()" 
+                            onchange="applyFilters()"
+                            placeholder="🏠 मकान चुनें / लिखें" 
+                            class="w-full py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 placeholder-slate-400"
+                            autocomplete="off"
+                        >
+                        <datalist id="houseListOptions"></datalist>
+                    </div>
 
                     <select id="filterCategory" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी रुझान (Loyalty)</option>
@@ -727,6 +734,31 @@
             });
         }
 
+        function populateHouseDatalist() {
+            const dl = document.getElementById('houseListOptions');
+            if (!dl) return;
+            const part = document.getElementById('filterPart')?.value;
+            const sec = document.getElementById('filterSection')?.value;
+
+            const houseCounts = new Map();
+            voters.forEach(v => {
+                if (part && v.part !== part) return;
+                if (sec && v.sec_name !== sec) return;
+                const h = String(v.house || '').trim();
+                if (h) {
+                    houseCounts.set(h, (houseCounts.get(h) || 0) + 1);
+                }
+            });
+
+            const sortedHouses = Array.from(houseCounts.entries()).sort((a, b) => {
+                const na = parseInt(a[0]), nb = parseInt(b[0]);
+                if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+                return a[0].localeCompare(b[0], 'hi');
+            });
+
+            dl.innerHTML = sortedHouses.map(([h, count]) => `<option value="${h}">मकान ${h} (${count} मतदाता)</option>`).join('');
+        }
+
         function onPartFilterChange() {
             const part = document.getElementById('filterPart').value;
             const secSelect = document.getElementById('filterSection');
@@ -744,45 +776,13 @@
                 secSelect.appendChild(opt);
             });
 
+            populateHouseDatalist();
             applyFilters();
         }
 
-        // Exact House Matching Engine (Prevents "1" matching "11", "111", "12", etc.)
-        function isHouseMatch(voterHouse, houseQuery) {
-            if (!houseQuery) return true;
-            const h = String(voterHouse || '').trim().toLowerCase();
-            const q = String(houseQuery).trim().toLowerCase();
-            if (!h || !q) return false;
-            
-            // 1. Direct exact string match
-            if (h === q) return true;
-            
-            // 2. Numeric equality (e.g. '01' === '1', '04' === '4')
-            const hNum = parseInt(h, 10);
-            const qNum = parseInt(q, 10);
-            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
-                const match = h.match(/^0*(\d+)/);
-                if (match && parseInt(match[1], 10) === qNum && (h === match[0] || h.startsWith(match[0] + '/') || h.startsWith(match[0] + '-') || h.startsWith(match[0] + ' ') || h.startsWith(match[0] + '.'))) {
-                    return true;
-                }
-            }
-            
-            // 3. Sub-unit match (e.g. '1/1' or '1-क' or '1 A' when searching '1')
-            if (h.startsWith(q + '/') || h.startsWith(q + '-') || h.startsWith(q + ' ') || h.startsWith(q + '.')) {
-                return true;
-            }
-            
-            return false;
-        }
-
-        // Intelligent Search Query Parser for House Numbers
-        function extractHouseNumberFromQuery(q) {
-            if (!q) return null;
-            const clean = q.trim().toLowerCase();
-            const match = clean.match(/^(?:मकान\s*(?:नं|संख्या|न)?\.?\s*|म\.\s*|house\s*(?:no)?\.?\s*|h\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
-            if (match) return match[1];
-            if (/^\d+[a-zA-Z\/-]?\w*$/.test(clean) && clean.length <= 4) return clean;
-            return null;
+        function onSectionFilterChange() {
+            populateHouseDatalist();
+            applyFilters();
         }
 
         // Transliteration Engine
@@ -860,6 +860,7 @@
             return res.toLowerCase();
         }
 
+        // Universal Main Search Input Handler (Fully Restored & Flexible)
         function handleMainSearchInput(query) {
             const clearBtn = document.getElementById('clearMainSearchBtn');
             const dropdown = document.getElementById('mainSearchDropdown');
@@ -873,32 +874,25 @@
                 return;
             }
 
-            const houseTarget = extractHouseNumberFromQuery(q);
-            let matchingVoters = [];
-
-            if (houseTarget) {
-                matchingVoters = voters.filter(v => isHouseMatch(v.house, houseTarget)).slice(0, 5);
-            } else {
-                const hindiWord = romanToHindiTransliterate(q);
-                const qClean = q.toLowerCase();
-
-                matchingVoters = voters.filter(v => {
-                    const nameTranslit = transliterateHindiClean(v.name);
-                    const relTranslit = transliterateHindiClean(v.rel_name);
-
-                    return v.name.includes(q) || v.rel_name.includes(q) || 
-                           v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
-                           nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
-                           String(v.epic || '').toLowerCase().includes(qClean) ||
-                           String(v.family_group || '').toLowerCase().includes(qClean);
-                }).slice(0, 5);
-            }
-
-            let dropdownHtml = '';
             const hindiWord = romanToHindiTransliterate(q);
             const isEnglish = /[a-zA-Z]/.test(q);
+            const qClean = q.toLowerCase();
 
-            if (isEnglish && hindiWord && !houseTarget) {
+            const matchingVoters = voters.filter(v => {
+                const nameTranslit = transliterateHindiClean(v.name);
+                const relTranslit = transliterateHindiClean(v.rel_name);
+
+                return v.name.includes(q) || v.rel_name.includes(q) || 
+                       v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
+                       nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
+                       String(v.epic || '').toLowerCase().includes(qClean) ||
+                       String(v.house || '').toLowerCase().includes(qClean) ||
+                       String(v.mobile || '').toLowerCase().includes(qClean) ||
+                       String(v.family_group || '').toLowerCase().includes(qClean);
+            }).slice(0, 5);
+
+            let dropdownHtml = '';
+            if (isEnglish && hindiWord) {
                 dropdownHtml += `
                     <div class="p-2 border-b border-slate-100 bg-slate-50">
                         <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1 flex items-center gap-1">
@@ -970,6 +964,7 @@
             checkAuth();
             populateSectionOptions();
             loadSavedData();
+            populateHouseDatalist();
             updateKPIs();
             applyFilters();
             lucide.createIcons();
@@ -1064,7 +1059,7 @@
             const searchHindi = romanToHindiTransliterate(rawSearch);
             const part = document.getElementById('filterPart')?.value;
             const sec = document.getElementById('filterSection')?.value;
-            const house = (document.getElementById('filterHouseInput')?.value || '').trim();
+            const house = (document.getElementById('filterHouseInput')?.value || '').trim().toLowerCase();
             const category = document.getElementById('filterCategory')?.value;
             const location = document.getElementById('filterLocation')?.value;
             const mobile = document.getElementById('filterMobile')?.value;
@@ -1073,8 +1068,11 @@
                 if (part && v.part !== part) return false;
                 if (sec && v.sec_name !== sec) return false;
                 
-                // EXACT HOUSE FILTER BOX MATCHING
-                if (house && !isHouseMatch(v.house, house)) return false;
+                // HOUSE FILTER (Dropdown / Input matching)
+                if (house) {
+                    const h = String(v.house || '').trim().toLowerCase();
+                    if (h !== house && !h.includes(house)) return false;
+                }
                 
                 if (category && v.category !== category) return false;
                 if (location && v.location_status !== location) return false;
@@ -1083,27 +1081,22 @@
                 if (mobile === 'linked' && !hasMobile) return false;
                 if (mobile === 'unlinked' && hasMobile) return false;
 
-                // SMART SEARCH BOX MATCHING
+                // FULL RESTORED UNIVERSAL MAIN SEARCH BOX
                 if (rawSearch) {
-                    const houseTarget = extractHouseNumberFromQuery(rawSearch);
-                    if (houseTarget) {
-                        if (!isHouseMatch(v.house, houseTarget)) return false;
-                    } else {
-                        const nameClean = transliterateHindiClean(v.name);
-                        const relClean = transliterateHindiClean(v.rel_name);
-                        const epicLower = String(v.epic || '').toLowerCase();
-                        const mobLower = String(v.mobile || '').toLowerCase();
-                        const famLower = String(v.family_group || '').toLowerCase();
+                    const nameClean = transliterateHindiClean(v.name);
+                    const relClean = transliterateHindiClean(v.rel_name);
+                    const epicLower = String(v.epic || '').toLowerCase();
+                    const houseLower = String(v.house || '').toLowerCase();
+                    const mobLower = String(v.mobile || '').toLowerCase();
+                    const famLower = String(v.family_group || '').toLowerCase();
 
-                        const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
-                                      v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
-                                      nameClean.includes(searchLower) || relClean.includes(searchLower) ||
-                                      epicLower.includes(searchLower) ||
-                                      (rawSearch.length >= 6 && mobLower.includes(searchLower)) ||
-                                      famLower.includes(searchLower);
+                    const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
+                                  v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
+                                  nameClean.includes(searchLower) || relClean.includes(searchLower) ||
+                                  epicLower.includes(searchLower) || houseLower.includes(searchLower) ||
+                                  mobLower.includes(searchLower) || famLower.includes(searchLower);
 
-                        if (!match) return false;
-                    }
+                    if (!match) return false;
                 }
 
                 return true;
@@ -1289,7 +1282,7 @@
                 const matchMember = members.some(m => 
                     m.name.toLowerCase().includes(searchQ) || 
                     m.rel_name.toLowerCase().includes(searchQ) || 
-                    isHouseMatch(m.house, searchQ) ||
+                    String(m.house).toLowerCase().includes(searchQ) ||
                     String(m.mobile || '').includes(searchQ)
                 );
                 return matchKey || matchMember;
@@ -1755,6 +1748,7 @@
             checkAuth();
             populateSectionOptions();
             loadSavedData();
+            populateHouseDatalist();
             updateKPIs();
             applyFilters();
             lucide.createIcons();

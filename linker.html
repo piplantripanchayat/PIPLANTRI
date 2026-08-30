@@ -648,23 +648,19 @@
                 if (statusFilter === 'HAS_SUGGESTION' && (!hasSugg || hasMobile)) return false;
 
                 if (rawQuery) {
-                    const houseTarget = extractHouseNumberFromQuery(rawQuery);
-                    if (houseTarget) {
-                        if (!isHouseMatch(v.house, houseTarget)) return false;
-                    } else {
-                        const nameClean = transliterateHindiClean(v.name);
-                        const relClean = transliterateHindiClean(v.rel_name);
-                        const epicLower = String(v.epic || '').toLowerCase();
-                        const mobLower = String(v.mobile || '').toLowerCase();
+                    const nameClean = transliterateHindiClean(v.name);
+                    const relClean = transliterateHindiClean(v.rel_name);
+                    const epicLower = String(v.epic || '').toLowerCase();
+                    const mobLower = String(v.mobile || '').toLowerCase();
+                    const houseLower = String(v.house || '').toLowerCase();
 
-                        const matchDirect = v.name.includes(rawQuery) || v.rel_name.includes(rawQuery) || 
-                                            v.name.includes(qHindi) || v.rel_name.includes(qHindi) ||
-                                            nameClean.includes(qLower) || relClean.includes(qLower) ||
-                                            epicLower.includes(qLower) ||
-                                            (rawQuery.length >= 6 && mobLower.includes(qLower));
+                    const matchDirect = v.name.includes(rawQuery) || v.rel_name.includes(rawQuery) || 
+                                        v.name.includes(qHindi) || v.rel_name.includes(qHindi) ||
+                                        nameClean.includes(qLower) || relClean.includes(qLower) ||
+                                        epicLower.includes(qLower) || houseLower.includes(qLower) ||
+                                        mobLower.includes(qLower);
 
-                        if (!matchDirect) return false;
-                    }
+                    if (!matchDirect) return false;
                 }
 
                 return true;
