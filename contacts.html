@@ -705,6 +705,27 @@
             renderModalVoters(query);
         }
 
+        // Exact House Matching Engine (Prevents "1" matching "11", "111", "12", etc.)
+        function isHouseMatch(voterHouse, houseQuery) {
+            if (!houseQuery) return true;
+            const h = String(voterHouse || '').trim().toLowerCase();
+            const q = String(houseQuery).trim().toLowerCase();
+            if (!h || !q) return false;
+            if (h === q) return true;
+            const hNum = parseInt(h, 10);
+            const qNum = parseInt(q, 10);
+            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
+                const match = h.match(/^0*(\d+)/);
+                if (match && parseInt(match[1], 10) === qNum && (h === match[0] || h.startsWith(match[0] + '/') || h.startsWith(match[0] + '-') || h.startsWith(match[0] + ' ') || h.startsWith(match[0] + '.'))) {
+                    return true;
+                }
+            }
+            if (h.startsWith(q + '/') || h.startsWith(q + '-') || h.startsWith(q + ' ') || h.startsWith(q + '.')) {
+                return true;
+            }
+            return false;
+        }
+
         function renderModalVoters(query) {
             const container = document.getElementById('modalVoterListBody');
             if (!container) return;
@@ -717,9 +738,9 @@
                 const n = (v.name || '').toLowerCase();
                 const r = (v.rel_name || '').toLowerCase();
                 const epic = String(v.epic || '').toLowerCase();
-                const house = String(v.house || '').toLowerCase();
+                const houseMatch = isHouseMatch(v.house, q);
 
-                return n.includes(q) || r.includes(q) || epic.includes(q) || house.includes(q) ||
+                return n.includes(q) || r.includes(q) || epic.includes(q) || houseMatch ||
                        n.includes(qHindi) || r.includes(qHindi);
             }).slice(0, 40);
 

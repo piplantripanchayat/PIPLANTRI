@@ -593,12 +593,33 @@
             }
         });
 
-        // Fast Filter with House Filter Support
+        // Exact House Matching Engine (Prevents "1" matching "11", "111", "12", etc.)
+        function isHouseMatch(voterHouse, houseQuery) {
+            if (!houseQuery) return true;
+            const h = String(voterHouse || '').trim().toLowerCase();
+            const q = String(houseQuery).trim().toLowerCase();
+            if (!h || !q) return false;
+            if (h === q) return true;
+            const hNum = parseInt(h, 10);
+            const qNum = parseInt(q, 10);
+            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
+                const match = h.match(/^0*(\d+)/);
+                if (match && parseInt(match[1], 10) === qNum && (h === match[0] || h.startsWith(match[0] + '/') || h.startsWith(match[0] + '-') || h.startsWith(match[0] + ' ') || h.startsWith(match[0] + '.'))) {
+                    return true;
+                }
+            }
+            if (h.startsWith(q + '/') || h.startsWith(q + '-') || h.startsWith(q + ' ') || h.startsWith(q + '.')) {
+                return true;
+            }
+            return false;
+        }
+
+        // Fast Filter with Exact House Filter Support
         function applyFilters() {
             const rawQuery = (document.getElementById('voterSearchInput')?.value || '').trim();
             const partFilter = document.getElementById('partFilterSelect')?.value || 'ALL';
             const secFilter = document.getElementById('sectionFilterSelect')?.value || 'ALL';
-            const houseFilter = (document.getElementById('houseFilterInput')?.value || '').trim().toLowerCase();
+            const houseFilter = (document.getElementById('houseFilterInput')?.value || '').trim();
             const statusFilter = document.getElementById('statusFilterSelect')?.value || 'ALL';
 
             const qLower = rawQuery.toLowerCase();
@@ -607,7 +628,7 @@
             filteredVotersList = votersData.filter(v => {
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
                 if (secFilter !== 'ALL' && v.sec_name !== secFilter) return false;
-                if (houseFilter && !String(v.house || '').toLowerCase().includes(houseFilter)) return false;
+                if (houseFilter && !isHouseMatch(v.house, houseFilter)) return false;
 
                 const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
                 const hasSugg = Boolean(PRECOMPUTED_SUGGESTIONS[v.id] && PRECOMPUTED_SUGGESTIONS[v.id].length > 0);
@@ -620,13 +641,13 @@
                     const nameClean = transliterateHindiClean(v.name);
                     const relClean = transliterateHindiClean(v.rel_name);
                     const epicLower = String(v.epic || '').toLowerCase();
-                    const houseLower = String(v.house || '').toLowerCase();
+                    const houseMatch = isHouseMatch(v.house, rawQuery);
                     const mobLower = String(v.mobile || '').toLowerCase();
 
                     const matchDirect = v.name.includes(rawQuery) || v.rel_name.includes(rawQuery) || 
                                         v.name.includes(qHindi) || v.rel_name.includes(qHindi) ||
                                         nameClean.includes(qLower) || relClean.includes(qLower) ||
-                                        epicLower.includes(qLower) || houseLower.includes(qLower) ||
+                                        epicLower.includes(qLower) || houseMatch ||
                                         mobLower.includes(qLower);
 
                     if (!matchDirect) return false;

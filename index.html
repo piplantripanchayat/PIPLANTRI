@@ -747,6 +747,34 @@
             applyFilters();
         }
 
+        // Exact House Matching Engine (Prevents "1" matching "11", "111", "12", etc.)
+        function isHouseMatch(voterHouse, houseQuery) {
+            if (!houseQuery) return true;
+            const h = String(voterHouse || '').trim().toLowerCase();
+            const q = String(houseQuery).trim().toLowerCase();
+            if (!h || !q) return false;
+            
+            // 1. Direct exact string match
+            if (h === q) return true;
+            
+            // 2. Numeric equality (e.g. '01' === '1', '04' === '4')
+            const hNum = parseInt(h, 10);
+            const qNum = parseInt(q, 10);
+            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
+                const match = h.match(/^0*(\d+)/);
+                if (match && parseInt(match[1], 10) === qNum && (h === match[0] || h.startsWith(match[0] + '/') || h.startsWith(match[0] + '-') || h.startsWith(match[0] + ' ') || h.startsWith(match[0] + '.'))) {
+                    return true;
+                }
+            }
+            
+            // 3. Sub-unit match (e.g. '1/1' or '1-क' or '1 A' when searching '1')
+            if (h.startsWith(q + '/') || h.startsWith(q + '-') || h.startsWith(q + ' ') || h.startsWith(q + '.')) {
+                return true;
+            }
+            
+            return false;
+        }
+
         // Transliteration Engine
         const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
         const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
@@ -842,11 +870,13 @@
             const matchingVoters = voters.filter(v => {
                 const nameTranslit = transliterateHindiClean(v.name);
                 const relTranslit = transliterateHindiClean(v.rel_name);
+                const houseMatch = isHouseMatch(v.house, q);
+
                 return v.name.includes(q) || v.rel_name.includes(q) || 
                        v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
                        nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
                        String(v.epic || '').toLowerCase().includes(qClean) ||
-                       String(v.house || '').includes(qClean) ||
+                       houseMatch ||
                        String(v.family_group || '').toLowerCase().includes(qClean);
             }).slice(0, 5);
 
@@ -1017,7 +1047,7 @@
             const searchHindi = romanToHindiTransliterate(rawSearch);
             const part = document.getElementById('filterPart')?.value;
             const sec = document.getElementById('filterSection')?.value;
-            const house = (document.getElementById('filterHouseInput')?.value || '').trim().toLowerCase();
+            const house = (document.getElementById('filterHouseInput')?.value || '').trim();
             const category = document.getElementById('filterCategory')?.value;
             const location = document.getElementById('filterLocation')?.value;
             const mobile = document.getElementById('filterMobile')?.value;
@@ -1025,7 +1055,10 @@
             filteredVoters = voters.filter(v => {
                 if (part && v.part !== part) return false;
                 if (sec && v.sec_name !== sec) return false;
-                if (house && !String(v.house || '').toLowerCase().includes(house)) return false;
+                
+                // EXACT HOUSE MATCHING
+                if (house && !isHouseMatch(v.house, house)) return false;
+                
                 if (category && v.category !== category) return false;
                 if (location && v.location_status !== location) return false;
                 
@@ -1037,14 +1070,14 @@
                     const nameClean = transliterateHindiClean(v.name);
                     const relClean = transliterateHindiClean(v.rel_name);
                     const epicLower = String(v.epic || '').toLowerCase();
-                    const houseLower = String(v.house || '').toLowerCase();
+                    const houseMatch = isHouseMatch(v.house, rawSearch);
                     const mobLower = String(v.mobile || '').toLowerCase();
                     const famLower = String(v.family_group || '').toLowerCase();
 
                     const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
                                   v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
                                   nameClean.includes(searchLower) || relClean.includes(searchLower) ||
-                                  epicLower.includes(searchLower) || houseLower.includes(searchLower) ||
+                                  epicLower.includes(searchLower) || houseMatch ||
                                   mobLower.includes(searchLower) || famLower.includes(searchLower);
 
                     if (!match) return false;
@@ -1217,7 +1250,7 @@
                 } else {
                     let secNo = v.sec_no;
                     if (!secNo && v.sec_name) {
-                        const match = v.sec_name.match(/^(d+)/);
+                        const match = v.sec_name.match(/^(\d+)/);
                         secNo = match ? match[1] : '1';
                     }
                     groupKey = `भाग ${v.part} | अनुभाग ${secNo} | मकान ${v.house || 'अज्ञात'}`;
@@ -1233,7 +1266,7 @@
                 const matchMember = members.some(m => 
                     m.name.toLowerCase().includes(searchQ) || 
                     m.rel_name.toLowerCase().includes(searchQ) || 
-                    String(m.house).includes(searchQ) ||
+                    isHouseMatch(m.house, searchQ) ||
                     String(m.mobile || '').includes(searchQ)
                 );
                 return matchKey || matchMember;
@@ -1336,7 +1369,7 @@
                 if (!currentKey) {
                     let secNo = v.sec_no;
                     if (!secNo && v.sec_name) {
-                        const match = v.sec_name.match(/^(d+)/);
+                        const match = v.sec_name.match(/^(\d+)/);
                         secNo = match ? match[1] : '1';
                     }
                     currentKey = `भाग ${v.part} | अनुभाग ${secNo} | मकान ${v.house || 'अज्ञात'}`;
