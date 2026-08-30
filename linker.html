@@ -198,8 +198,10 @@
                 <select id="sortSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-semibold">
                     <option value="sr_asc">🔢 क्रम (1 ➔ 2607)</option>
                     <option value="sr_desc">🔢 क्रम (2607 ➔ 1)</option>
-                    <option value="name_asc">🔤 नाम (A ➔ Z / अ ➔ ज्ञ)</option>
-                    <option value="name_desc">🔤 नाम (Z ➔ A / ज्ञ ➔ अ)</option>
+                    <option value="name_asc">🔤 मतदाता नाम (A ➔ Z / अ ➔ ज्ञ)</option>
+                    <option value="name_desc">🔤 मतदाता नाम (Z ➔ A / ज्ञ ➔ अ)</option>
+                    <option value="rel_asc">🔤 पिता/पति नाम (A ➔ Z / अ ➔ ज्ञ)</option>
+                    <option value="rel_desc">🔤 पिता/पति नाम (Z ➔ A / ज्ञ ➔ अ)</option>
                     <option value="house_asc">🏠 मकान नं. (1, 2, 3...)</option>
                     <option value="age_asc">👶 आयु (कम से ज्यादा)</option>
                     <option value="age_desc">👴 आयु (ज्यादा से कम)</option>
@@ -738,6 +740,10 @@
                 filteredVotersList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hi'));
             } else if (sortBy === 'name_desc') {
                 filteredVotersList.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'hi'));
+            } else if (sortBy === 'rel_asc') {
+                filteredVotersList.sort((a, b) => (a.rel_name || '').localeCompare(b.rel_name || '', 'hi'));
+            } else if (sortBy === 'rel_desc') {
+                filteredVotersList.sort((a, b) => (b.rel_name || '').localeCompare(a.rel_name || '', 'hi'));
             } else if (sortBy === 'house_asc') {
                 filteredVotersList.sort((a, b) => {
                     const na = parseInt(a.house), nb = parseInt(b.house);
