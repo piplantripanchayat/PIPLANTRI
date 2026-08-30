@@ -291,7 +291,22 @@
                         <datalist id="houseListOptions"></datalist>
                     </div>
 
-                    <!-- FAMILY GROUP FILTER -->
+                    <!-- DEDICATED SEARCHABLE & DROPDOWN FAMILY ID FILTER -->
+                    <div class="relative min-w-[170px] max-w-[230px]">
+                        <input 
+                            type="text" 
+                            id="filterFamilyIdInput" 
+                            list="familyIdListOptions"
+                            oninput="onFamilyIdInputChange(this.value)" 
+                            onchange="onFamilyIdInputChange(this.value)"
+                            placeholder="👨‍👩‍👧 फैमिली ID चुनें / खोजें" 
+                            class="w-full py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 placeholder-slate-400"
+                            autocomplete="off"
+                        >
+                        <datalist id="familyIdListOptions"></datalist>
+                    </div>
+
+                    <!-- FAMILY GROUP STATUS FILTER -->
                     <select id="filterFamilyGroup" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी परिवार स्थिति</option>
                         <option value="grouped">👨‍👩‍👧 ग्रुप बने हुए</option>
@@ -841,6 +856,24 @@
             dl.innerHTML = sortedHouses.map(([h, count]) => `<option value="${h}">मकान ${h} (${count} मतदाता)</option>`).join('');
         }
 
+        function populateFamilyIdDatalist() {
+            const dl = document.getElementById('familyIdListOptions');
+            if (!dl) return;
+            const part = document.getElementById('filterPart')?.value;
+
+            const familyMap = new Map();
+            voters.forEach(v => {
+                if (v.family_group && v.family_group.trim()) {
+                    if (part && v.part !== part) return;
+                    const fId = v.family_group.trim();
+                    familyMap.set(fId, (familyMap.get(fId) || 0) + 1);
+                }
+            });
+
+            const sortedFamilies = Array.from(familyMap.entries()).sort((a, b) => a[0].localeCompare(b[0], 'hi'));
+            dl.innerHTML = sortedFamilies.map(([fId, count]) => `<option value="${fId}">👨‍👩‍👧 ${fId} (${count} सदस्य)</option>`).join('');
+        }
+
         function onPartFilterChange() {
             const part = document.getElementById('filterPart').value;
             const secSelect = document.getElementById('filterSection');
@@ -859,11 +892,13 @@
             });
 
             populateHouseDatalist();
+            populateFamilyIdDatalist();
             applyFilters();
         }
 
         function onSectionFilterChange() {
             populateHouseDatalist();
+            populateFamilyIdDatalist();
             applyFilters();
         }
 
@@ -1049,12 +1084,27 @@
             applyFilters();
         }
 
+        function onFamilyIdInputChange(val) {
+            activeFamilyFilter = (val || '').trim();
+            const banner = document.getElementById('activeFamilyFilterBanner');
+            const nameEl = document.getElementById('activeFamilyFilterName');
+            if (activeFamilyFilter) {
+                if (nameEl) nameEl.textContent = activeFamilyFilter;
+                banner?.classList.remove('hidden');
+            } else {
+                banner?.classList.add('hidden');
+            }
+            applyFilters();
+        }
+
         function filterBySpecificFamilyGroup(familyId) {
-            activeFamilyFilter = familyId;
+            activeFamilyFilter = (familyId || '').trim();
+            const input = document.getElementById('filterFamilyIdInput');
+            if (input) input.value = activeFamilyFilter;
             const banner = document.getElementById('activeFamilyFilterBanner');
             const nameEl = document.getElementById('activeFamilyFilterName');
             if (banner && nameEl) {
-                nameEl.textContent = familyId;
+                nameEl.textContent = activeFamilyFilter;
                 banner.classList.remove('hidden');
             }
             applyFilters();
@@ -1062,6 +1112,8 @@
 
         function clearActiveFamilyFilter() {
             activeFamilyFilter = '';
+            const input = document.getElementById('filterFamilyIdInput');
+            if (input) input.value = '';
             document.getElementById('activeFamilyFilterBanner')?.classList.add('hidden');
             applyFilters();
         }
@@ -1128,6 +1180,7 @@
             loadSavedData();
             buildPhoneticIndex();
             populateHouseDatalist();
+            populateFamilyIdDatalist();
             updateKPIs();
             applyFilters();
             lucide.createIcons();
@@ -1152,12 +1205,14 @@
                 voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
             }
             filteredVoters = [...voters];
+            populateFamilyIdDatalist();
         }
 
         function saveVoterState() {
             localStorage.setItem('ac175_voters_db_v6_preindexed', JSON.stringify(voters));
             localStorage.setItem('ac175_voters_db_final_v4', JSON.stringify(voters));
             localStorage.setItem('ac175_voters_db_bilingual_v5', JSON.stringify(voters));
+            populateFamilyIdDatalist();
             updateKPIs();
             if (currentTab === 'voters') renderVotersTable();
             else if (currentTab === 'families') renderFamilyView();
@@ -1224,7 +1279,8 @@
             const part = document.getElementById('filterPart')?.value;
             const sec = document.getElementById('filterSection')?.value;
             const house = (document.getElementById('filterHouseInput')?.value || '').trim();
-            const famFilter = document.getElementById('filterFamilyGroup')?.value;
+            const typedFamilyId = (document.getElementById('filterFamilyIdInput')?.value || '').trim();
+            const targetFamilyFilter = activeFamilyFilter || typedFamilyId;
             const category = document.getElementById('filterCategory')?.value;
             const location = document.getElementById('filterLocation')?.value;
             const mobile = document.getElementById('filterMobile')?.value;
@@ -1236,12 +1292,16 @@
                 // EXACT MATCH IN DEDICATED HOUSE FILTER BOX
                 if (house && !matchHouseFilter(v.house, house)) return false;
                 
-                // FAMILY GROUP FILTER
+                // DEDICATED SEARCHABLE FAMILY ID FILTER
+                if (targetFamilyFilter) {
+                    const vFam = String(v.family_group || '').trim().toLowerCase();
+                    const qFam = targetFamilyFilter.toLowerCase();
+                    if (!vFam.includes(qFam)) return false;
+                }
+
+                // FAMILY GROUP STATUS FILTER (grouped vs ungrouped)
                 if (famFilter === 'grouped' && !v.family_group) return false;
                 if (famFilter === 'ungrouped' && v.family_group) return false;
-
-                // SPECIFIC CLICKED FAMILY FILTER
-                if (activeFamilyFilter && v.family_group !== activeFamilyFilter) return false;
 
                 if (category && v.category !== category) return false;
                 if (location && v.location_status !== location) return false;
