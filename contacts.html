@@ -501,6 +501,7 @@
             const qLower = rawQuery.toLowerCase();
             const isEnglish = /[a-zA-Z]/.test(rawQuery);
             const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawQuery) : [];
+            const qHindi = romanToHindiTransliterate(rawQuery);
 
             filteredContactsList = CONTACTS.filter(c => {
                 // Village filter
@@ -523,9 +524,13 @@
                     const v = (c.village || '').toLowerCase();
                     const m = String(c.mobile || '').toLowerCase();
                     const rem = (c.remarks || '').toLowerCase();
+                    const nameClean = transliterateHindiClean(c.name);
+                    const relClean = transliterateHindiClean(c.rel_name);
+                    const matchHindiSugg = hindiSuggestions.some(s => (c.name && c.name.includes(s.word)) || (c.rel_name && c.rel_name.includes(s.word)));
 
                     const match = n.includes(qLower) || r.includes(qLower) || v.includes(qLower) || m.includes(qLower) || rem.includes(qLower) ||
-                                  n.includes(qHindi) || r.includes(qHindi);
+                                  nameClean.includes(qLower) || relClean.includes(qLower) ||
+                                  n.includes(qHindi) || r.includes(qHindi) || matchHindiSugg;
                     if (!match) return false;
                 }
 
@@ -596,18 +601,19 @@
                 let linkedVotersHtml = '';
                 if (hasLinked) {
                     linkedVotersHtml = `
-                        <div class="mt-2 pt-2 border-t border-slate-800/80">
+                        <div class="mt-2 pt-2 border-t border-slate-800">
                             <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
-                                <i data-lucide="user-check" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
+                                <i data-lucide="users" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
                             </span>
                             <div class="flex flex-wrap gap-1.5">
-                                ${linkedVoters.map(lv => `
-                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-semibold">
-                                        <span>${lv.name} (भाग ${lv.part}/म.${lv.house})</span>
-                                        <button onclick="unlinkVoterFromMobile(${lv.id}, '${c.mobile}')" class="text-emerald-500 hover:text-red-400" title="अनलिंक करें">
+                                ${linkedVoters.map(v => `
+                                    <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
+                                        <span class="font-bold">${v.name}</span>
+                                        <span class="text-[10px] text-emerald-400 font-mono">भाग ${v.part}/म.${v.house}</span>
+                                        <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
                                             <i data-lucide="x" class="w-3 h-3"></i>
                                         </button>
-                                    </span>
+                                    </div>
                                 `).join('')}
                             </div>
                         </div>
@@ -619,29 +625,37 @@
                     suggestionsHtml = `
                         <div class="mt-2 pt-2 border-t border-slate-800/80">
                             <span class="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1 mb-1">
-                                <i data-lucide="sparkles" class="w-3 h-3"></i> AI संभावित मतदाता सुझाव:
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-400"></i> AI संभावित मतदाता सुझाव:
                             </span>
-                            <div class="space-y-1.5">
+                            <div class="space-y-2">
                                 ${suggestions.map(s => {
                                     const isAlreadyLinked = hasLinked && linkedVoters.some(lv => lv.id === s.voterId);
                                     return `
-                                        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-1.5 flex items-center justify-between gap-2 text-xs">
+                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                                             <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${s.score}% Match</span>
-                                                    <strong class="text-white truncate">${s.voterName}</strong>
-                                                    <span class="text-[10px] text-slate-400">(${s.voterRel}: ${s.voterRelName})</span>
+                                                <!-- Top Line: Match Badge + Part/House -->
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${s.score}% Match</span>
+                                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${s.part} • म.${s.house}</span>
                                                 </div>
-                                                <div class="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                    ${s.reasons} • भाग ${s.part}/म.${s.house}
+                                                <!-- Second Line: Full Voter Name & Relative (NO TRUNCATE) -->
+                                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                    <strong class="text-white text-xs font-bold">${s.voterName}</strong>
+                                                    <span class="text-[11px] text-slate-400">(${s.voterRel}: <strong class="text-slate-300">${s.voterRelName}</strong>)</span>
                                                 </div>
+                                                <!-- Third Line: Reasons -->
+                                                ${s.reasons ? `<div class="text-[11px] text-slate-400 mt-0.5 break-words">${s.reasons}</div>` : ''}
                                             </div>
-                                            <div class="flex-shrink-0">
+                                            <!-- Action Button: Link -->
+                                            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
                                                 ${isAlreadyLinked ? `
-                                                    <span class="px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 text-[10px] font-bold border border-emerald-700">लिंक्ड है</span>
+                                                    <span class="px-3 py-1.5 rounded-lg bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700 flex items-center gap-1">
+                                                        <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                                                        <span>लिंक है</span>
+                                                    </span>
                                                 ` : `
-                                                    <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-2.5 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded text-[10px] font-bold shadow flex items-center gap-1 transition active:scale-95">
-                                                        <i data-lucide="link" class="w-3 h-3"></i>
+                                                    <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                                                        <i data-lucide="link" class="w-3.5 h-3.5"></i>
                                                         <span>लिंक करें</span>
                                                     </button>
                                                 `}
