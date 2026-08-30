@@ -1,5 +1,5 @@
-// Piplantri Election PWA Service Worker (100% Offline Ready)
-const CACHE_NAME = 'piplantri-election-v2';
+// Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
+const CACHE_NAME = 'piplantri-election-v5-exact-match';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keyList.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache:', key);
+            console.log('[Service Worker] Removing old stale cache:', key);
             return caches.delete(key);
           }
         })
@@ -39,25 +39,32 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-First with Cache Fallback for instant live updates
 self.addEventListener('fetch', (event) => {
+  // For external CDNs, use cache-first for performance
+  if (event.request.url.includes('cdn.') || event.request.url.includes('unpkg.com') || event.request.url.includes('fonts.googleapis')) {
+    event.respondWith(
+      caches.match(event.request).then(cached => cached || fetch(event.request))
+    );
+    return;
+  }
+
+  // For app HTML and JS files, ALWAYS fetch from Network first so updates are immediate
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return networkResponse;
-      }).catch(() => {
-        // Offline fallback
-        return caches.match('./index.html');
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          return cached || caches.match('./index.html');
+        });
+      })
   );
 });
