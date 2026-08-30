@@ -33,7 +33,7 @@
             border: 1px solid #cbd5e1;
             border-radius: 0.75rem;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            max-height: 280px;
+            max-height: 320px;
             overflow-y: auto;
         }
 
@@ -768,6 +768,34 @@
         let pollingFilterState = 'all';
         let activeFamilyFilter = '';
 
+        // Comprehensive Hindi Phonetic Index
+        let phoneticWordMap = new Map();
+
+        function buildPhoneticIndex() {
+            phoneticWordMap.clear();
+            voters.forEach(v => {
+                [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
+                    const words = fullName.split(/\s+/);
+                    words.forEach(w => {
+                        const clean = w.replace(/[^\u0900-\u097F]/g, '');
+                        if (clean.length >= 2) {
+                            if (!phoneticWordMap.has(clean)) {
+                                phoneticWordMap.set(clean, { count: 0, roman: transliterateHindiClean(clean) });
+                            }
+                            phoneticWordMap.get(clean).count++;
+                        }
+                    });
+                    const fullClean = fullName.replace(/[^\u0900-\u097F\s]/g, '').trim();
+                    if (fullClean && fullClean.includes(' ')) {
+                        if (!phoneticWordMap.has(fullClean)) {
+                            phoneticWordMap.set(fullClean, { count: 0, roman: transliterateHindiClean(fullClean) });
+                        }
+                        phoneticWordMap.get(fullClean).count++;
+                    }
+                });
+            });
+        }
+
         function populateSectionOptions() {
             const secSelect = document.getElementById('filterSection');
             if (!secSelect) return;
@@ -854,62 +882,18 @@
         }
 
         // Transliteration Engine
-        const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
-        const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
-        const HINDI_CONSONANTS = [
-            ['chh','छ'],['ksh','क्ष'],['gya','ज्ञ'],['gy','ज्ञ'],['tra','त्र'],['tr','त्र'],
-            ['kh','ख'],['gh','घ'],['ch','च'],['jh','झ'],['th','थ'],['dh','ध'],
-            ['ph','फ'],['bh','भ'],['sh','श'],['shh','ष'],
-            ['k','क'],['g','ग'],['c','क'],['j','ज'],['z','ज़'],
-            ['t','त'],['d','द'],['n','न'],['p','प'],['f','फ़'],
-            ['b','ब'],['m','म'],['y','य'],['r','र'],['l','ल'],
-            ['v','व'],['w','व'],['s','स'],['h','ह'],['q','क']
-        ];
-
-        function romanToHindiTransliterate(roman) {
-            if (!roman) return "";
-            let str = roman.toLowerCase().trim();
-            let res = "";
-            let i = 0;
-            const len = str.length;
-            while (i < len) {
-                let matchedCons = null, consLen = 0;
-                for (const [eng, dev] of HINDI_CONSONANTS) {
-                    if (str.startsWith(eng, i)) { matchedCons = dev; consLen = eng.length; break; }
-                }
-                if (matchedCons) {
-                    i += consLen;
-                    let matra = null, vowelLen = 0;
-                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
-                    for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) { matra = HINDI_MATRAS[v]; vowelLen = v.length; break; }
-                    }
-                    if (matra !== null) { res += matchedCons + matra; i += vowelLen; }
-                    else { res += (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) ? matchedCons : matchedCons + '्'; }
-                } else {
-                    let standalone = null, vLen = 0;
-                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
-                    for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) { standalone = HINDI_VOWELS[v]; vLen = v.length; break; }
-                    }
-                    if (standalone) { res += standalone; i += vLen; }
-                    else { res += str[i]; i++; }
-                }
-            }
-            return res;
-        }
-
         const consMap = {
             'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'n',
             'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'n',
             'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
             'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
             'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
-            'य': 'y', 'r': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
-            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy'
+            'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
+            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
+            'श्र': 'shr', 'ऋ': 'ri'
         };
-        const matraMap = {'ा':'a','ि':'i','ी':'ee','ु':'u','ू':'oo','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n'};
-        const vowelsMap = {'अ':'a','आ':'aa','इ':'i','ई':'ee','उ':'u','ऊ':'oo','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
+        const matraMap = {'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','ः':'h'};
+        const vowelsMap = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
 
         function transliterateHindiClean(text) {
             if (!text) return "";
@@ -925,10 +909,39 @@
                 else if (vowelsMap[ch]) res += vowelsMap[ch];
                 else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') res += ch;
             }
-            return res.toLowerCase();
+            return res.toLowerCase().replace(/aa+/g, 'a').replace(/ee+/g, 'i').replace(/oo+/g, 'u').trim();
         }
 
-        // Universal Main Search Input Handler (Fully Flexible Across All Fields)
+        function getMultiHindiSuggestions(englishQuery) {
+            const q = (englishQuery || '').toLowerCase().trim();
+            if (!q) return [];
+            
+            const qNorm = q.replace(/aa+/g, 'a')
+                           .replace(/ee+/g, 'i')
+                           .replace(/oo+/g, 'u')
+                           .replace(/shh?/g, 'sh')
+                           .replace(/w/g, 'v')
+                           .replace(/x/g, 'ksh');
+            
+            const matches = [];
+            phoneticWordMap.forEach((meta, word) => {
+                const rNorm = meta.roman.replace(/w/g, 'v');
+                let score = 0;
+                if (rNorm === qNorm) score = 100;
+                else if (rNorm.startsWith(qNorm)) score = 80;
+                else if (rNorm.includes(qNorm)) score = 50;
+                else if (qNorm.startsWith(rNorm) && rNorm.length >= 3) score = 60;
+                
+                if (score > 0) {
+                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+                }
+            });
+            
+            matches.sort((a, b) => b.score - a.score);
+            return matches.slice(0, 8);
+        }
+
+        // Universal Main Search Input Handler (With Comprehensive Multi-Hindi Suggestions)
         function handleMainSearchInput(query) {
             const clearBtn = document.getElementById('clearMainSearchBtn');
             const dropdown = document.getElementById('mainSearchDropdown');
@@ -942,16 +955,17 @@
                 return;
             }
 
-            const hindiWord = romanToHindiTransliterate(q);
             const isEnglish = /[a-zA-Z]/.test(q);
             const qClean = q.toLowerCase();
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
 
             const matchingVoters = voters.filter(v => {
                 const nameTranslit = transliterateHindiClean(v.name);
                 const relTranslit = transliterateHindiClean(v.rel_name);
+                const matchHindiSugg = hindiSuggestions.some(s => v.name.includes(s.word) || v.rel_name.includes(s.word));
 
                 return v.name.includes(q) || v.rel_name.includes(q) || 
-                       v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
+                       matchHindiSugg ||
                        nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
                        String(v.epic || '').toLowerCase().includes(qClean) ||
                        String(v.house || '').toLowerCase().includes(qClean) ||
@@ -960,16 +974,21 @@
             }).slice(0, 5);
 
             let dropdownHtml = '';
-            if (isEnglish && hindiWord) {
+            if (isEnglish && hindiSuggestions.length > 0) {
                 dropdownHtml += `
                     <div class="p-2 border-b border-slate-100 bg-slate-50">
-                        <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1 flex items-center gap-1">
-                            <i data-lucide="languages" class="w-3 h-3 text-indigo-600"></i> हिंदी सुझाव:
+                        <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1"><i data-lucide="languages" class="w-3 h-3 text-indigo-600"></i> हिंदी नाम सुझाव:</span>
+                            <span class="text-[10px] text-slate-400 font-normal">English: "${q}"</span>
                         </div>
-                        <button onclick="selectMainSearchSuggestion('${hindiWord}')" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-xs flex items-center justify-between transition">
-                            <span>🇮🇳 ${hindiWord}</span>
-                            <span class="text-[10px] text-slate-500 font-normal">English: "${q}"</span>
-                        </button>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${hindiSuggestions.map(s => `
+                                <button onclick="selectMainSearchSuggestion('${s.word}')" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold text-xs flex items-center gap-1 transition active:scale-95">
+                                    <span>${s.word}</span>
+                                    <span class="text-[9px] px-1 py-0.2 rounded-full bg-indigo-200/70 text-indigo-900 font-normal">${s.count}</span>
+                                </button>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
             }
@@ -1093,6 +1112,7 @@
             checkAuth();
             populateSectionOptions();
             loadSavedData();
+            buildPhoneticIndex();
             populateHouseDatalist();
             updateKPIs();
             applyFilters();
@@ -1185,7 +1205,8 @@
         function applyFilters() {
             const rawSearch = (document.getElementById('voterSearchInput')?.value || '').trim();
             const searchLower = rawSearch.toLowerCase();
-            const searchHindi = romanToHindiTransliterate(rawSearch);
+            const isEnglish = /[a-zA-Z]/.test(rawSearch);
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawSearch) : [];
             const part = document.getElementById('filterPart')?.value;
             const sec = document.getElementById('filterSection')?.value;
             const house = (document.getElementById('filterHouseInput')?.value || '').trim();
@@ -1215,7 +1236,7 @@
                 if (mobile === 'linked' && !hasMobile) return false;
                 if (mobile === 'unlinked' && hasMobile) return false;
 
-                // FULL UNRESTRICTED UNIVERSAL MAIN SEARCH BOX
+                // FULL UNRESTRICTED UNIVERSAL MAIN SEARCH BOX WITH MULTI-HINDI MATCHING
                 if (rawSearch) {
                     const nameClean = transliterateHindiClean(v.name);
                     const relClean = transliterateHindiClean(v.rel_name);
@@ -1224,8 +1245,10 @@
                     const mobLower = String(v.mobile || '').toLowerCase();
                     const famLower = String(v.family_group || '').toLowerCase();
 
+                    const matchHindiSugg = hindiSuggestions.some(s => v.name.includes(s.word) || v.rel_name.includes(s.word));
+
                     const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
-                                  v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
+                                  matchHindiSugg ||
                                   nameClean.includes(searchLower) || relClean.includes(searchLower) ||
                                   epicLower.includes(searchLower) || houseLower.includes(searchLower) ||
                                   mobLower.includes(searchLower) || famLower.includes(searchLower);
@@ -1880,6 +1903,7 @@
             checkAuth();
             populateSectionOptions();
             loadSavedData();
+            buildPhoneticIndex();
             populateHouseDatalist();
             updateKPIs();
             applyFilters();

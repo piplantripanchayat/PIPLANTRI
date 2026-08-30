@@ -392,6 +392,7 @@
                 votersData = [...INITIAL_VOTERS];
             }
 
+            buildPhoneticIndex();
             applyFilters();
             updateKPIs();
             lucide.createIcons();
@@ -504,7 +505,64 @@
             return res.toLowerCase();
         }
 
-        // Live Search Input
+        // Comprehensive Hindi Phonetic Index
+        let phoneticWordMap = new Map();
+
+        function buildPhoneticIndex() {
+            phoneticWordMap.clear();
+            votersData.forEach(v => {
+                [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
+                    const words = fullName.split(/\s+/);
+                    words.forEach(w => {
+                        const clean = w.replace(/[^\u0900-\u097F]/g, '');
+                        if (clean.length >= 2) {
+                            if (!phoneticWordMap.has(clean)) {
+                                phoneticWordMap.set(clean, { count: 0, roman: transliterateHindiClean(clean) });
+                            }
+                            phoneticWordMap.get(clean).count++;
+                        }
+                    });
+                    const fullClean = fullName.replace(/[^\u0900-\u097F\s]/g, '').trim();
+                    if (fullClean && fullClean.includes(' ')) {
+                        if (!phoneticWordMap.has(fullClean)) {
+                            phoneticWordMap.set(fullClean, { count: 0, roman: transliterateHindiClean(fullClean) });
+                        }
+                        phoneticWordMap.get(fullClean).count++;
+                    }
+                });
+            });
+        }
+
+        function getMultiHindiSuggestions(englishQuery) {
+            const q = (englishQuery || '').toLowerCase().trim();
+            if (!q) return [];
+            
+            const qNorm = q.replace(/aa+/g, 'a')
+                           .replace(/ee+/g, 'i')
+                           .replace(/oo+/g, 'u')
+                           .replace(/shh?/g, 'sh')
+                           .replace(/w/g, 'v')
+                           .replace(/x/g, 'ksh');
+            
+            const matches = [];
+            phoneticWordMap.forEach((meta, word) => {
+                const rNorm = meta.roman.replace(/w/g, 'v');
+                let score = 0;
+                if (rNorm === qNorm) score = 100;
+                else if (rNorm.startsWith(qNorm)) score = 80;
+                else if (rNorm.includes(qNorm)) score = 50;
+                else if (qNorm.startsWith(rNorm) && rNorm.length >= 3) score = 60;
+                
+                if (score > 0) {
+                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+                }
+            });
+            
+            matches.sort((a, b) => b.score - a.score);
+            return matches.slice(0, 8);
+        }
+
+        // Live Search Input with Multi-Hindi Suggestions
         function handleVoterSearchInput(query) {
             const clearBtn = document.getElementById('clearSearchBtn');
             const dropdown = document.getElementById('voterSearchDropdown');
@@ -518,31 +576,38 @@
                 return;
             }
 
-            const hindiWord = romanToHindiTransliterate(q);
             const isEnglish = /[a-zA-Z]/.test(q);
             const qClean = q.toLowerCase();
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
 
             const matchingVoters = votersData.filter(v => {
                 const nameTranslit = transliterateHindiClean(v.name);
                 const relTranslit = transliterateHindiClean(v.rel_name);
+                const matchHindiSugg = hindiSuggestions.some(s => v.name.includes(s.word) || v.rel_name.includes(s.word));
+
                 return v.name.includes(q) || v.rel_name.includes(q) || 
-                       v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
+                       matchHindiSugg ||
                        nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
                        String(v.epic || '').toLowerCase().includes(qClean) ||
                        String(v.house || '').includes(qClean);
             }).slice(0, 5);
 
             let dropdownHtml = '';
-            if (isEnglish && hindiWord) {
+            if (isEnglish && hindiSuggestions.length > 0) {
                 dropdownHtml += `
                     <div class="p-2 border-b border-slate-800 bg-slate-900/90">
-                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 flex items-center gap-1">
-                            <i data-lucide="languages" class="w-3 h-3 text-orange-400"></i> हिंदी सुझाव:
-                        </div>
-                        <button onclick="selectSearchSuggestion('${hindiWord}')" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-300 font-bold text-xs flex items-center justify-between transition">
-                            <span>🇮🇳 ${hindiWord}</span>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1"><i data-lucide="languages" class="w-3 h-3 text-orange-400"></i> हिंदी नाम सुझाव:</span>
                             <span class="text-[10px] text-slate-400 font-normal">English: "${q}"</span>
-                        </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${hindiSuggestions.map(s => `
+                                <button onclick="selectSearchSuggestion('${s.word}')" class="px-2.5 py-1 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-300 font-bold text-xs flex items-center gap-1 transition active:scale-95">
+                                    <span>${s.word}</span>
+                                    <span class="text-[9px] px-1 py-0.2 rounded-full bg-orange-500/20 text-orange-200 font-normal">${s.count}</span>
+                                </button>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
             }

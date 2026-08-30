@@ -364,6 +364,7 @@
                 votersState = [...VOTERS];
             }
 
+            buildPhoneticIndex();
             applyContactFilters();
             updateKPIs();
             lucide.createIcons();
@@ -415,6 +416,57 @@
             return res;
         }
 
+        // Comprehensive Hindi Phonetic Index
+        let phoneticWordMap = new Map();
+
+        function buildPhoneticIndex() {
+            phoneticWordMap.clear();
+            const source = [...(votersState || []), ...(CONTACTS || [])];
+            source.forEach(v => {
+                [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
+                    const words = fullName.split(/\s+/);
+                    words.forEach(w => {
+                        const clean = w.replace(/[^\u0900-\u097F]/g, '');
+                        if (clean.length >= 2) {
+                            if (!phoneticWordMap.has(clean)) {
+                                phoneticWordMap.set(clean, { count: 0, roman: transliterateHindiClean(clean) });
+                            }
+                            phoneticWordMap.get(clean).count++;
+                        }
+                    });
+                });
+            });
+        }
+
+        function getMultiHindiSuggestions(englishQuery) {
+            const q = (englishQuery || '').toLowerCase().trim();
+            if (!q) return [];
+            
+            const qNorm = q.replace(/aa+/g, 'a')
+                           .replace(/ee+/g, 'i')
+                           .replace(/oo+/g, 'u')
+                           .replace(/shh?/g, 'sh')
+                           .replace(/w/g, 'v')
+                           .replace(/x/g, 'ksh');
+            
+            const matches = [];
+            phoneticWordMap.forEach((meta, word) => {
+                const rNorm = meta.roman.replace(/w/g, 'v');
+                let score = 0;
+                if (rNorm === qNorm) score = 100;
+                else if (rNorm.startsWith(qNorm)) score = 80;
+                else if (rNorm.includes(qNorm)) score = 50;
+                else if (qNorm.startsWith(rNorm) && rNorm.length >= 3) score = 60;
+                
+                if (score > 0) {
+                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+                }
+            });
+            
+            matches.sort((a, b) => b.score - a.score);
+            return matches.slice(0, 8);
+        }
+
         // Get linked voters for a mobile number
         function getLinkedVotersForMobile(mobile) {
             if (!mobile || String(mobile).length < 10) return [];
@@ -447,7 +499,8 @@
             const statusFilter = document.getElementById('contactStatusFilter')?.value || 'ALL';
 
             const qLower = rawQuery.toLowerCase();
-            const qHindi = romanToHindiTransliterate(rawQuery);
+            const isEnglish = /[a-zA-Z]/.test(rawQuery);
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawQuery) : [];
 
             filteredContactsList = CONTACTS.filter(c => {
                 // Village filter
@@ -759,7 +812,8 @@
 
             const q = (query || '').trim();
             const qLower = q.toLowerCase();
-            const qHindi = romanToHindiTransliterate(q);
+            const isEnglish = /[a-zA-Z]/.test(q);
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
 
             const filtered = votersState.filter(v => {
                 if (!q) return true;
@@ -767,9 +821,13 @@
                 const r = (v.rel_name || '').toLowerCase();
                 const epic = String(v.epic || '').toLowerCase();
                 const house = String(v.house || '').toLowerCase();
+                const nameTranslit = transliterateHindiClean(v.name);
+                const relTranslit = transliterateHindiClean(v.rel_name);
+
+                const matchHindiSugg = hindiSuggestions.some(s => (v.name && v.name.includes(s.word)) || (v.rel_name && v.rel_name.includes(s.word)));
 
                 return n.includes(qLower) || r.includes(qLower) || epic.includes(qLower) || house.includes(qLower) ||
-                       n.includes(qHindi) || r.includes(qHindi);
+                       nameTranslit.includes(qLower) || relTranslit.includes(qLower) || matchHindiSugg;
             }).slice(0, 40);
 
             if (filtered.length === 0) {
