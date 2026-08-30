@@ -284,12 +284,19 @@
                             list="houseListOptions"
                             oninput="applyFilters()" 
                             onchange="applyFilters()"
-                            placeholder="🏠 मकान चुनें / लिखें" 
+                            placeholder="🏠 मकान चुनें / खोजें" 
                             class="w-full py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 placeholder-slate-400"
                             autocomplete="off"
                         >
                         <datalist id="houseListOptions"></datalist>
                     </div>
+
+                    <!-- FAMILY GROUP FILTER -->
+                    <select id="filterFamilyGroup" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
+                        <option value="">सभी परिवार स्थिति</option>
+                        <option value="grouped">👨‍👩‍👧 ग्रुप बने हुए</option>
+                        <option value="ungrouped">⚪ बिना ग्रुप वाले</option>
+                    </select>
 
                     <select id="filterCategory" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी रुझान (Loyalty)</option>
@@ -316,6 +323,17 @@
                 </div>
             </div>
 
+            <!-- Active Family Filter Banner -->
+            <div id="activeFamilyFilterBanner" class="hidden bg-indigo-50 border border-indigo-200 text-indigo-900 px-3 py-2 rounded-xl text-xs flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-indigo-600"></i>
+                    <span>फ़िल्टर सक्रिय परिवार: <b id="activeFamilyFilterName" class="font-extrabold"></b></span>
+                </div>
+                <button onclick="clearActiveFamilyFilter()" class="px-2 py-0.5 bg-indigo-200 hover:bg-indigo-300 text-indigo-950 rounded-lg font-bold text-[11px] transition">
+                    ✕ फ़िल्टर हटाएं (Show All)
+                </button>
+            </div>
+
             <!-- Voters Table Container -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between text-xs font-semibold text-slate-600 gap-2">
@@ -331,7 +349,7 @@
                         <div id="selectionActionButtons" class="hidden items-center gap-1.5 flex-wrap">
                             <button onclick="autoCreateFamilyGroup()" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[11px] font-extrabold shadow-sm flex items-center gap-1 transition active:scale-95">
                                 <i data-lucide="users" class="w-3.5 h-3.5 text-amber-300"></i>
-                                <span>👨‍👩‍👧‍👦 ऑटो फैमिली ग्रुप बनाएं (<span id="autoGroupCountDisplay">0</span>) [A, B, C...]</span>
+                                <span>👨‍👩‍👧‍👦 ऑटो फैमिली ग्रुप बनाएं (<span id="autoGroupCountDisplay">0</span>)</span>
                             </button>
                             <button id="bulkActionBtn" onclick="openBulkActionModal()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[11px] font-bold shadow-sm">
                                 ⚙️ बल्क एक्शन
@@ -392,7 +410,7 @@
                         <h2 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                             <span>परिवार एवं उप-परिवार विभाजन प्रबंधक (Family & Sub-Group Manager)</span>
                         </h2>
-                        <p class="text-[11px] text-slate-500">एक ही मकान संख्या के अंदर विभाजित उप-परिवारों (परिवार A, B, C, D...) के अलग-अलग वोटिंग विचार ट्रैक करें</p>
+                        <p class="text-[11px] text-slate-500">विभाजित उप-परिवारों व संयुक्त परिवारों के अलग-अलग वोटिंग विचार ट्रैक करें</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -556,7 +574,7 @@
                     <div>
                         <label class="block font-bold text-indigo-950 mb-1">👨‍👩‍👧‍👦 उप-परिवार समूह ID (Family Group ID)</label>
                         <input type="text" id="modalFamilyGroup" placeholder="उदा: भाग 59 | अनु. 1 | म.12 - परिवार A" class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
-                        <p class="text-[10px] text-indigo-700 mt-0.5">एक ही मकान के अलग-अलग परिवारों को अलग-अलग परिवार ID (जैसे परिवार A, B, C...) दी जा सकती है।</p>
+                        <p class="text-[10px] text-indigo-700 mt-0.5">एक ही मकान अथवा अलग-अलग मकानों के परिवारों को एक संयुक्त परिवार ID दी जा सकती है।</p>
                     </div>
                 </div>
 
@@ -721,6 +739,7 @@
         let currentPage = 1;
         let pageSize = 50;
         let pollingFilterState = 'all';
+        let activeFamilyFilter = '';
 
         function populateSectionOptions() {
             const secSelect = document.getElementById('filterSection');
@@ -783,6 +802,30 @@
         function onSectionFilterChange() {
             populateHouseDatalist();
             applyFilters();
+        }
+
+        // Exact Match Engine for the Dedicated House Filter Box (Prevents House 1 from showing House 11, 15, etc.)
+        function matchHouseFilter(voterHouse, selectedHouse) {
+            if (!selectedHouse) return true;
+            const h = String(voterHouse || '').trim().toLowerCase();
+            let q = String(selectedHouse).trim().toLowerCase();
+            if (!h || !q) return false;
+
+            // Remove prefix if user typed "मकान 1" or "म. 1"
+            const matchPrefix = q.match(/^(?:मकान\s*|म\.\s*|house\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
+            if (matchPrefix) q = matchPrefix[1];
+
+            if (h === q) return true;
+
+            // Numeric equality (e.g. '01' === '1')
+            const hNum = parseInt(h, 10);
+            const qNum = parseInt(q, 10);
+            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
+                const match = h.match(/^0*(\d+)$/);
+                if (match && parseInt(match[1], 10) === qNum) return true;
+            }
+
+            return false;
         }
 
         // Transliteration Engine
@@ -860,7 +903,7 @@
             return res.toLowerCase();
         }
 
-        // Universal Main Search Input Handler (Fully Restored & Flexible)
+        // Universal Main Search Input Handler (Fully Flexible Across All Fields)
         function handleMainSearchInput(query) {
             const clearBtn = document.getElementById('clearMainSearchBtn');
             const dropdown = document.getElementById('mainSearchDropdown');
@@ -951,6 +994,23 @@
             input.value = '';
             document.getElementById('clearMainSearchBtn')?.classList.add('hidden');
             document.getElementById('mainSearchDropdown')?.classList.add('hidden');
+            applyFilters();
+        }
+
+        function filterBySpecificFamilyGroup(familyId) {
+            activeFamilyFilter = familyId;
+            const banner = document.getElementById('activeFamilyFilterBanner');
+            const nameEl = document.getElementById('activeFamilyFilterName');
+            if (banner && nameEl) {
+                nameEl.textContent = familyId;
+                banner.classList.remove('hidden');
+            }
+            applyFilters();
+        }
+
+        function clearActiveFamilyFilter() {
+            activeFamilyFilter = '';
+            document.getElementById('activeFamilyFilterBanner')?.classList.add('hidden');
             applyFilters();
         }
 
@@ -1059,7 +1119,8 @@
             const searchHindi = romanToHindiTransliterate(rawSearch);
             const part = document.getElementById('filterPart')?.value;
             const sec = document.getElementById('filterSection')?.value;
-            const house = (document.getElementById('filterHouseInput')?.value || '').trim().toLowerCase();
+            const house = (document.getElementById('filterHouseInput')?.value || '').trim();
+            const famFilter = document.getElementById('filterFamilyGroup')?.value;
             const category = document.getElementById('filterCategory')?.value;
             const location = document.getElementById('filterLocation')?.value;
             const mobile = document.getElementById('filterMobile')?.value;
@@ -1068,12 +1129,16 @@
                 if (part && v.part !== part) return false;
                 if (sec && v.sec_name !== sec) return false;
                 
-                // HOUSE FILTER (Dropdown / Input matching)
-                if (house) {
-                    const h = String(v.house || '').trim().toLowerCase();
-                    if (h !== house && !h.includes(house)) return false;
-                }
+                // EXACT MATCH IN DEDICATED HOUSE FILTER BOX
+                if (house && !matchHouseFilter(v.house, house)) return false;
                 
+                // FAMILY GROUP FILTER
+                if (famFilter === 'grouped' && !v.family_group) return false;
+                if (famFilter === 'ungrouped' && v.family_group) return false;
+
+                // SPECIFIC CLICKED FAMILY FILTER
+                if (activeFamilyFilter && v.family_group !== activeFamilyFilter) return false;
+
                 if (category && v.category !== category) return false;
                 if (location && v.location_status !== location) return false;
                 
@@ -1081,7 +1146,7 @@
                 if (mobile === 'linked' && !hasMobile) return false;
                 if (mobile === 'unlinked' && hasMobile) return false;
 
-                // FULL RESTORED UNIVERSAL MAIN SEARCH BOX
+                // FULL UNRESTRICTED UNIVERSAL MAIN SEARCH BOX
                 if (rawSearch) {
                     const nameClean = transliterateHindiClean(v.name);
                     const relClean = transliterateHindiClean(v.rel_name);
@@ -1182,7 +1247,7 @@
                         </div>
                         ${v.family_group ? `
                             <div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold text-[10px]">
-                                <span>👨‍👩‍👧 ${v.family_group}</span>
+                                <span onclick="filterBySpecificFamilyGroup('${v.family_group}')" class="cursor-pointer hover:underline" title="पूरा परिवार देखें">👨‍👩‍👧 ${v.family_group}</span>
                                 <button onclick="removeSingleVoterFromFamily(${v.id})" title="ग्रुप से हटाएं" class="text-indigo-400 hover:text-red-500 ml-0.5 font-bold">×</button>
                             </div>
                         ` : ''}
@@ -1308,7 +1373,7 @@
                         <div class="flex-1 min-w-0 pr-2">
                             <div class="flex items-center gap-1">
                                 <span class="font-bold text-slate-900 truncate">${m.name}</span>
-                                <span class="text-[10px] text-slate-400 font-mono">(${m.age} / ${m.gender})</span>
+                                <span class="text-[10px] text-slate-400 font-mono">(${m.age}/${m.gender} • म.${m.house})</span>
                             </div>
                             <div class="text-[10px] text-slate-500 truncate">
                                 ${m.rel}: ${m.rel_name} ${m.mobile ? '• 📱 ' + m.mobile : ''}
@@ -1568,7 +1633,7 @@
             closeVoterModal();
         }
 
-        // ================= 1-CLICK AUTO FAMILY GROUPING (A, B, C, D...) =================
+        // ================= 1-CLICK AUTO FAMILY GROUPING (SUPPORTS SINGLE & MULTI-HOUSE FAMILIES) =================
         function toggleSelectAll(checked) {
             if (checked) {
                 filteredVoters.forEach(v => selectedVoterIds.add(v.id));
@@ -1603,57 +1668,54 @@
             const selectedList = voters.filter(v => selectedVoterIds.has(v.id));
             if (selectedList.length === 0) return;
 
-            // Group selected voters by their part, anubhag, and house
-            const houseMap = new Map();
-            selectedList.forEach(v => {
-                const part = v.part || '59';
-                let secNo = v.sec_no;
-                if (!secNo && v.sec_name) {
-                    const match = v.sec_name.match(/^(\d+)/);
-                    secNo = match ? match[1] : '1';
+            const parts = [...new Set(selectedList.map(v => v.part || '59'))];
+            const houses = [...new Set(selectedList.map(v => String(v.house || '').trim()).filter(Boolean))];
+            const secNos = [...new Set(selectedList.map(v => {
+                if (v.sec_no) return v.sec_no;
+                if (v.sec_name) {
+                    const m = v.sec_name.match(/^(\d+)/);
+                    return m ? m[1] : '1';
                 }
-                const house = v.house || 'NA';
-                const key = `${part}__${secNo}__${house}`;
-                if (!houseMap.has(key)) houseMap.set(key, []);
-                houseMap.get(key).push(v);
+                return '1';
+            }))];
+
+            let basePrefix = '';
+            if (houses.length <= 1) {
+                const h = houses.length === 1 ? houses[0] : 'NA';
+                basePrefix = `भाग ${parts.join(',')} | अनु. ${secNos.join(',')} | म.${h} - परिवार `;
+            } else {
+                // Multi-house joint family group (e.g. searching across different houses by name)
+                basePrefix = `भाग ${parts.join(',')} | म.${houses.join(',')} - संयुक्त परिवार `;
+            }
+
+            // Find next available letter (A, B, C, D...)
+            const existingLetters = new Set();
+            voters.forEach(v => {
+                if (v.family_group && v.family_group.startsWith(basePrefix)) {
+                    const letter = v.family_group.replace(basePrefix, '').trim();
+                    if (letter) existingLetters.add(letter);
+                }
             });
 
-            const createdGroups = [];
-
-            houseMap.forEach((members, key) => {
-                const [part, secNo, house] = key.split('__');
-                const basePrefix = `भाग ${part} | अनु. ${secNo} | म.${house} - परिवार `;
-
-                // Find all existing letters for this basePrefix across all voters in memory
-                const existingLetters = new Set();
-                voters.forEach(v => {
-                    if (v.family_group && v.family_group.startsWith(basePrefix)) {
-                        const letter = v.family_group.replace(basePrefix, '').trim();
-                        if (letter) existingLetters.add(letter);
-                    }
-                });
-
-                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                let chosenLetter = 'A';
-                for (let i = 0; i < alphabet.length; i++) {
-                    if (!existingLetters.has(alphabet[i])) {
-                        chosenLetter = alphabet[i];
-                        break;
-                    }
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let chosenLetter = 'A';
+            for (let i = 0; i < alphabet.length; i++) {
+                if (!existingLetters.has(alphabet[i])) {
+                    chosenLetter = alphabet[i];
+                    break;
                 }
+            }
 
-                const generatedFamilyId = `${basePrefix}${chosenLetter}`;
-                members.forEach(m => {
-                    m.family_group = generatedFamilyId;
-                });
-                createdGroups.push(`${generatedFamilyId} (${members.length} मतदाता)`);
+            const generatedFamilyId = `${basePrefix}${chosenLetter}`;
+            selectedList.forEach(m => {
+                m.family_group = generatedFamilyId;
             });
 
             saveVoterState();
             selectedVoterIds.clear();
             updateBulkActionBtn();
             renderVotersTable();
-            alert(`✅ नया फैमिली ग्रुप सफलतापूर्वक बन गया:\n\n• ${createdGroups.join('\n• ')}`);
+            alert(`✅ नया फैमिली ग्रुप सफलतापूर्वक बन गया:\n\n• ${generatedFamilyId} (${selectedList.length} मतदाता)`);
         }
 
         function autoRemoveFamilyGroup() {

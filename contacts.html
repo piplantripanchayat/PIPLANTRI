@@ -705,23 +705,20 @@
             renderModalVoters(query);
         }
 
-        // Exact House Matching Engine (Prevents "1" matching "11", "111", "12", etc.)
+        // Exact House Matching Engine for Dedicated House Filter
         function isHouseMatch(voterHouse, houseQuery) {
             if (!houseQuery) return true;
             const h = String(voterHouse || '').trim().toLowerCase();
-            const q = String(houseQuery).trim().toLowerCase();
+            let q = String(houseQuery).trim().toLowerCase();
             if (!h || !q) return false;
+            const matchPrefix = q.match(/^(?:मकान\s*|म\.\s*|house\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
+            if (matchPrefix) q = matchPrefix[1];
             if (h === q) return true;
             const hNum = parseInt(h, 10);
             const qNum = parseInt(q, 10);
             if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
-                const match = h.match(/^0*(\d+)/);
-                if (match && parseInt(match[1], 10) === qNum && (h === match[0] || h.startsWith(match[0] + '/') || h.startsWith(match[0] + '-') || h.startsWith(match[0] + ' ') || h.startsWith(match[0] + '.'))) {
-                    return true;
-                }
-            }
-            if (h.startsWith(q + '/') || h.startsWith(q + '-') || h.startsWith(q + ' ') || h.startsWith(q + '.')) {
-                return true;
+                const match = h.match(/^0*(\d+)$/);
+                if (match && parseInt(match[1], 10) === qNum) return true;
             }
             return false;
         }
