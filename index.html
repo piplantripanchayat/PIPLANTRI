@@ -312,14 +312,27 @@
             <!-- Voters Table Container -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between text-xs font-semibold text-slate-600 gap-2">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span>कुल परिणाम: <b id="voterResultCount" class="text-indigo-700">0</b> मतदाता</span>
                         <span class="text-slate-300">|</span>
                         <div class="flex items-center gap-1.5">
                             <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
                             <label for="selectAllCheckbox" class="cursor-pointer">सभी चुनें</label>
                         </div>
-                        <button id="bulkActionBtn" onclick="openBulkActionModal()" class="hidden px-2.5 py-1 bg-indigo-600 text-white rounded-md text-[11px] font-bold shadow-sm">बल्क एक्शन (<span id="bulkCountDisplay">0</span>)</button>
+                        
+                        <!-- 1-CLICK AUTO FAMILY GROUPING BUTTONS -->
+                        <div id="selectionActionButtons" class="hidden items-center gap-1.5 flex-wrap">
+                            <button onclick="autoCreateFamilyGroup()" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[11px] font-extrabold shadow-sm flex items-center gap-1 transition active:scale-95">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-300"></i>
+                                <span>👨‍👩‍👧‍👦 ऑटो फैमिली ग्रुप बनाएं (<span id="autoGroupCountDisplay">0</span>) [A, B, C...]</span>
+                            </button>
+                            <button id="bulkActionBtn" onclick="openBulkActionModal()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[11px] font-bold shadow-sm">
+                                ⚙️ बल्क एक्शन
+                            </button>
+                            <button onclick="autoRemoveFamilyGroup()" title="ग्रुप हटाएं" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[11px] font-semibold">
+                                ✕ अन-ग्रुप
+                            </button>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -340,7 +353,7 @@
                                 <th class="p-2.5 w-8 text-center"><input type="checkbox" disabled class="opacity-0"></th>
                                 <th class="p-2.5 w-12 text-center">क्र.</th>
                                 <th class="p-2.5 w-24">भाग / मकान</th>
-                                <th class="p-2.5">मतदाता का नाम व विवरण</th>
+                                <th class="p-2.5">मतदाता का नाम व परिवार ID</th>
                                 <th class="p-2.5 w-32">पिता / पति</th>
                                 <th class="p-2.5 w-24 text-center">आयु/लिंग</th>
                                 <th class="p-2.5 w-28 text-center">EPIC नंबर</th>
@@ -370,9 +383,9 @@
                     </div>
                     <div>
                         <h2 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                            <span>परिवार एवं उप-परिवार विभाजन प्रबंधक (Family Split & Sub-Group Manager)</span>
+                            <span>परिवार एवं उप-परिवार विभाजन प्रबंधक (Family & Sub-Group Manager)</span>
                         </h2>
-                        <p class="text-[11px] text-slate-500">एक ही मकान में रहने वाले अलग-अलग परिवारों/शाखाओं को विभाजित करें और उनके अलग-अलग वोटिंग रुझान ट्रैक करें</p>
+                        <p class="text-[11px] text-slate-500">एक ही मकान संख्या के अंदर विभाजित उप-परिवारों (परिवार A, B, C, D...) के अलग-अलग वोटिंग विचार ट्रैक करें</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -388,7 +401,7 @@
                         type="text" 
                         id="familySearchInput" 
                         oninput="renderFamilyView()" 
-                        placeholder="मुखिया, मकान नं. या सदस्य खोजें..." 
+                        placeholder="फैमिली ID, मकान नं. या नाम खोजें..." 
                         class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-indigo-500"
                     >
                 </div>
@@ -534,13 +547,9 @@
                 <!-- Custom Family Sub-Group & Mukhiya Field -->
                 <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 space-y-2">
                     <div>
-                        <label class="block font-bold text-indigo-950 mb-1">👨‍👩‍👧‍👦 उप-परिवार / शाखा समूह (Family Sub-Group Name)</label>
-                        <input type="text" id="modalFamilyGroup" placeholder="उदा: रमेश पालीवाल शाखा, कन्हैयालाल परिवार..." class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500">
-                        <p class="text-[10px] text-indigo-700 mt-0.5">यदि एक ही मकान में कई परिवार हैं, तो उन्हें अलग नाम देकर विभाजित करें।</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" id="modalIsMukhiya" class="w-4 h-4 text-indigo-600 rounded cursor-pointer">
-                        <label for="modalIsMukhiya" class="font-bold text-slate-800 cursor-pointer">👑 क्या यह मतदाता इस उप-परिवार का मुखिया (Head) है?</label>
+                        <label class="block font-bold text-indigo-950 mb-1">👨‍👩‍👧‍👦 उप-परिवार समूह ID (Family Group ID)</label>
+                        <input type="text" id="modalFamilyGroup" placeholder="उदा: भाग 59 | अनु. 1 | म.12 - परिवार A" class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                        <p class="text-[10px] text-indigo-700 mt-0.5">एक ही मकान के अलग-अलग परिवारों को अलग-अलग परिवार ID (जैसे परिवार A, B, C...) दी जा सकती है।</p>
                     </div>
                 </div>
 
@@ -604,8 +613,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">उप-परिवार समूह में भेजें (Move to Family Group):</label>
-                    <input type="text" id="bulkFamilyGroupInput" placeholder="नए उप-परिवार का नाम..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                    <label class="block font-semibold text-slate-700 mb-1">कस्टम उप-परिवार ID सेट करें:</label>
+                    <input type="text" id="bulkFamilyGroupInput" placeholder="उदा: भाग 59 | अनु. 1 | म.12 - परिवार A" class="w-full p-2 border border-slate-300 rounded-lg outline-none">
                 </div>
             </div>
             <div class="flex justify-end gap-2 text-xs font-semibold mt-4">
@@ -837,7 +846,8 @@
                        v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
                        nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
                        String(v.epic || '').toLowerCase().includes(qClean) ||
-                       String(v.house || '').includes(qClean);
+                       String(v.house || '').includes(qClean) ||
+                       String(v.family_group || '').toLowerCase().includes(qClean);
             }).slice(0, 5);
 
             let dropdownHtml = '';
@@ -1029,12 +1039,13 @@
                     const epicLower = String(v.epic || '').toLowerCase();
                     const houseLower = String(v.house || '').toLowerCase();
                     const mobLower = String(v.mobile || '').toLowerCase();
+                    const famLower = String(v.family_group || '').toLowerCase();
 
                     const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
                                   v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
                                   nameClean.includes(searchLower) || relClean.includes(searchLower) ||
                                   epicLower.includes(searchLower) || houseLower.includes(searchLower) ||
-                                  mobLower.includes(searchLower);
+                                  mobLower.includes(searchLower) || famLower.includes(searchLower);
 
                     if (!match) return false;
                 }
@@ -1096,7 +1107,7 @@
                                     <a href="tel:${num}" class="p-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="कॉल">
                                         <i data-lucide="phone" class="w-3 h-3"></i>
                                     </a>
-                                    <a href="https://wa.me/91${num}?text=${encodeURIComponent('सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition" title="व्हाट्सएप">
+                                    <a href="https://wa.me/91${num}?text=${encodeURIComponent(' सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition" title="व्हाट्सएप">
                                         <i data-lucide="message-circle" class="w-3 h-3"></i>
                                     </a>
                                 </div>
@@ -1119,9 +1130,13 @@
                     <td class="p-2.5">
                         <div class="font-bold text-slate-900 text-xs flex items-center gap-1">
                             <span>${v.name}</span>
-                            ${v.is_mukhiya ? '<span class="text-amber-500 text-[10px]" title="परिवार मुखिया">👑</span>' : ''}
                         </div>
-                        ${v.family_group ? `<div class="text-[10px] text-indigo-600 font-semibold truncate max-w-[200px]">🏠 ${v.family_group}</div>` : ''}
+                        ${v.family_group ? `
+                            <div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold text-[10px]">
+                                <span>👨‍👩‍👧 ${v.family_group}</span>
+                                <button onclick="removeSingleVoterFromFamily(${v.id})" title="ग्रुप से हटाएं" class="text-indigo-400 hover:text-red-500 ml-0.5 font-bold">×</button>
+                            </div>
+                        ` : ''}
                         <div class="text-[10px] text-slate-500 truncate max-w-[200px]">${v.sec_name || ''}</div>
                     </td>
                     <td class="p-2.5">
@@ -1143,6 +1158,15 @@
 
             renderPagination(totalPages);
             lucide.createIcons();
+        }
+
+        function removeSingleVoterFromFamily(voterId) {
+            const v = voters.find(x => x.id === voterId);
+            if (v) {
+                v.family_group = '';
+                saveVoterState();
+                renderVotersTable();
+            }
         }
 
         function renderPagination(totalPages) {
@@ -1189,9 +1213,14 @@
 
                 let groupKey = '';
                 if (v.family_group && v.family_group.trim()) {
-                    groupKey = `भाग ${v.part} • ${v.family_group.trim()} (म.${v.house || '-'}) `;
+                    groupKey = v.family_group.trim();
                 } else {
-                    groupKey = `भाग ${v.part} • मकान ${v.house || 'अज्ञात'}`;
+                    let secNo = v.sec_no;
+                    if (!secNo && v.sec_name) {
+                        const match = v.sec_name.match(/^(d+)/);
+                        secNo = match ? match[1] : '1';
+                    }
+                    groupKey = `भाग ${v.part} | अनुभाग ${secNo} | मकान ${v.house || 'अज्ञात'}`;
                 }
 
                 if (!familyMap.has(groupKey)) familyMap.set(groupKey, []);
@@ -1219,7 +1248,6 @@
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between hover:border-indigo-300 transition';
 
-                const mukhiya = members.find(m => m.is_mukhiya) || members[0];
                 const totalMembers = members.length;
                 const supportCount = members.filter(m => m.category === 'Support').length;
                 const targetCount = members.filter(m => m.category === 'Target').length;
@@ -1231,7 +1259,6 @@
                         <div class="flex-1 min-w-0 pr-2">
                             <div class="flex items-center gap-1">
                                 <span class="font-bold text-slate-900 truncate">${m.name}</span>
-                                ${m.is_mukhiya ? '<span class="text-amber-500 font-extrabold text-[10px]" title="मुखिया">👑</span>' : ''}
                                 <span class="text-[10px] text-slate-400 font-mono">(${m.age} / ${m.gender})</span>
                             </div>
                             <div class="text-[10px] text-slate-500 truncate">
@@ -1246,22 +1273,15 @@
                                 <option value="Opposition" ${m.category === 'Opposition' ? 'selected' : ''}>🔴 विपक्ष</option>
                                 <option value="Unassigned" ${m.category === 'Unassigned' ? 'selected' : ''}>⚪ अन-मार्क</option>
                             </select>
-                            <button onclick="promptMoveToSubFamily(${m.id})" title="उप-परिवार में भेजें / अलग करें" class="p-1 rounded bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700">
-                                <i data-lucide="split" class="w-3.5 h-3.5"></i>
-                            </button>
                         </div>
                     </div>
                 `).join('');
 
                 card.innerHTML = `
                     <div>
-                        <div class="flex items-start justify-between border-b border-slate-200 pb-2.5 mb-2.5">
+                        <div class="flex items-start justify-between border-b border-slate-200 pb-2 mb-2">
                             <div>
                                 <span class="font-extrabold text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">${fKey}</span>
-                                <div class="text-[11px] text-slate-700 font-bold mt-1 flex items-center gap-1">
-                                    <span>मुखिया: ${mukhiya.name}</span>
-                                    <button onclick="promptSetMukhiya('${fKey}')" class="text-[10px] text-indigo-600 hover:underline font-normal">(बदलें)</button>
-                                </div>
                             </div>
                             <span class="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full text-xs flex-shrink-0">${totalMembers} सदस्य</span>
                         </div>
@@ -1310,38 +1330,19 @@
             }
         }
 
-        function promptMoveToSubFamily(voterId) {
-            const v = voters.find(x => x.id === voterId);
-            if (!v) return;
-
-            const current = v.family_group || `मकान ${v.house || ''}`;
-            const newGroup = prompt(`${v.name} (म.${v.house}) को किस नए उप-परिवार / समूह में जोड़ना चाहते हैं?\n\nउदा: "रमेश पालीवाल शाखा", "कन्हैयालाल परिवार", "मकान ${v.house} - परिवार B":`, current);
-
-            if (newGroup !== null) {
-                v.family_group = newGroup.trim();
-                saveVoterState();
-                renderFamilyView();
-            }
-        }
-
-        function promptSetMukhiya(fKey) {
-            const name = prompt(`${fKey} के लिए नए मुखिया का नाम दर्ज करें:`);
-            if (!name) return;
-            const target = voters.find(v => v.name.includes(name.trim()));
-            if (target) {
-                target.is_mukhiya = true;
-                saveVoterState();
-                renderFamilyView();
-            } else {
-                alert("इस नाम का कोई मतदाता नहीं मिला!");
-            }
-        }
-
         function bulkSetFamilyLoyalty(fKey, cat) {
-            const groupName = fKey.replace(/^भाग \d+ • /, '').replace(/ \(म\.[^)]+\)$/, '').trim();
             voters.forEach(v => {
-                const defaultKey = `मकान ${v.house || 'अज्ञात'}`;
-                if ((v.family_group && v.family_group.trim() === groupName) || defaultKey === groupName) {
+                let currentKey = v.family_group ? v.family_group.trim() : '';
+                if (!currentKey) {
+                    let secNo = v.sec_no;
+                    if (!secNo && v.sec_name) {
+                        const match = v.sec_name.match(/^(d+)/);
+                        secNo = match ? match[1] : '1';
+                    }
+                    currentKey = `भाग ${v.part} | अनुभाग ${secNo} | मकान ${v.house || 'अज्ञात'}`;
+                }
+
+                if (currentKey === fKey) {
                     v.category = cat;
                 }
             });
@@ -1480,7 +1481,6 @@
             document.getElementById('modalMobile').value = v.mobile || '';
             document.getElementById('modalCategory').value = v.category || 'Unassigned';
             document.getElementById('modalFamilyGroup').value = v.family_group || '';
-            document.getElementById('modalIsMukhiya').checked = Boolean(v.is_mukhiya);
             document.getElementById('modalLocationStatus').value = v.location_status || 'Local';
             document.getElementById('modalOutstationCity').value = v.outstation_city || '';
             document.getElementById('modalCustomGroup').value = v.custom_group || '';
@@ -1509,7 +1509,6 @@
             v.mobile = document.getElementById('modalMobile').value.trim();
             v.category = document.getElementById('modalCategory').value;
             v.family_group = document.getElementById('modalFamilyGroup').value.trim();
-            v.is_mukhiya = document.getElementById('modalIsMukhiya').checked;
             v.location_status = document.getElementById('modalLocationStatus').value;
             v.outstation_city = document.getElementById('modalOutstationCity').value.trim();
             v.custom_group = document.getElementById('modalCustomGroup').value.trim();
@@ -1520,7 +1519,7 @@
             closeVoterModal();
         }
 
-        // Bulk Actions
+        // ================= 1-CLICK AUTO FAMILY GROUPING (A, B, C, D...) =================
         function toggleSelectAll(checked) {
             if (checked) {
                 filteredVoters.forEach(v => selectedVoterIds.add(v.id));
@@ -1538,14 +1537,90 @@
         }
 
         function updateBulkActionBtn() {
-            const btn = document.getElementById('bulkActionBtn');
-            const countDisplay = document.getElementById('bulkCountDisplay');
+            const actionContainer = document.getElementById('selectionActionButtons');
+            const countDisplay = document.getElementById('autoGroupCountDisplay');
             if (selectedVoterIds.size > 0) {
-                btn.classList.remove('hidden');
-                countDisplay.textContent = selectedVoterIds.size;
+                actionContainer.classList.remove('hidden');
+                actionContainer.classList.add('flex');
+                if (countDisplay) countDisplay.textContent = selectedVoterIds.size;
             } else {
-                btn.classList.add('hidden');
+                actionContainer.classList.add('hidden');
+                actionContainer.classList.remove('flex');
             }
+        }
+
+        function autoCreateFamilyGroup() {
+            if (selectedVoterIds.size === 0) return;
+            const selectedList = voters.filter(v => selectedVoterIds.has(v.id));
+            if (selectedList.length === 0) return;
+
+            // Group selected voters by their part, anubhag, and house
+            const houseMap = new Map();
+            selectedList.forEach(v => {
+                const part = v.part || '59';
+                let secNo = v.sec_no;
+                if (!secNo && v.sec_name) {
+                    const match = v.sec_name.match(/^(\d+)/);
+                    secNo = match ? match[1] : '1';
+                }
+                const house = v.house || 'NA';
+                const key = `${part}__${secNo}__${house}`;
+                if (!houseMap.has(key)) houseMap.set(key, []);
+                houseMap.get(key).push(v);
+            });
+
+            const createdGroups = [];
+
+            houseMap.forEach((members, key) => {
+                const [part, secNo, house] = key.split('__');
+                const basePrefix = `भाग ${part} | अनु. ${secNo} | म.${house} - परिवार `;
+
+                // Find all existing letters for this basePrefix across all voters in memory
+                const existingLetters = new Set();
+                voters.forEach(v => {
+                    if (v.family_group && v.family_group.startsWith(basePrefix)) {
+                        const letter = v.family_group.replace(basePrefix, '').trim();
+                        if (letter) existingLetters.add(letter);
+                    }
+                });
+
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let chosenLetter = 'A';
+                for (let i = 0; i < alphabet.length; i++) {
+                    if (!existingLetters.has(alphabet[i])) {
+                        chosenLetter = alphabet[i];
+                        break;
+                    }
+                }
+
+                const generatedFamilyId = `${basePrefix}${chosenLetter}`;
+                members.forEach(m => {
+                    m.family_group = generatedFamilyId;
+                });
+                createdGroups.push(`${generatedFamilyId} (${members.length} मतदाता)`);
+            });
+
+            saveVoterState();
+            selectedVoterIds.clear();
+            updateBulkActionBtn();
+            renderVotersTable();
+            alert(`✅ नया फैमिली ग्रुप सफलतापूर्वक बन गया:\n\n• ${createdGroups.join('\n• ')}`);
+        }
+
+        function autoRemoveFamilyGroup() {
+            if (selectedVoterIds.size === 0) return;
+            if (!confirm(`क्या आप चयनित ${selectedVoterIds.size} मतदाताओं को उनके फैमिली ग्रुप से हटाना चाहते हैं?`)) return;
+
+            voters.forEach(v => {
+                if (selectedVoterIds.has(v.id)) {
+                    v.family_group = '';
+                }
+            });
+
+            saveVoterState();
+            selectedVoterIds.clear();
+            updateBulkActionBtn();
+            renderVotersTable();
         }
 
         function openBulkActionModal() {
@@ -1571,6 +1646,7 @@
             selectedVoterIds.clear();
             updateBulkActionBtn();
             closeBulkActionModal();
+            renderVotersTable();
         }
 
         function quickFilterCategory(cat) {
@@ -1597,8 +1673,7 @@
                 "भाग (Booth)": v.part,
                 "अनुभाग (Section)": v.sec_name,
                 "मकान नं.": v.house,
-                "उप-परिवार समूह": v.family_group,
-                "मुखिया": v.is_mukhiya ? 'हाँ' : 'नहीं',
+                "फैमिली ग्रुप ID": v.family_group,
                 "क्रम संख्या": v.sr || v.id,
                 "मतदाता नाम": v.name,
                 "संबंध": v.rel,
