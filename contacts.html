@@ -176,6 +176,15 @@
                     <option value="LINKED">🟢 वोटर से लिंक हो चुके</option>
                     <option value="UNLINKED">🔴 बिना लिंक वाले</option>
                 </select>
+
+                <!-- Sort Dropdown -->
+                <select id="contactSortSelect" onchange="applyContactFilters()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-semibold">
+                    <option value="name_asc">🔤 नाम (A ➔ Z / अ ➔ ज्ञ)</option>
+                    <option value="name_desc">🔤 नाम (Z ➔ A / ज्ञ ➔ अ)</option>
+                    <option value="village_asc">📍 गाँव अनुसार (Village)</option>
+                    <option value="linked_first">🟢 लिंक्ड पहले</option>
+                    <option value="unlinked_first">🔴 बिना लिंक वाले पहले</option>
+                </select>
             </div>
         </div>
 
@@ -469,6 +478,27 @@
 
                 return true;
             });
+
+            const sortBy = document.getElementById('contactSortSelect')?.value || 'name_asc';
+            if (sortBy === 'name_asc') {
+                filteredContactsList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hi'));
+            } else if (sortBy === 'name_desc') {
+                filteredContactsList.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'hi'));
+            } else if (sortBy === 'village_asc') {
+                filteredContactsList.sort((a, b) => (a.village || '').localeCompare(b.village || '', 'hi'));
+            } else if (sortBy === 'linked_first') {
+                filteredContactsList.sort((a, b) => {
+                    const lA = getLinkedVotersForMobile(a.mobile).length;
+                    const lB = getLinkedVotersForMobile(b.mobile).length;
+                    return lB - lA;
+                });
+            } else if (sortBy === 'unlinked_first') {
+                filteredContactsList.sort((a, b) => {
+                    const lA = getLinkedVotersForMobile(a.mobile).length;
+                    const lB = getLinkedVotersForMobile(b.mobile).length;
+                    return lA - lB;
+                });
+            }
 
             document.getElementById('visibleContactCount').innerText = filteredContactsList.length.toLocaleString('en-IN');
             

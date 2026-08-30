@@ -193,6 +193,17 @@
                     <option value="HAS_SUGGESTION">⚡ AI सुझाव उपलब्ध</option>
                     <option value="LINKED">🟢 लिंक हो चुके (Linked)</option>
                 </select>
+
+                <!-- Sort Dropdown -->
+                <select id="sortSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 font-semibold">
+                    <option value="sr_asc">🔢 क्रम (1 ➔ 2607)</option>
+                    <option value="sr_desc">🔢 क्रम (2607 ➔ 1)</option>
+                    <option value="name_asc">🔤 नाम (A ➔ Z / अ ➔ ज्ञ)</option>
+                    <option value="name_desc">🔤 नाम (Z ➔ A / ज्ञ ➔ अ)</option>
+                    <option value="house_asc">🏠 मकान नं. (1, 2, 3...)</option>
+                    <option value="age_asc">👶 आयु (कम से ज्यादा)</option>
+                    <option value="age_desc">👴 आयु (ज्यादा से कम)</option>
+                </select>
             </div>
 
             <!-- Export -->
@@ -652,6 +663,27 @@
 
                 return true;
             });
+
+            const sortBy = document.getElementById('sortSelect')?.value || 'sr_asc';
+            if (sortBy === 'sr_asc') {
+                filteredVotersList.sort((a, b) => (parseInt(a.sr || a.id) || 0) - (parseInt(b.sr || b.id) || 0));
+            } else if (sortBy === 'sr_desc') {
+                filteredVotersList.sort((a, b) => (parseInt(b.sr || b.id) || 0) - (parseInt(a.sr || a.id) || 0));
+            } else if (sortBy === 'name_asc') {
+                filteredVotersList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hi'));
+            } else if (sortBy === 'name_desc') {
+                filteredVotersList.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'hi'));
+            } else if (sortBy === 'house_asc') {
+                filteredVotersList.sort((a, b) => {
+                    const na = parseInt(a.house), nb = parseInt(b.house);
+                    if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+                    return String(a.house || '').localeCompare(String(b.house || ''), 'hi');
+                });
+            } else if (sortBy === 'age_asc') {
+                filteredVotersList.sort((a, b) => (parseInt(a.age) || 0) - (parseInt(b.age) || 0));
+            } else if (sortBy === 'age_desc') {
+                filteredVotersList.sort((a, b) => (parseInt(b.age) || 0) - (parseInt(a.age) || 0));
+            }
 
             document.getElementById('visibleCountDisplay').innerText = filteredVotersList.length.toLocaleString('en-IN');
             
