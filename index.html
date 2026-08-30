@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ग्राम पंचायत पिपलांत्री - सरपंच चुनाव वार-रूम (प्रत्याशी: नविन पालीवाल)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
@@ -32,7 +32,7 @@
             background: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 0.75rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             max-height: 280px;
             overflow-y: auto;
         }
@@ -47,16 +47,53 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
+    
+    <!-- GLOBAL SECURITY PIN LOCK MODAL (PIN: 1111) -->
+    <div id="pinLockModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center flex flex-col items-center">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30 mb-4">
+                <i data-lucide="shield-lock" class="w-8 h-8 text-white"></i>
+            </div>
+            
+            <h2 class="text-lg sm:text-xl font-extrabold text-white">ग्राम पंचायत पिपलांत्री</h2>
+            <p class="text-xs text-orange-400 font-bold mt-0.5">सरपंच चुनाव वार-रूम • प्रत्याशी: नविन पालीवाल</p>
+            <p class="text-xs text-slate-400 mt-3">कृपया चुनाव टीम का 4-अंक का सुरक्षा PIN दर्ज करें:</p>
+
+            <div class="my-5 w-full">
+                <input 
+                    type="password" 
+                    id="pinInputBox" 
+                    maxlength="4" 
+                    pattern="[0-9]*" 
+                    inputmode="numeric" 
+                    placeholder="••••" 
+                    class="w-full text-center text-3xl tracking-[1em] py-3 bg-slate-950 border-2 border-slate-700 focus:border-orange-500 rounded-2xl text-white outline-none font-mono transition"
+                    onkeyup="if(event.key === 'Enter' || this.value.length === 4) verifyPin(this.value)"
+                    autocomplete="off"
+                >
+                <p id="pinErrorDisplay" class="text-rose-400 text-xs mt-2 font-semibold hidden"></p>
+            </div>
+
+            <button onclick="verifyPin()" class="w-full py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-950 transition active:scale-95 flex items-center justify-center gap-2">
+                <i data-lucide="unlock" class="w-4 h-4"></i>
+                <span>अनलॉक करें (Unlock)</span>
+            </button>
+
+            <p class="text-[10px] text-slate-500 mt-4">अधिकृत चुनावी कार्यकर्ताओं हेतु सुरक्षित पोर्टल</p>
+        </div>
+    </div>
+
+
     <!-- Top Navigation Header -->
     <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white shadow-xl sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2.5">
                 <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-inner">
                     <i data-lucide="vote" class="w-6 h-6"></i>
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
-                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
                             चुनाव वार-रूम एवं मतदाता प्रबंधन पोर्टल
                         </h1>
                         <span class="bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-extrabold shadow-sm flex items-center gap-1">
@@ -69,31 +106,30 @@
                 </div>
             </div>
 
-            <!-- Quick Action Buttons -->
+            <!-- Action Buttons -->
             <div class="flex items-center flex-wrap gap-2 text-xs">
-                <a href="linker.html" class="px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white font-bold flex items-center gap-1.5 shadow transition" title="AI कांटेक्ट लिंकर">
-                    <i data-lucide="link-2" class="w-4 h-4 text-amber-300"></i>
-                    <span>AI कांटेक्ट लिंकर</span>
+                <button onclick="triggerPWAInstall()" class="pwa-install-btn hidden px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold shadow flex items-center gap-1">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                    <span>ऐप इंस्टॉल</span>
+                </button>
+                <a href="linker.html" class="px-2.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold flex items-center gap-1.5 shadow transition" title="वोटर ➔ कांटेक्ट लिंकर">
+                    <i data-lucide="link-2" class="w-3.5 h-3.5"></i>
+                    <span>वोटर लिंकर</span>
                 </a>
-                <button onclick="switchTab('slips')" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>पर्ची प्रिंट</span>
+                <a href="contacts.html" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center gap-1.5 shadow transition" title="कांटेक्ट ➔ वोटर लिंकर">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-300"></i>
+                    <span>कांटेक्ट लिंकर</span>
+                </a>
+                <button onclick="switchTab('slips')" class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">पर्ची प्रिंट</span>
                 </button>
-                <button onclick="exportToExcel()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>एक्सेल (.xlsx)</span>
+                <button onclick="exportToExcel()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">एक्सेल</span>
                 </button>
-                <button onclick="exportJSONBackup()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 border border-slate-700 transition" title="JSON बैकअप">
-                    <i data-lucide="save" class="w-4 h-4"></i>
-                    <span>बैकअप</span>
-                </button>
-                <button onclick="document.getElementById('importFileInputMain').click()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold flex items-center gap-1.5 border border-slate-700 transition">
-                    <i data-lucide="upload" class="w-4 h-4"></i>
-                    <span>रिस्टोर</span>
-                </button>
-                <input type="file" id="importFileInputMain" accept=".json" class="hidden" onchange="importData(event)">
-                <button onclick="resetDataConfirmation()" title="डेटा रीसेट करें" class="p-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 transition">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <button onclick="lockPortal()" title="सुरक्षा लॉक करें" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
@@ -123,10 +159,6 @@
                     <i data-lucide="printer" class="w-4 h-4"></i>
                     <span>मतदाता पर्ची प्रिंटर</span>
                 </button>
-                <a href="linker.html" class="px-3.5 py-2 rounded-lg flex items-center gap-1.5 text-indigo-300 hover:text-white hover:bg-indigo-900/60 transition ml-auto">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-                    <span>AI कांटेक्ट लिंकर ↗</span>
-                </a>
             </div>
         </div>
     </header>
@@ -219,7 +251,7 @@
                             id="voterSearchInput" 
                             oninput="handleMainSearchInput(this.value)" 
                             onfocus="handleMainSearchInput(this.value)"
-                            placeholder="वोटर खोजें: नाम (English या Hindi), पिता/पति, मकान नं., EPIC... (उदा: harsh, ramesh)" 
+                            placeholder="वोटर खोजें: नाम (English/Hindi), पिता/पति, मकान नं., EPIC..." 
                             class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
                             autocomplete="off"
                         >
@@ -233,7 +265,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 flex-wrap">
-                    <select id="filterPart" onchange="applyFilters()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
+                    <select id="filterPart" onchange="onPartFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी 4 भाग (Booth)</option>
                         <option value="59">भाग 59 - मोरवड (695)</option>
                         <option value="60">भाग 60 - उमठी (445)</option>
@@ -241,7 +273,11 @@
                         <option value="62">भाग 62 - पिपलांत्री बायां (729)</option>
                     </select>
 
-                    <select id="filterCategory" onchange="applyFilters()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
+                    <select id="filterSection" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[180px]">
+                        <option value="">सभी अनुभाग (All Anubhags)</option>
+                    </select>
+
+                    <select id="filterCategory" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी रुझान (Loyalty)</option>
                         <option value="Support">🟢 100% पक्का समर्थक</option>
                         <option value="Target">🟡 टारगेट (कन्वर्ट करना है)</option>
@@ -250,7 +286,7 @@
                         <option value="Unassigned">⚪ अन-मार्क</option>
                     </select>
 
-                    <select id="filterLocation" onchange="applyFilters()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
+                    <select id="filterLocation" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी निवास स्थिति</option>
                         <option value="Local">गांव में उपस्थित (Local)</option>
                         <option value="Bahar">✈️ बाहर रहने वाले (Outstation)</option>
@@ -258,15 +294,15 @@
                         <option value="ECIDeleted">विलोपित (Deleted)</option>
                     </select>
 
-                    <select id="filterMobile" onchange="applyFilters()" class="py-1.5 px-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
-                        <option value="">सभी मोबाइल स्थिति</option>
+                    <select id="filterMobile" onchange="applyFilters()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
+                        <option value="">सभी मोबाइल</option>
                         <option value="linked">📱 मोबाइल उपलब्ध</option>
-                        <option value="unlinked">🔴 बिना मोबाइल वाले</option>
+                        <option value="unlinked">🔴 बिना मोबाइल</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Voters Table Container -->
+            <!-- Voters Table / Mobile Friendly Card List -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between text-xs font-semibold text-slate-600 gap-2">
                     <div class="flex items-center gap-2">
@@ -301,9 +337,9 @@
                                 <th class="p-2.5 w-32">पिता / पति</th>
                                 <th class="p-2.5 w-24 text-center">आयु/लिंग</th>
                                 <th class="p-2.5 w-28 text-center">EPIC नंबर</th>
-                                <th class="p-2.5 w-40 text-center">मोबाइल / संपर्क</th>
-                                <th class="p-2.5 w-36 text-center">रुझान (Loyalty)</th>
-                                <th class="p-2.5 w-20 text-center">कार्य</th>
+                                <th class="p-2.5 w-44 text-center">मोबाइल / संपर्क</th>
+                                <th class="p-2.5 w-32 text-center">रुझान (Loyalty)</th>
+                                <th class="p-2.5 w-16 text-center">कार्य</th>
                             </tr>
                         </thead>
                         <tbody id="votersTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
@@ -459,8 +495,8 @@
                 <input type="hidden" id="modalVoterId">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">मोबाइल नंबर</label>
-                        <input type="tel" id="modalMobile" maxlength="10" placeholder="10-अंक का मोबाइल नंबर..." class="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block font-bold text-slate-700 mb-1">मोबाइल नंबर (एक से अधिक होने पर कॉमा लगाएं)</label>
+                        <input type="text" id="modalMobile" placeholder="उदा: 9829012345, 7023029903" class="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">वोटर श्रेणी (Loyalty)</label>
@@ -542,17 +578,85 @@
     <!-- External Cached Master Data Source -->
     <script src="data.js"></script>
 
-    <!-- Core App Logic -->
+    <!-- Core Master Portal Logic -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
-            });
+        
+    // SECURITY PIN SYSTEM (PIN: 1111)
+    const CORRECT_PIN = "1111";
+    const AUTH_KEY = "piplantri_auth_pin_verified";
+
+    function checkAuth() {
+        const isAuth = sessionStorage.getItem(AUTH_KEY) === "true" || localStorage.getItem(AUTH_KEY) === "true";
+        const lockModal = document.getElementById("pinLockModal");
+        if (!isAuth && lockModal) {
+            lockModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            setTimeout(() => {
+                document.getElementById("pinInputBox")?.focus();
+            }, 100);
+        } else if (lockModal) {
+            lockModal.classList.add("hidden");
+            document.body.style.overflow = "auto";
         }
+    }
+
+    function verifyPin(enteredPin) {
+        const pin = String(enteredPin || document.getElementById("pinInputBox")?.value || "").trim();
+        const errorDisplay = document.getElementById("pinErrorDisplay");
+        if (pin === CORRECT_PIN) {
+            sessionStorage.setItem(AUTH_KEY, "true");
+            localStorage.setItem(AUTH_KEY, "true");
+            document.getElementById("pinLockModal")?.classList.add("hidden");
+            document.body.style.overflow = "auto";
+            if (errorDisplay) errorDisplay.classList.add("hidden");
+        } else {
+            if (errorDisplay) {
+                errorDisplay.textContent = "गलत PIN! कृपया सही 4-अंक का पिन (1111) दर्ज करें।";
+                errorDisplay.classList.remove("hidden");
+            }
+            const box = document.getElementById("pinInputBox");
+            if (box) {
+                box.value = "";
+                box.focus();
+            }
+        }
+    }
+
+    function lockPortal() {
+        if (confirm("क्या आप पोर्टल को लॉक करना चाहते हैं?")) {
+            sessionStorage.removeItem(AUTH_KEY);
+            localStorage.removeItem(AUTH_KEY);
+            window.location.reload();
+        }
+    }
+
+    // PWA INSTALL PROMPT
+    let deferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        document.querySelectorAll(".pwa-install-btn").forEach(btn => btn.classList.remove("hidden"));
+    });
+
+    function triggerPWAInstall() {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === "accepted") {
+                    console.log("User accepted install prompt");
+                }
+                deferredInstallPrompt = null;
+            });
+        } else {
+            alert("ऐप इंस्टॉल करने के लिए अपने मोबाइल ब्राउज़र मेन्यू (3 डॉट्स) पर क्लिक करें और 'Add to Home Screen' या 'Install App' चुनें!");
+        }
+    }
+
 
         const VOTERS_MASTER = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.voters : [];
         const CONTACTS_DIRECTORY = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contacts : [];
         const PRECOMPUTED_SUGGESTIONS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.suggestions : {};
+        const SECTIONS_LIST = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.sections : [];
 
         let voters = [];
         let filteredVoters = [];
@@ -561,6 +665,38 @@
         let currentPage = 1;
         let pageSize = 50;
         let pollingFilterState = 'all';
+
+        function populateSectionOptions() {
+            const secSelect = document.getElementById('filterSection');
+            if (!secSelect) return;
+            secSelect.innerHTML = '<option value="">सभी अनुभाग (All Anubhags)</option>';
+            SECTIONS_LIST.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                secSelect.appendChild(opt);
+            });
+        }
+
+        function onPartFilterChange() {
+            const part = document.getElementById('filterPart').value;
+            const secSelect = document.getElementById('filterSection');
+            secSelect.innerHTML = '<option value="">सभी अनुभाग (All Anubhags)</option>';
+            
+            const filteredSections = SECTIONS_LIST.filter(s => {
+                if (!part) return true;
+                return voters.some(v => v.part === part && v.sec_name === s);
+            });
+
+            filteredSections.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                secSelect.appendChild(opt);
+            });
+
+            applyFilters();
+        }
 
         // Transliteration Engine
         const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
@@ -581,58 +717,28 @@
             let res = "";
             let i = 0;
             const len = str.length;
-
             while (i < len) {
-                let matchedCons = null;
-                let consLen = 0;
+                let matchedCons = null, consLen = 0;
                 for (const [eng, dev] of HINDI_CONSONANTS) {
-                    if (str.startsWith(eng, i)) {
-                        matchedCons = dev;
-                        consLen = eng.length;
-                        break;
-                    }
+                    if (str.startsWith(eng, i)) { matchedCons = dev; consLen = eng.length; break; }
                 }
-
                 if (matchedCons) {
                     i += consLen;
-                    let matra = null;
-                    let vowelLen = 0;
+                    let matra = null, vowelLen = 0;
                     const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
                     for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) {
-                            matra = HINDI_MATRAS[v];
-                            vowelLen = v.length;
-                            break;
-                        }
+                        if (str.startsWith(v, i)) { matra = HINDI_MATRAS[v]; vowelLen = v.length; break; }
                     }
-                    if (matra !== null) {
-                        res += matchedCons + matra;
-                        i += vowelLen;
-                    } else {
-                        if (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) {
-                            res += matchedCons;
-                        } else {
-                            res += matchedCons + '्';
-                        }
-                    }
+                    if (matra !== null) { res += matchedCons + matra; i += vowelLen; }
+                    else { res += (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) ? matchedCons : matchedCons + '्'; }
                 } else {
-                    let standalone = null;
-                    let vLen = 0;
+                    let standalone = null, vLen = 0;
                     const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
                     for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) {
-                            standalone = HINDI_VOWELS[v];
-                            vLen = v.length;
-                            break;
-                        }
+                        if (str.startsWith(v, i)) { standalone = HINDI_VOWELS[v]; vLen = v.length; break; }
                     }
-                    if (standalone) {
-                        res += standalone;
-                        i += vLen;
-                    } else {
-                        res += str[i];
-                        i++;
-                    }
+                    if (standalone) { res += standalone; i += vLen; }
+                    else { res += str[i]; i++; }
                 }
             }
             return res;
@@ -645,18 +751,10 @@
             'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
             'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
             'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
-            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
-            'क़': 'q', 'ख़': 'kh', 'ग़': 'g', 'ज़': 'z', 'ड़': 'd', 'ढ़': 'dh', 'फ़': 'f'
+            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy'
         };
-        const matraMap = {
-            'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo',
-            'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
-            'ं': 'n', 'ँ': 'n', 'ः': 'h'
-        };
-        const vowelsMap = {
-            'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo',
-            'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au'
-        };
+        const matraMap = {'ा':'a','ि':'i','ी':'ee','ु':'u','ू':'oo','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n'};
+        const vowelsMap = {'अ':'a','आ':'aa','इ':'i','ई':'ee','उ':'u','ऊ':'oo','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
 
         function transliterateHindiClean(text) {
             if (!text) return "";
@@ -667,17 +765,10 @@
                 if (consMap[ch]) {
                     res += consMap[ch];
                     const nextCh = i + 1 < len ? text[i + 1] : '';
-                    if (nextCh !== '्' && !matraMap[nextCh] && nextCh !== ' ' && i + 1 < len) {
-                        res += 'a';
-                    }
-                } else if (matraMap[ch]) {
-                    res += matraMap[ch];
-                } else if (vowelsMap[ch]) {
-                    res += vowelsMap[ch];
-                } else if (ch === '्') {
-                } else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') {
-                    res += ch;
-                }
+                    if (nextCh !== '्' && !matraMap[nextCh] && nextCh !== ' ' && i + 1 < len) res += 'a';
+                } else if (matraMap[ch]) res += matraMap[ch];
+                else if (vowelsMap[ch]) res += vowelsMap[ch];
+                else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') res += ch;
             }
             return res.toLowerCase();
         }
@@ -687,9 +778,8 @@
             const dropdown = document.getElementById('mainSearchDropdown');
             const q = (query || '').trim();
 
-            if (q.length > 0) {
-                clearBtn?.classList.remove('hidden');
-            } else {
+            if (q.length > 0) clearBtn?.classList.remove('hidden');
+            else {
                 clearBtn?.classList.add('hidden');
                 dropdown?.classList.add('hidden');
                 applyFilters();
@@ -703,18 +793,14 @@
             const matchingVoters = voters.filter(v => {
                 const nameTranslit = transliterateHindiClean(v.name);
                 const relTranslit = transliterateHindiClean(v.rel_name);
-                return v.name.includes(q) || 
-                       v.rel_name.includes(q) || 
-                       v.name.includes(hindiWord) || 
-                       v.rel_name.includes(hindiWord) ||
-                       nameTranslit.includes(qClean) || 
-                       relTranslit.includes(qClean) || 
+                return v.name.includes(q) || v.rel_name.includes(q) || 
+                       v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
+                       nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
                        String(v.epic || '').toLowerCase().includes(qClean) ||
                        String(v.house || '').includes(qClean);
             }).slice(0, 5);
 
             let dropdownHtml = '';
-
             if (isEnglish && hindiWord) {
                 dropdownHtml += `
                     <div class="p-2 border-b border-slate-100 bg-slate-50">
@@ -784,6 +870,8 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            populateSectionOptions();
             loadSavedData();
             updateKPIs();
             applyFilters();
@@ -878,12 +966,14 @@
             const searchLower = rawSearch.toLowerCase();
             const searchHindi = romanToHindiTransliterate(rawSearch);
             const part = document.getElementById('filterPart')?.value;
+            const sec = document.getElementById('filterSection')?.value;
             const category = document.getElementById('filterCategory')?.value;
             const location = document.getElementById('filterLocation')?.value;
             const mobile = document.getElementById('filterMobile')?.value;
 
             filteredVoters = voters.filter(v => {
                 if (part && v.part !== part) return false;
+                if (sec && v.sec_name !== sec) return false;
                 if (category && v.category !== category) return false;
                 if (location && v.location_status !== location) return false;
                 
@@ -898,14 +988,10 @@
                     const houseLower = String(v.house || '').toLowerCase();
                     const mobLower = String(v.mobile || '').toLowerCase();
 
-                    const match = v.name.includes(rawSearch) || 
-                                  v.rel_name.includes(rawSearch) || 
-                                  v.name.includes(searchHindi) || 
-                                  v.rel_name.includes(searchHindi) ||
-                                  nameClean.includes(searchLower) || 
-                                  relClean.includes(searchLower) ||
-                                  epicLower.includes(searchLower) || 
-                                  houseLower.includes(searchLower) ||
+                    const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
+                                  v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
+                                  nameClean.includes(searchLower) || relClean.includes(searchLower) ||
+                                  epicLower.includes(searchLower) || houseLower.includes(searchLower) ||
                                   mobLower.includes(searchLower);
 
                     if (!match) return false;
@@ -948,7 +1034,8 @@
                 const isInactive = v.location_status === 'Deceased' || v.location_status === 'ECIDeleted';
                 tr.className = `hover:bg-slate-50 transition ${isInactive ? 'bg-slate-100 opacity-60' : v.voted ? 'bg-emerald-50/30' : ''}`;
 
-                const hasMobile = v.mobile && String(v.mobile).trim().length >= 10;
+                const phoneNumbers = (v.mobile || '').split(',').map(n => n.trim()).filter(n => n.length >= 10);
+                const hasMobile = phoneNumbers.length > 0;
 
                 let catBadge = '';
                 if (v.category === 'Support') catBadge = '<span class="badge-support px-2 py-0.5 rounded-full font-bold text-[10px]">🟢 पक्का 100%</span>';
@@ -960,14 +1047,18 @@
                 let phoneHtml = '';
                 if (hasMobile) {
                     phoneHtml = `
-                        <div class="flex items-center justify-center gap-1.5">
-                            <span class="font-mono font-bold text-slate-900 text-xs">${v.mobile}</span>
-                            <a href="tel:${v.mobile}" class="p-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="कॉल करें">
-                                <i data-lucide="phone" class="w-3.5 h-3.5"></i>
-                            </a>
-                            <a href="https://wa.me/91${v.mobile}?text=${encodeURIComponent('सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition" title="व्हाट्सएप अपील भेजें">
-                                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                            </a>
+                        <div class="flex flex-col gap-1 items-center justify-center">
+                            ${phoneNumbers.map(num => `
+                                <div class="flex items-center gap-1">
+                                    <span class="font-mono font-bold text-slate-900 text-xs">${num}</span>
+                                    <a href="tel:${num}" class="p-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="कॉल">
+                                        <i data-lucide="phone" class="w-3 h-3"></i>
+                                    </a>
+                                    <a href="https://wa.me/91${num}?text=${encodeURIComponent('सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition" title="व्हाट्सएप">
+                                        <i data-lucide="message-circle" class="w-3 h-3"></i>
+                                    </a>
+                                </div>
+                            `).join('')}
                         </div>
                     `;
                 } else {
@@ -985,7 +1076,7 @@
                     </td>
                     <td class="p-2.5">
                         <div class="font-bold text-slate-900 text-xs">${v.name}</div>
-                        <div class="text-[10px] text-slate-500">${v.sec_name || ''}</div>
+                        <div class="text-[10px] text-slate-500 truncate max-w-[200px]">${v.sec_name || ''}</div>
                     </td>
                     <td class="p-2.5">
                         <div class="text-xs text-slate-700">${v.rel_name || '-'}</div>
@@ -996,7 +1087,7 @@
                     <td class="p-2.5 text-center">${phoneHtml}</td>
                     <td class="p-2.5 text-center">${catBadge}</td>
                     <td class="p-2.5 text-center">
-                        <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="विवरण व रणनीति संपादित करें">
+                        <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="संपादित करें">
                             <i data-lucide="edit" class="w-4 h-4"></i>
                         </button>
                     </td>
@@ -1043,7 +1134,6 @@
         function renderFamilyView() {
             const container = document.getElementById('familyCardsContainer');
             container.innerHTML = '';
-
             const partFilter = document.getElementById('familyPartSelect').value;
 
             const familyMap = new Map();
@@ -1085,14 +1175,12 @@
                             </div>
                             <span class="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full text-xs">${totalMembers} सदस्य</span>
                         </div>
-                        <div class="space-y-0.5">
-                            ${membersHtml}
-                        </div>
+                        <div class="space-y-0.5">${membersHtml}</div>
                     </div>
                     ${sharedPhone ? `
                         <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                             <span class="text-slate-500 font-mono">📱 ${sharedPhone}</span>
-                            <a href="https://wa.me/91${sharedPhone}" target="_blank" class="text-emerald-600 font-bold hover:underline">व्हाट्सएप परिवार</a>
+                            <a href="https://wa.me/91${sharedPhone.split(',')[0].trim()}" target="_blank" class="text-emerald-600 font-bold hover:underline">व्हाट्सएप परिवार</a>
                         </div>
                     ` : ''}
                 `;
@@ -1106,7 +1194,6 @@
         function renderOutstationView() {
             const tbody = document.getElementById('outstationTableBody');
             tbody.innerHTML = '';
-
             const outstationList = voters.filter(v => v.location_status === 'Bahar');
 
             if (outstationList.length === 0) {
@@ -1139,7 +1226,6 @@
         function renderPollingView() {
             const tbody = document.getElementById('pollingTableBody');
             tbody.innerHTML = '';
-
             let list = voters;
             if (pollingFilterState === 'voted') list = voters.filter(v => v.voted);
             else if (pollingFilterState === 'pending') list = voters.filter(v => !v.voted && v.location_status !== 'Deceased' && v.location_status !== 'ECIDeleted');
@@ -1192,7 +1278,6 @@
         function generateSlipsFromFilters() {
             const container = document.getElementById('slipsPrintContainer');
             container.innerHTML = '';
-
             const part = document.getElementById('slipPartSelect').value;
             const slipsVoters = voters.filter(v => !part || v.part === part).slice(0, 300);
 
@@ -1226,7 +1311,7 @@
             });
         }
 
-        // Voter Modal
+        // Voter Detail Modal
         function openVoterModal(voterId) {
             const v = voters.find(x => x.id === voterId);
             if (!v) return;
@@ -1346,6 +1431,7 @@
             const exportData = voters.map(v => ({
                 "ID": v.id,
                 "भाग (Booth)": v.part,
+                "अनुभाग (Section)": v.sec_name,
                 "क्रम संख्या": v.sr || v.id,
                 "मकान नं.": v.house,
                 "मतदाता नाम": v.name,
@@ -1368,47 +1454,14 @@
             XLSX.writeFile(wb, `Piplantri_Voters_Master_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        function exportJSONBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(voters, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `Piplantri_Voters_Backup_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (Array.isArray(imported) && imported.length > 0) {
-                        voters = imported;
-                        saveVoterState();
-                        alert("डेटा सफलतापूर्वक रिस्टोर हो गया!");
-                    } else {
-                        alert("अमान्य JSON फाइल!");
-                    }
-                } catch(err) {
-                    alert("फाइल पढ़ने में त्रुटि!");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function resetDataConfirmation() {
-            if (confirm("क्या आप वाकई सभी बदलाव रीसेट करके मूल वोटर सूची पर वापस जाना चाहते हैं?")) {
-                localStorage.removeItem('ac175_voters_db_v6_preindexed');
-                localStorage.removeItem('ac175_voters_db_final_v4');
-                localStorage.removeItem('ac175_voters_db_bilingual_v5');
-                voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
-                saveVoterState();
-                alert("डेटा सफलतापूर्वक रीसेट हो गया!");
-            }
-        }
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            populateSectionOptions();
+            loadSavedData();
+            updateKPIs();
+            applyFilters();
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>

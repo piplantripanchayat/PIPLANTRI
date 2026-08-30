@@ -1,9 +1,10 @@
 // Piplantri Election PWA Service Worker (100% Offline Ready)
-const CACHE_NAME = 'piplantri-election-v1';
+const CACHE_NAME = 'piplantri-election-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './linker.html',
+  './contacts.html',
   './data.js',
   './manifest.json',
   'https://cdn.tailwindcss.com',
