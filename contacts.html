@@ -6,9 +6,7 @@
     <title>कांटेक्ट डायरेक्टरी व AI वोटर लिंकर | ग्राम पंचायत पिपलांत्री - सरपंच चुनाव (नविन पालीवाल)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -31,7 +29,7 @@
         }
     </style>
 </head>
-<body class="h-full flex flex-col font-sans antialiased selection:bg-orange-500 selection:text-white bg-slate-950 text-slate-100">
+<body class="h-full flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white bg-slate-950 text-slate-100">
 
     
     <!-- GLOBAL SECURITY PIN LOCK MODAL (PIN: 1111) -->
@@ -76,7 +74,7 @@
             <div class="flex items-center space-x-2 sm:space-x-3">
                 <a href="index.html" class="flex items-center space-x-1.5 text-slate-400 hover:text-white transition">
                     <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
-                        <i data-lucide="arrow-left" class="w-4 h-4 text-orange-400"></i>
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-indigo-400"></i>
                     </div>
                     <span class="text-xs font-bold hidden sm:inline">मुख्य पोर्टल</span>
                 </a>
@@ -84,7 +82,7 @@
                 <div>
                     <h1 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5 flex-wrap">
                         <span>कांटेक्ट डायरेक्टरी लिंकर</span>
-                        <span class="px-2 py-0.5 text-[9px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full">CONTACT ➔ VOTER</span>
+                        <span class="px-2 py-0.5 text-[9px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">CONTACT ➔ VOTER</span>
                     </h1>
                     <p class="text-[11px] text-slate-400">ग्राम पंचायत पिपलांत्री • प्रत्याशी: <strong class="text-orange-400">नविन पालीवाल</strong></p>
                 </div>
@@ -94,7 +92,7 @@
             <div class="flex items-center space-x-1.5 sm:space-x-2">
                 <button onclick="triggerPWAInstall()" class="pwa-install-btn hidden px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1">
                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">ऐप इंस्टॉल करें</span>
+                    <span class="hidden sm:inline">ऐप इंस्टॉल</span>
                 </button>
                 <a href="linker.html" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1">
                     <i data-lucide="user-check" class="w-3.5 h-3.5 text-orange-400"></i>
@@ -140,9 +138,9 @@
 
         <!-- Search & Filter Controls -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col md:flex-row gap-2 items-stretch md:items-center justify-between relative">
-            <div class="flex-1 flex flex-col sm:flex-row gap-2 relative">
+            <div class="flex-1 flex flex-col sm:flex-row gap-2 relative flex-wrap">
                 <!-- Search Input with Live Transliteration -->
-                <div class="relative flex-1">
+                <div class="relative flex-1 min-w-[200px]">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                     <input 
                         type="text" 
@@ -305,12 +303,12 @@
             deferredInstallPrompt.prompt();
             deferredInstallPrompt.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === "accepted") {
-                    console.log("User accepted the install prompt");
+                    console.log("User accepted install prompt");
                 }
                 deferredInstallPrompt = null;
             });
         } else {
-            alert("ऐप इंस्टॉल करने के लिए अपने ब्राउज़र मेन्यू (3 डॉट्स) पर क्लिक करें और 'Add to Home Screen' / 'Install App' चुनें!");
+            alert("ऐप इंस्टॉल करने के लिए अपने मोबाइल ब्राउज़र मेन्यू (3 डॉट्स) पर क्लिक करें और 'Add to Home Screen' या 'Install App' चुनें!");
         }
     }
 
@@ -618,7 +616,6 @@
             }
         }
 
-        // Link voter to contact (Supports MULTIPLE phone numbers per voter!)
         function linkVoterToContact(voterId, mobileNumber) {
             const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');
             if (mob.length < 10) return;

@@ -96,7 +96,7 @@
                 </button>
                 <a href="contacts.html" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow">
                     <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-300"></i>
-                    <span>कांटेक्ट ➔ वोटर लिंकर</span>
+                    <span>कांटेक्ट ➔ वोटर</span>
                 </a>
                 <button onclick="autoLinkAllHighConfidence()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow">
                     <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
@@ -140,16 +140,16 @@
             </div>
         </div>
 
-        <!-- Search & Filter Controls (With Section/Anubhag Filter) -->
+        <!-- Search & Filter Controls (With Part, Section, and House No Filters) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col md:flex-row gap-2 items-stretch md:items-center justify-between relative">
-            <div class="flex-1 flex flex-col sm:flex-row gap-2 relative">
+            <div class="flex-1 flex flex-col sm:flex-row gap-2 relative flex-wrap">
                 <!-- Search Input with Live Transliteration -->
-                <div class="relative flex-1">
+                <div class="relative flex-1 min-w-[200px]">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                     <input 
                         type="text" 
                         id="voterSearchInput" 
-                        placeholder="वोटर खोजें: नाम (English/Hindi), पिता, मकान नं., EPIC... (उदा: harsh, ramesh)" 
+                        placeholder="वोटर खोजें: नाम (English/Hindi), पिता, EPIC... (उदा: harsh, ramesh)" 
                         class="w-full bg-slate-950 border border-slate-700/80 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition"
                         oninput="handleVoterSearchInput(this.value)"
                         onfocus="handleVoterSearchInput(this.value)"
@@ -163,18 +163,28 @@
 
                 <!-- Part Filter -->
                 <select id="partFilterSelect" onchange="onPartChange()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
-                    <option value="ALL">सभी 4 भाग (2,607)</option>
-                    <option value="59">भाग 59 - मोरवड़ (673)</option>
-                    <option value="60">भाग 60 - उमठी (445)</option>
-                    <option value="61">भाग 61 - पिपलांत्री कलां (738)</option>
-                    <option value="62">भाग 62 - पिपलांत्री खुर्द/आरणा (751)</option>
+                    <option value="ALL">सभी 4 भाग</option>
+                    <option value="59">भाग 59 - मोरवड़</option>
+                    <option value="60">भाग 60 - उमठी</option>
+                    <option value="61">भाग 61 - पिपलांत्री कलां</option>
+                    <option value="62">भाग 62 - पिपलांत्री खुर्द/आरणा</option>
                 </select>
 
                 <!-- Anubhag / Section Filter -->
-                <select id="sectionFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 max-w-xs">
-                    <option value="ALL">सभी अनुभाग (All Anubhags)</option>
-                    <!-- Populated dynamically -->
+                <select id="sectionFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 max-w-[160px]">
+                    <option value="ALL">सभी अनुभाग (Anubhag)</option>
                 </select>
+
+                <!-- House Number Filter / Search -->
+                <div class="relative w-28">
+                    <input 
+                        type="text" 
+                        id="houseFilterInput" 
+                        oninput="applyFilters()" 
+                        placeholder="मकान नं." 
+                        class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                    >
+                </div>
 
                 <!-- Status Filter -->
                 <select id="statusFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
@@ -194,7 +204,7 @@
             </div>
         </div>
 
-        <!-- Voters Table / Paginated View -->
+        <!-- Voters List -->
         <div class="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden flex flex-col min-h-[500px]">
             <div class="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
                 <span class="font-medium flex items-center gap-1.5">
@@ -204,12 +214,8 @@
                 <span class="text-[11px] text-slate-400 font-mono">स्क्रॉल करने पर और लोड होंगे ↓</span>
             </div>
 
-            <!-- Scrollable Table Body -->
             <div class="flex-1 overflow-y-auto custom-scrollbar" id="tableScrollContainer" onscroll="handleTableScroll(this)">
-                <!-- Mobile / Desktop Responsive Card Table -->
-                <div id="votersCardList" class="p-2.5 space-y-2.5">
-                    <!-- Rendered dynamically -->
-                </div>
+                <div id="votersCardList" class="p-2.5 space-y-2.5"></div>
             </div>
         </div>
     </main>
@@ -383,7 +389,7 @@
         function populateSectionDropdown() {
             const secSelect = document.getElementById('sectionFilterSelect');
             if (!secSelect) return;
-            secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (All Anubhags)</option>';
+            secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (Anubhag)</option>';
             SECTIONS_LIST.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s;
@@ -395,12 +401,11 @@
         function onPartChange() {
             const part = document.getElementById('partFilterSelect').value;
             const secSelect = document.getElementById('sectionFilterSelect');
-            secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (All Anubhags)</option>';
+            secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (Anubhag)</option>';
             
             const filteredSections = SECTIONS_LIST.filter(s => {
                 if (part === 'ALL') return true;
-                const matchVoter = votersData.some(v => v.part === part && v.sec_name === s);
-                return matchVoter;
+                return votersData.some(v => v.part === part && v.sec_name === s);
             });
 
             filteredSections.forEach(s => {
@@ -465,7 +470,7 @@
             'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
             'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
             'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
-            'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
+            'य': 'y', 'r': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
             'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy'
         };
         const matraMap = {'ा':'a','ि':'i','ी':'ee','ु':'u','ू':'oo','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n'};
@@ -588,11 +593,12 @@
             }
         });
 
-        // Fast Filter & Card Render
+        // Fast Filter with House Filter Support
         function applyFilters() {
             const rawQuery = (document.getElementById('voterSearchInput')?.value || '').trim();
             const partFilter = document.getElementById('partFilterSelect')?.value || 'ALL';
             const secFilter = document.getElementById('sectionFilterSelect')?.value || 'ALL';
+            const houseFilter = (document.getElementById('houseFilterInput')?.value || '').trim().toLowerCase();
             const statusFilter = document.getElementById('statusFilterSelect')?.value || 'ALL';
 
             const qLower = rawQuery.toLowerCase();
@@ -601,6 +607,7 @@
             filteredVotersList = votersData.filter(v => {
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
                 if (secFilter !== 'ALL' && v.sec_name !== secFilter) return false;
+                if (houseFilter && !String(v.house || '').toLowerCase().includes(houseFilter)) return false;
 
                 const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
                 const hasSugg = Boolean(PRECOMPUTED_SUGGESTIONS[v.id] && PRECOMPUTED_SUGGESTIONS[v.id].length > 0);
@@ -669,7 +676,6 @@
                 const hasPhone = phoneNumbers.length > 0;
                 const suggestions = PRECOMPUTED_SUGGESTIONS[vid] || [];
 
-                // Render all phone numbers (Supports MULTIPLE numbers per voter!)
                 let phonesHtml = '';
                 if (hasPhone) {
                     phonesHtml = `
@@ -695,7 +701,6 @@
                     phonesHtml = '<div class="text-slate-500 text-xs italic mt-1">🔴 खाली (No Phone)</div>';
                 }
 
-                // AI Suggestions
                 let suggestionsHtml = '';
                 if (suggestions.length > 0) {
                     suggestionsHtml = `
@@ -744,7 +749,7 @@
                             <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${v.part} • क्र. ${v.sr || v.id}</span>
                             <strong class="text-white text-sm">${v.name}</strong>
                             <span class="text-xs text-slate-400">(${v.age} वर्ष / ${v.gender})</span>
-                            <span class="px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 text-[10px] font-mono border border-slate-800">मकान: ${v.house || '-'}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 text-[10px] font-mono border border-slate-800">म.${v.house || '-'}</span>
                         </div>
                         <div class="text-xs text-slate-400 mt-0.5">
                             <span class="text-slate-500">${v.rel || 'पिता'}:</span> ${v.rel_name || '-'} • <span class="text-indigo-400 font-mono text-[11px]">EPIC: ${v.epic || '-'}</span>
@@ -762,7 +767,7 @@
                         </button>
                         <button onclick="promptManualPhoneInput(${vid})" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition flex items-center gap-1">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-blue-400"></i>
-                            <span>सीधा नंबर डालें</span>
+                            <span>सीधा नंबर</span>
                         </button>
                     </div>
                 `;
@@ -782,7 +787,6 @@
             }
         }
 
-        // Phone Assignment with Multiple Number Support
         function assignPhoneToVoter(voterId, mobileNumber) {
             const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');
             if (mob.length < 10) return;
@@ -878,7 +882,6 @@
             document.getElementById('kpiSuggestedCount').innerText = suggested.toLocaleString('en-IN');
         }
 
-        // Contact Picker Modal
         function openContactPickerModal(voterId) {
             activeVoterForModal = votersData.find(v => v.id === voterId);
             if (!activeVoterForModal) return;
