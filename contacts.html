@@ -726,21 +726,36 @@
             return false;
         }
 
+        // Intelligent Search Query Parser for House Numbers
+        function extractHouseNumberFromQuery(q) {
+            if (!q) return null;
+            const clean = q.trim().toLowerCase();
+            const match = clean.match(/^(?:मकान\s*(?:नं|संख्या|न)?\.?\s*|म\.\s*|house\s*(?:no)?\.?\s*|h\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
+            if (match) return match[1];
+            if (/^\d+[a-zA-Z\/-]?\w*$/.test(clean) && clean.length <= 4) return clean;
+            return null;
+        }
+
         function renderModalVoters(query) {
             const container = document.getElementById('modalVoterListBody');
             if (!container) return;
 
-            const q = (query || '').toLowerCase().trim();
+            const q = (query || '').trim();
+            const qLower = q.toLowerCase();
             const qHindi = romanToHindiTransliterate(q);
 
             const filtered = votersState.filter(v => {
                 if (!q) return true;
+                const houseTarget = extractHouseNumberFromQuery(q);
+                if (houseTarget) {
+                    return isHouseMatch(v.house, houseTarget);
+                }
+
                 const n = (v.name || '').toLowerCase();
                 const r = (v.rel_name || '').toLowerCase();
                 const epic = String(v.epic || '').toLowerCase();
-                const houseMatch = isHouseMatch(v.house, q);
 
-                return n.includes(q) || r.includes(q) || epic.includes(q) || houseMatch ||
+                return n.includes(qLower) || r.includes(qLower) || epic.includes(qLower) ||
                        n.includes(qHindi) || r.includes(qHindi);
             }).slice(0, 40);
 

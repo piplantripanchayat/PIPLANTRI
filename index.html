@@ -775,6 +775,16 @@
             return false;
         }
 
+        // Intelligent Search Query Parser for House Numbers
+        function extractHouseNumberFromQuery(q) {
+            if (!q) return null;
+            const clean = q.trim().toLowerCase();
+            const match = clean.match(/^(?:मकान\s*(?:नं|संख्या|न)?\.?\s*|म\.\s*|house\s*(?:no)?\.?\s*|h\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
+            if (match) return match[1];
+            if (/^\d+[a-zA-Z\/-]?\w*$/.test(clean) && clean.length <= 4) return clean;
+            return null;
+        }
+
         // Transliteration Engine
         const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
         const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
@@ -863,25 +873,32 @@
                 return;
             }
 
-            const hindiWord = romanToHindiTransliterate(q);
-            const isEnglish = /[a-zA-Z]/.test(q);
-            const qClean = q.toLowerCase();
+            const houseTarget = extractHouseNumberFromQuery(q);
+            let matchingVoters = [];
 
-            const matchingVoters = voters.filter(v => {
-                const nameTranslit = transliterateHindiClean(v.name);
-                const relTranslit = transliterateHindiClean(v.rel_name);
-                const houseMatch = isHouseMatch(v.house, q);
+            if (houseTarget) {
+                matchingVoters = voters.filter(v => isHouseMatch(v.house, houseTarget)).slice(0, 5);
+            } else {
+                const hindiWord = romanToHindiTransliterate(q);
+                const qClean = q.toLowerCase();
 
-                return v.name.includes(q) || v.rel_name.includes(q) || 
-                       v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
-                       nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
-                       String(v.epic || '').toLowerCase().includes(qClean) ||
-                       houseMatch ||
-                       String(v.family_group || '').toLowerCase().includes(qClean);
-            }).slice(0, 5);
+                matchingVoters = voters.filter(v => {
+                    const nameTranslit = transliterateHindiClean(v.name);
+                    const relTranslit = transliterateHindiClean(v.rel_name);
+
+                    return v.name.includes(q) || v.rel_name.includes(q) || 
+                           v.name.includes(hindiWord) || v.rel_name.includes(hindiWord) ||
+                           nameTranslit.includes(qClean) || relTranslit.includes(qClean) || 
+                           String(v.epic || '').toLowerCase().includes(qClean) ||
+                           String(v.family_group || '').toLowerCase().includes(qClean);
+                }).slice(0, 5);
+            }
 
             let dropdownHtml = '';
-            if (isEnglish && hindiWord) {
+            const hindiWord = romanToHindiTransliterate(q);
+            const isEnglish = /[a-zA-Z]/.test(q);
+
+            if (isEnglish && hindiWord && !houseTarget) {
                 dropdownHtml += `
                     <div class="p-2 border-b border-slate-100 bg-slate-50">
                         <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1 flex items-center gap-1">
@@ -1056,7 +1073,7 @@
                 if (part && v.part !== part) return false;
                 if (sec && v.sec_name !== sec) return false;
                 
-                // EXACT HOUSE MATCHING
+                // EXACT HOUSE FILTER BOX MATCHING
                 if (house && !isHouseMatch(v.house, house)) return false;
                 
                 if (category && v.category !== category) return false;
@@ -1066,21 +1083,27 @@
                 if (mobile === 'linked' && !hasMobile) return false;
                 if (mobile === 'unlinked' && hasMobile) return false;
 
+                // SMART SEARCH BOX MATCHING
                 if (rawSearch) {
-                    const nameClean = transliterateHindiClean(v.name);
-                    const relClean = transliterateHindiClean(v.rel_name);
-                    const epicLower = String(v.epic || '').toLowerCase();
-                    const houseMatch = isHouseMatch(v.house, rawSearch);
-                    const mobLower = String(v.mobile || '').toLowerCase();
-                    const famLower = String(v.family_group || '').toLowerCase();
+                    const houseTarget = extractHouseNumberFromQuery(rawSearch);
+                    if (houseTarget) {
+                        if (!isHouseMatch(v.house, houseTarget)) return false;
+                    } else {
+                        const nameClean = transliterateHindiClean(v.name);
+                        const relClean = transliterateHindiClean(v.rel_name);
+                        const epicLower = String(v.epic || '').toLowerCase();
+                        const mobLower = String(v.mobile || '').toLowerCase();
+                        const famLower = String(v.family_group || '').toLowerCase();
 
-                    const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
-                                  v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
-                                  nameClean.includes(searchLower) || relClean.includes(searchLower) ||
-                                  epicLower.includes(searchLower) || houseMatch ||
-                                  mobLower.includes(searchLower) || famLower.includes(searchLower);
+                        const match = v.name.includes(rawSearch) || v.rel_name.includes(rawSearch) || 
+                                      v.name.includes(searchHindi) || v.rel_name.includes(searchHindi) ||
+                                      nameClean.includes(searchLower) || relClean.includes(searchLower) ||
+                                      epicLower.includes(searchLower) ||
+                                      (rawSearch.length >= 6 && mobLower.includes(searchLower)) ||
+                                      famLower.includes(searchLower);
 
-                    if (!match) return false;
+                        if (!match) return false;
+                    }
                 }
 
                 return true;

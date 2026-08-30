@@ -614,6 +614,16 @@
             return false;
         }
 
+        // Intelligent Search Query Parser for House Numbers
+        function extractHouseNumberFromQuery(q) {
+            if (!q) return null;
+            const clean = q.trim().toLowerCase();
+            const match = clean.match(/^(?:मकान\s*(?:नं|संख्या|न)?\.?\s*|म\.\s*|house\s*(?:no)?\.?\s*|h\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
+            if (match) return match[1];
+            if (/^\d+[a-zA-Z\/-]?\w*$/.test(clean) && clean.length <= 4) return clean;
+            return null;
+        }
+
         // Fast Filter with Exact House Filter Support
         function applyFilters() {
             const rawQuery = (document.getElementById('voterSearchInput')?.value || '').trim();
@@ -637,20 +647,24 @@
                 if (statusFilter === 'LINKED' && !hasMobile) return false;
                 if (statusFilter === 'HAS_SUGGESTION' && (!hasSugg || hasMobile)) return false;
 
-                if (qLower) {
-                    const nameClean = transliterateHindiClean(v.name);
-                    const relClean = transliterateHindiClean(v.rel_name);
-                    const epicLower = String(v.epic || '').toLowerCase();
-                    const houseMatch = isHouseMatch(v.house, rawQuery);
-                    const mobLower = String(v.mobile || '').toLowerCase();
+                if (rawQuery) {
+                    const houseTarget = extractHouseNumberFromQuery(rawQuery);
+                    if (houseTarget) {
+                        if (!isHouseMatch(v.house, houseTarget)) return false;
+                    } else {
+                        const nameClean = transliterateHindiClean(v.name);
+                        const relClean = transliterateHindiClean(v.rel_name);
+                        const epicLower = String(v.epic || '').toLowerCase();
+                        const mobLower = String(v.mobile || '').toLowerCase();
 
-                    const matchDirect = v.name.includes(rawQuery) || v.rel_name.includes(rawQuery) || 
-                                        v.name.includes(qHindi) || v.rel_name.includes(qHindi) ||
-                                        nameClean.includes(qLower) || relClean.includes(qLower) ||
-                                        epicLower.includes(qLower) || houseMatch ||
-                                        mobLower.includes(qLower);
+                        const matchDirect = v.name.includes(rawQuery) || v.rel_name.includes(rawQuery) || 
+                                            v.name.includes(qHindi) || v.rel_name.includes(qHindi) ||
+                                            nameClean.includes(qLower) || relClean.includes(qLower) ||
+                                            epicLower.includes(qLower) ||
+                                            (rawQuery.length >= 6 && mobLower.includes(qLower));
 
-                    if (!matchDirect) return false;
+                        if (!matchDirect) return false;
+                    }
                 }
 
                 return true;
