@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="cloudSync.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0b1120; }
@@ -90,6 +91,9 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-1.5 sm:space-x-2">
+                <!-- CLOUD SYNC STATUS BADGE -->
+                <div class="cloud-sync-badge cursor-pointer" onclick="CloudSync.openSyncModal()" title="क्लाउड सिंक स्थिति देखें"></div>
+
                 <button onclick="triggerPWAInstall()" class="pwa-install-btn hidden px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1">
                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">ऐप इंस्टॉल</span>
@@ -337,31 +341,42 @@
         function initContactsApp() {
             checkAuth();
 
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY) || 
-                              localStorage.getItem('ac175_voters_db_bilingual_v5') || 
-                              localStorage.getItem('ac175_voters_db_final_v4');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        const map = new Map();
-                        parsed.forEach(v => map.set(Number(v.id), v));
-                        votersState = VOTERS.map(v => {
-                            const found = map.get(Number(v.id));
-                            if (found && found.mobile) {
-                                return { ...v, mobile: String(found.mobile).trim() };
-                            }
-                            return { ...v, mobile: v.mobile || '' };
-                        });
+            if (window.CloudSync) {
+                votersState = window.CloudSync.applyDeltas(VOTERS);
+                window.CloudSync.init({
+                    onDataMerged: (updatedList) => {
+                        votersState = updatedList;
+                        applyContactFilters();
+                        updateKPIs();
+                    }
+                });
+            } else {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY) || 
+                                  localStorage.getItem('ac175_voters_db_bilingual_v5') || 
+                                  localStorage.getItem('ac175_voters_db_final_v4');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            const map = new Map();
+                            parsed.forEach(v => map.set(Number(v.id), v));
+                            votersState = VOTERS.map(v => {
+                                const found = map.get(Number(v.id));
+                                if (found && found.mobile) {
+                                    return { ...v, mobile: String(found.mobile).trim() };
+                                }
+                                return { ...v, mobile: v.mobile || '' };
+                            });
+                        } else {
+                            votersState = [...VOTERS];
+                        }
                     } else {
                         votersState = [...VOTERS];
                     }
-                } else {
+                } catch (e) {
+                    console.error("Local storage load error:", e);
                     votersState = [...VOTERS];
                 }
-            } catch (e) {
-                console.error("Local storage load error:", e);
-                votersState = [...VOTERS];
             }
 
             buildPhoneticIndex();
@@ -735,6 +750,9 @@
                 v.mobile = clean10;
             }
 
+            if (window.CloudSync) {
+                window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
+            }
             saveVotersState();
             applyContactFilters();
             updateKPIs();
@@ -748,6 +766,9 @@
             if (v.mobile) {
                 const nums = v.mobile.split(',').map(m => m.trim()).filter(m => m !== clean10 && m.length >= 10);
                 v.mobile = nums.join(', ');
+                if (window.CloudSync) {
+                    window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
+                }
                 saveVotersState();
                 applyContactFilters();
                 updateKPIs();

@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="cloudSync.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Mukta', 'Inter', sans-serif; background-color: #f8fafc; }
@@ -108,6 +109,9 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center flex-wrap gap-2 text-xs">
+                <!-- CLOUD SYNC LIVE STATUS BADGE -->
+                <div class="cloud-sync-badge cursor-pointer" onclick="CloudSync.openSyncModal()" title="क्लाउड सिंक स्थिति एवं बैकअप देखें"></div>
+
                 <button onclick="triggerPWAInstall()" class="pwa-install-btn hidden px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold shadow flex items-center gap-1">
                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
                     <span>ऐप इंस्टॉल</span>
@@ -1184,25 +1188,56 @@
             updateKPIs();
             applyFilters();
             lucide.createIcons();
+
+            if (window.CloudSync) {
+                window.CloudSync.init({
+                    onDataMerged: (updatedList) => {
+                        voters = updatedList;
+                        applyFilters();
+                        updateKPIs();
+                        populateFamilyIdDatalist();
+                    }
+                });
+            }
         });
 
+        function syncVoterToCloud(v) {
+            if (!v) return;
+            if (window.CloudSync) {
+                window.CloudSync.recordUpdate(v.id, {
+                    mobile: v.mobile || '',
+                    category: v.category || 'Unassigned',
+                    family_group: v.family_group || '',
+                    location_status: v.location_status || 'Local',
+                    outstation_city: v.outstation_city || '',
+                    custom_group: v.custom_group || '',
+                    notes: v.notes || '',
+                    voted: Boolean(v.voted)
+                });
+            }
+        }
+
         function loadSavedData() {
-            const saved = localStorage.getItem('ac175_voters_db_v6_preindexed') || 
-                          localStorage.getItem('ac175_voters_db_final_v4') || 
-                          localStorage.getItem('ac175_voters_db_bilingual_v5');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length === VOTERS_MASTER.length) {
-                        voters = parsed;
-                    } else {
+            if (window.CloudSync) {
+                voters = window.CloudSync.applyDeltas(VOTERS_MASTER);
+            } else {
+                const saved = localStorage.getItem('ac175_voters_db_v6_preindexed') || 
+                              localStorage.getItem('ac175_voters_db_final_v4') || 
+                              localStorage.getItem('ac175_voters_db_bilingual_v5');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length === VOTERS_MASTER.length) {
+                            voters = parsed;
+                        } else {
+                            voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
+                        }
+                    } catch(e) {
                         voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
                     }
-                } catch(e) {
+                } else {
                     voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
                 }
-            } else {
-                voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
             }
             filteredVoters = [...voters];
             populateFamilyIdDatalist();
@@ -1882,8 +1917,25 @@
             v.notes = document.getElementById('modalNotes').value.trim();
             v.voted = document.getElementById('modalVoted').checked;
 
+            syncVoterToCloud(v);
             saveVoterState();
             closeVoterModal();
+        }
+
+        function changeVoterLoyalty(voterId, cat) {
+            const v = voters.find(x => x.id === voterId);
+            if (!v) return;
+            v.category = cat;
+            syncVoterToCloud(v);
+            saveVoterState();
+        }
+
+        function removeSingleVoterFromFamily(voterId) {
+            const v = voters.find(x => x.id === voterId);
+            if (!v) return;
+            v.family_group = '';
+            syncVoterToCloud(v);
+            saveVoterState();
         }
 
         // ================= 1-CLICK AUTO FAMILY GROUPING (SUPPORTS SINGLE & MULTI-HOUSE FAMILIES) =================
@@ -1962,6 +2014,7 @@
             const generatedFamilyId = `${basePrefix}${chosenLetter}`;
             selectedList.forEach(m => {
                 m.family_group = generatedFamilyId;
+                syncVoterToCloud(m);
             });
 
             saveVoterState();
@@ -1978,6 +2031,7 @@
             voters.forEach(v => {
                 if (selectedVoterIds.has(v.id)) {
                     v.family_group = '';
+                    syncVoterToCloud(v);
                 }
             });
 
@@ -2004,6 +2058,7 @@
                 if (selectedVoterIds.has(v.id)) {
                     if (cat) v.category = cat;
                     if (newFam) v.family_group = newFam;
+                    syncVoterToCloud(v);
                 }
             });
             saveVoterState();
