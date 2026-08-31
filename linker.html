@@ -130,9 +130,12 @@
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                    <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-400"></i> लिंक हुए मोबाइल
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-400"></i> लिंक्ड मतदाता (Voters)
                 </span>
-                <span class="text-lg font-extrabold text-emerald-400 mt-0.5" id="kpiLinkedCount">0</span>
+                <div class="flex items-baseline gap-1.5 mt-0.5">
+                    <span class="text-lg font-extrabold text-emerald-400" id="kpiLinkedCount">0</span>
+                    <span class="text-[10px] text-emerald-300 font-medium font-mono" id="kpiUniquePhonesCount">(0 मोबाइल नंबर)</span>
+                </div>
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -427,6 +430,42 @@
             applyFilters();
             updateKPIs();
             lucide.createIcons();
+        }
+
+        function updateKPIs() {
+            const total = votersData.length;
+            const linkedVoters = votersData.filter(v => v.mobile && String(v.mobile).trim().length >= 10);
+            const linkedCount = linkedVoters.length;
+            const remainingCount = total - linkedCount;
+
+            const uniqueMobiles = new Set();
+            linkedVoters.forEach(v => {
+                v.mobile.split(',').map(m => m.trim().replace(/[^0-9]/g, '')).filter(m => m.length >= 10).forEach(clean => {
+                    uniqueMobiles.add(clean.slice(-10));
+                });
+            });
+
+            const suggMap = (window.PIPLANTRI_DATA && window.PIPLANTRI_DATA.suggestions) || {};
+            let suggestedCount = 0;
+            votersData.forEach(v => {
+                const vid = parseInt(v.id);
+                if (suggMap[vid] && suggMap[vid].length > 0) suggestedCount++;
+            });
+
+            const elTotal = document.getElementById('kpiTotalVoters');
+            if (elTotal) elTotal.innerText = total.toLocaleString('en-IN');
+
+            const elLinked = document.getElementById('kpiLinkedCount');
+            if (elLinked) elLinked.innerText = linkedCount.toLocaleString('en-IN');
+
+            const elUniquePhones = document.getElementById('kpiUniquePhonesCount');
+            if (elUniquePhones) elUniquePhones.innerText = `(${uniqueMobiles.size} मोबाइल नंबर)`;
+
+            const elRemaining = document.getElementById('kpiRemainingCount');
+            if (elRemaining) elRemaining.innerText = remainingCount.toLocaleString('en-IN');
+
+            const elSuggested = document.getElementById('kpiSuggestedCount');
+            if (elSuggested) elSuggested.innerText = suggestedCount.toLocaleString('en-IN');
         }
 
         function onWardChange() {

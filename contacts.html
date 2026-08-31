@@ -96,6 +96,14 @@
                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">ऐप इंस्टॉल</span>
                 </button>
+                <button onclick="openAddContactModal()" class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow transition active:scale-95" title="नया मोबाइल कांटेक्ट जोड़ें">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5 text-emerald-200"></i>
+                    <span>+ नया संपर्क</span>
+                </button>
+                <button onclick="exportContactsDirectoryExcel()" class="hidden sm:flex px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold border border-slate-700 items-center gap-1 shadow transition active:scale-95" title="कांटेक्ट डायरेक्टरी एक्सेल डाउनलोड करें">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span class="hidden md:inline">एक्सेल</span>
+                </button>
                 <button onclick="openReportsModal()" class="px-2.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow transition active:scale-95" title="लिंक्ड, पेंडिंग व वार्ड रिपोर्ट देखें व प्रिंट करें">
                     <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>🖨️ रिपोर्ट व प्रिंट</span>
@@ -124,9 +132,12 @@
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                    <i data-lucide="link" class="w-3.5 h-3.5 text-emerald-400"></i> वोटर से लिंक नंबर
+                    <i data-lucide="link" class="w-3.5 h-3.5 text-emerald-400"></i> वोटर से लिंक नंबर (Contacts)
                 </span>
-                <span class="text-lg font-extrabold text-emerald-400 mt-0.5" id="kpiLinkedContacts">0</span>
+                <div class="flex items-baseline gap-1.5 mt-0.5">
+                    <span class="text-lg font-extrabold text-emerald-400" id="kpiLinkedContacts">0</span>
+                    <span class="text-[10px] text-emerald-300 font-medium font-mono" id="kpiLinkedVotersCount">(0 वोटर जुड़े)</span>
+                </div>
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -319,7 +330,97 @@
         </div>
     </div>
 
-    
+    <!-- ADD / EDIT CONTACT MODAL -->
+    <div id="contactFormModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-extrabold text-white flex items-center gap-2" id="contactFormModalTitle">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+                        <span>नया संपर्क जोड़ें</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400">कांटेक्ट डायरेक्टरी में मोबाइल नंबर दर्ज / अपडेट करें</p>
+                </div>
+                <button onclick="closeContactFormModal()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-3 text-xs">
+                <input type="hidden" id="formContactCid" value="">
+
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1">व्यक्ति का नाम (Name):</label>
+                    <input type="text" id="formContactName" placeholder="उदा: रमेश पालीवाल / Ramesh Paliwal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-medium">
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1">संबंध (Rel):</label>
+                        <select id="formContactRel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500 font-medium">
+                            <option value="पिता">पिता</option>
+                            <option value="पति">पति</option>
+                            <option value="माता">माता</option>
+                            <option value="अन्य">अन्य</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-slate-300 font-bold mb-1">पिता / पति / संबंधी का नाम:</label>
+                        <input type="text" id="formContactRelName" placeholder="उदा: सोहन लाल" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1">मोबाइल नंबर (10-Digit Mobile) <span class="text-red-400">*</span>:</label>
+                    <input type="tel" id="formContactMobile" placeholder="उदा: 9829012345" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-orange-300 font-mono font-bold text-sm focus:outline-none focus:border-orange-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1">गाँव / ढाणी (Village):</label>
+                        <select id="formContactVillage" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500 font-medium">
+                            <option value="">-- बिना गाँव --</option>
+                            <option value="PIPLANTRI KHURD">पिपलांत्री खुर्द</option>
+                            <option value="PEEPALANTRI KALAN">पिपलांत्री कलां</option>
+                            <option value="MORWAR">मोरवड़ (Morwad)</option>
+                            <option value="BADI MORWAD">बडी मोरवड़</option>
+                            <option value="CHHOTI MORWAD">छोटी मोरवड़</option>
+                            <option value="OMTHI">उमठी (Omthi)</option>
+                            <option value="AARNA">आरणा (Aarna)</option>
+                            <option value="GUGLETA">गुगलेटा (Gugleta)</option>
+                            <option value="DHARMETA">धर्मेटा (Dharmeta)</option>
+                            <option value="BANDA">बन्दा (Banda)</option>
+                            <option value="KANATALAB">काना का तालाब</option>
+                            <option value="KADECHO KA GUDA">कडेचो का गुडा</option>
+                            <option value="DIPAJI KI BHAGAL">दीपाजी की भागल</option>
+                            <option value="MENAV KI BHAGAL">मेणाव की भागल</option>
+                            <option value="SENDRO KI BHAGAL">सेहदरो की भागल</option>
+                            <option value="HINDUJI KI BHAGAL">हिन्दूजी की भागल</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1">प्रकार / रिमार्क्स (Remarks):</label>
+                        <input type="text" id="formContactRemarks" placeholder="उदा: सिंगल / परिवार का सदस्य" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+                <button type="button" id="formDeleteContactBtn" onclick="deleteCurrentFormContact()" class="hidden px-3 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded-lg font-bold transition flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>हटाएं</span>
+                </button>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" onclick="closeContactFormModal()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold">रद्द करें</button>
+                    <button type="button" onclick="saveContactFormDetails()" class="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white rounded-lg font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                        <span>सुरक्षित करें</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- COMPREHENSIVE REPORTS & PRINT MODAL (ALL 3 PAGES) -->
     <div id="reportsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-white border border-slate-200 w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-900">
@@ -503,13 +604,16 @@
     const CONTACTS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contacts : [];
     const REVERSE_SUGGESTIONS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contactSuggestions : {};
     const STORAGE_KEY = 'ac175_voters_db_v6_preindexed';
+    const CONTACTS_STORAGE_KEY = 'ac175_contacts_custom_v3';
 
     let votersState = [];
     let votersMap = new Map();
+    let contactsState = [];
     let filteredContactsList = [];
     let currentlyRenderedContactCount = 0;
     let BATCH_SIZE = 50;
     let activeContactForModal = null;
+    let activeEditingContactCid = null;
     let searchDebounceTimer = null;
 
     function changeContactPageSize(val) {
@@ -541,6 +645,24 @@
 
     function initContactsApp() {
         checkAuth();
+
+        // Load custom contacts from localStorage
+        try {
+            const savedCustom = localStorage.getItem(CONTACTS_STORAGE_KEY);
+            if (savedCustom) {
+                const parsedCustom = JSON.parse(savedCustom);
+                if (Array.isArray(parsedCustom) && parsedCustom.length > 0) {
+                    contactsState = parsedCustom;
+                } else {
+                    contactsState = [...CONTACTS];
+                }
+            } else {
+                contactsState = [...CONTACTS];
+            }
+        } catch (e) {
+            console.error("Error loading custom contacts:", e);
+            contactsState = [...CONTACTS];
+        }
 
         if (window.CloudSync) {
             votersState = window.CloudSync.applyDeltas(VOTERS);
@@ -586,6 +708,48 @@
         applyContactFilters();
         updateKPIs();
         lucide.createIcons();
+    }
+
+    function updateKPIs() {
+        const total = contactsState.length;
+        const linkedVoters = votersState.filter(v => v.mobile && String(v.mobile).trim().length >= 10);
+        
+        const uniqueLinkedMobiles = new Set();
+        linkedVoters.forEach(v => {
+            v.mobile.split(',').map(m => m.trim().replace(/[^0-9]/g, '')).filter(m => m.length >= 10).forEach(clean => {
+                uniqueLinkedMobiles.add(clean.slice(-10));
+            });
+        });
+
+        let linkedContactsCount = 0;
+        let suggestedContactsCount = 0;
+
+        contactsState.forEach(c => {
+            const mobClean = String(c.mobile || '').trim().replace(/[^0-9]/g, '').slice(-10);
+            if (mobClean.length === 10 && uniqueLinkedMobiles.has(mobClean)) {
+                linkedContactsCount++;
+            }
+            if (REVERSE_SUGGESTIONS[c.cid] && REVERSE_SUGGESTIONS[c.cid].length > 0) {
+                suggestedContactsCount++;
+            }
+        });
+
+        const unlinkedContactsCount = total - linkedContactsCount;
+
+        const elTotal = document.getElementById('kpiTotalContacts');
+        if (elTotal) elTotal.innerText = total.toLocaleString('en-IN');
+
+        const elLinked = document.getElementById('kpiLinkedContacts');
+        if (elLinked) elLinked.innerText = linkedContactsCount.toLocaleString('en-IN');
+
+        const elLinkedVoters = document.getElementById('kpiLinkedVotersCount');
+        if (elLinkedVoters) elLinkedVoters.innerText = `(${linkedVoters.length} वोटर जुड़े)`;
+
+        const elSuggested = document.getElementById('kpiSuggestedContacts');
+        if (elSuggested) elSuggested.innerText = suggestedContactsCount.toLocaleString('en-IN');
+
+        const elUnlinked = document.getElementById('kpiUnlinkedContacts');
+        if (elUnlinked) elUnlinked.innerText = unlinkedContactsCount.toLocaleString('en-IN');
     }
 
     // Transliteration Helpers
@@ -803,7 +967,7 @@
         const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawQuery) : [];
         const qHindi = romanToHindiTransliterate(rawQuery);
 
-        filteredContactsList = CONTACTS.filter(c => {
+        filteredContactsList = contactsState.filter(c => {
             // 1. Village / Location Filter
             if (villageFilter !== 'ALL') {
                 if (villageFilter === 'BLANK_VILLAGE') {
@@ -1046,9 +1210,12 @@
                 </div>
 
                 <div class="flex items-center space-x-1.5 flex-shrink-0 self-start md:self-center">
+                    <button onclick="openEditContactModal(${c.cid})" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="कांटेक्ट संपादित करें (Edit)">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    </button>
                     <button onclick="openVoterPickerForContact(${c.cid})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1">
                         <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                        <span>+ वोटर खोजें व जोड़ें</span>
+                        <span>+ वोटर जोड़ें</span>
                     </button>
                     <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल">
                         <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -1171,21 +1338,166 @@
         }
     }
 
-    function updateKPIs() {
-        const total = CONTACTS.length;
-        const linked = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length > 0).length;
-        const unlinked = total - linked;
-        const suggested = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length === 0 && REVERSE_SUGGESTIONS[c.cid] && REVERSE_SUGGESTIONS[c.cid].length > 0).length;
+    // CONTACT MANAGEMENT & EDITING MODAL ENGINE
+    function openAddContactModal() {
+        activeEditingContactCid = null;
+        const titleEl = document.getElementById('contactFormModalTitle');
+        if (titleEl) {
+            titleEl.innerHTML = `
+                <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+                <span>+ नया संपर्क जोड़ें</span>
+            `;
+        }
+        document.getElementById('formContactCid').value = '';
+        document.getElementById('formContactName').value = '';
+        document.getElementById('formContactRel').value = 'पिता';
+        document.getElementById('formContactRelName').value = '';
+        document.getElementById('formContactMobile').value = '';
+        document.getElementById('formContactVillage').value = '';
+        document.getElementById('formContactRemarks').value = '';
+        document.getElementById('formDeleteContactBtn')?.classList.add('hidden');
+        document.getElementById('contactFormModal')?.classList.remove('hidden');
+        lucide.createIcons();
+    }
 
-        document.getElementById('kpiTotalContacts').innerText = total.toLocaleString('en-IN');
-        document.getElementById('kpiLinkedContacts').innerText = linked.toLocaleString('en-IN');
-        document.getElementById('kpiUnlinkedContacts').innerText = unlinked.toLocaleString('en-IN');
-        document.getElementById('kpiSuggestedContacts').innerText = suggested.toLocaleString('en-IN');
+    function openEditContactModal(cid) {
+        const contact = contactsState.find(c => Number(c.cid) === Number(cid));
+        if (!contact) return;
+
+        activeEditingContactCid = contact.cid;
+        const titleEl = document.getElementById('contactFormModalTitle');
+        if (titleEl) {
+            titleEl.innerHTML = `
+                <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                <span>संपर्क संपादित करें (Edit Contact)</span>
+            `;
+        }
+        document.getElementById('formContactCid').value = contact.cid;
+        document.getElementById('formContactName').value = contact.name || '';
+        document.getElementById('formContactRel').value = contact.rel || 'पिता';
+        document.getElementById('formContactRelName').value = contact.rel_name || '';
+        document.getElementById('formContactMobile').value = contact.mobile || '';
+        document.getElementById('formContactVillage').value = contact.village || '';
+        document.getElementById('formContactRemarks').value = contact.remarks || '';
+        document.getElementById('formDeleteContactBtn')?.classList.remove('hidden');
+        document.getElementById('contactFormModal')?.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function closeContactFormModal() {
+        document.getElementById('contactFormModal')?.classList.add('hidden');
+        activeEditingContactCid = null;
+    }
+
+    function saveContactFormDetails() {
+        const cidInput = document.getElementById('formContactCid').value;
+        const name = document.getElementById('formContactName').value.trim();
+        const rel = document.getElementById('formContactRel').value;
+        const rel_name = document.getElementById('formContactRelName').value.trim();
+        const rawMobile = document.getElementById('formContactMobile').value.trim();
+        const village = document.getElementById('formContactVillage').value;
+        const remarks = document.getElementById('formContactRemarks').value.trim();
+
+        const cleanMobile = rawMobile.replace(/[^0-9]/g, '');
+        if (cleanMobile.length < 10) {
+            alert("कृपया 10-अंकीय मान्य मोबाइल नंबर दर्ज करें!");
+            return;
+        }
+        const mobile = cleanMobile.slice(-10);
+
+        if (cidInput) {
+            const target = contactsState.find(c => Number(c.cid) === Number(cidInput));
+            if (target) {
+                target.name = name;
+                target.rel = rel;
+                target.rel_name = rel_name;
+                target.mobile = mobile;
+                target.village = village;
+                target.remarks = remarks;
+            }
+        } else {
+            const maxCid = contactsState.reduce((max, c) => Math.max(max, Number(c.cid) || 0), 0);
+            const newContact = {
+                cid: maxCid + 1,
+                name: name,
+                rel: rel,
+                rel_name: rel_name,
+                mobile: mobile,
+                village: village,
+                remarks: remarks
+            };
+            contactsState.unshift(newContact);
+        }
+
+        try {
+            localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contactsState));
+        } catch (e) {
+            console.error("Storage save error:", e);
+        }
+
+        closeContactFormModal();
+        applyContactFilters();
+        updateKPIs();
+        alert(cidInput ? "संपर्क सफलतापूर्वक अपडेट किया गया!" : "नया संपर्क सफलतापूर्वक जोड़ा गया!");
+    }
+
+    function deleteCurrentFormContact() {
+        const cid = document.getElementById('formContactCid').value;
+        if (!cid) return;
+
+        if (!confirm("क्या आप वाकई इस संपर्क को डायरेक्टरी से हटाना चाहते हैं?")) return;
+
+        contactsState = contactsState.filter(c => Number(c.cid) !== Number(cid));
+        try {
+            localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contactsState));
+        } catch (e) {
+            console.error("Storage save error:", e);
+        }
+
+        closeContactFormModal();
+        applyContactFilters();
+        updateKPIs();
+        alert("संपर्क डायरेक्टरी से हटा दिया गया!");
+    }
+
+    function exportContactsDirectoryExcel() {
+        const rows = [
+            ["CID", "नाम (Name)", "संबंध (Relation)", "पिता/पति का नाम (Relative Name)", "मोबाइल नंबर (Mobile)", "गाँव (Village)", "रिमार्क्स (Remarks)", "कुल लिंक्ड वोटर संख्या", "लिंक्ड वोटर सूची"]
+        ];
+
+        contactsState.forEach(c => {
+            const linked = getLinkedVotersForMobile(c.mobile);
+            const linkedDetails = linked.map(v => `${v.name} (वार्ड ${v.ward || '-'}, भाग ${v.part}, म.${v.house})`).join(' | ');
+            rows.push([
+                c.cid,
+                c.name || '',
+                c.rel || '',
+                c.rel_name || '',
+                c.mobile || '',
+                c.village || '',
+                c.remarks || '',
+                linked.length,
+                linkedDetails
+            ]);
+        });
+
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        rows.forEach(r => {
+            csvContent += r.map(f => '"' + String(f).replace(/"/g, '""') + '"').join(",") + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Piplantri_Contacts_Directory_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Manual Voter Picker Modal
     function openVoterPickerForContact(cid) {
-        activeContactForModal = CONTACTS.find(c => c.cid === cid);
+        activeContactForModal = contactsState.find(c => Number(c.cid) === Number(cid));
         if (!activeContactForModal) return;
 
         document.getElementById('modalContactTargetDisplay').innerHTML = `
