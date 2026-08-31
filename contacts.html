@@ -332,11 +332,17 @@
         const STORAGE_KEY = 'ac175_voters_db_v6_preindexed';
 
         let votersState = [];
+        let votersMap = new Map();
         let filteredContactsList = [];
         let currentlyRenderedContactCount = 0;
         const BATCH_SIZE = 40;
         let activeContactForModal = null;
         let searchDebounceTimer = null;
+
+        function rebuildVotersMap() {
+            votersMap.clear();
+            votersState.forEach(v => votersMap.set(Number(v.id), v));
+        }
 
         function initContactsApp() {
             checkAuth();
@@ -346,6 +352,7 @@
                 window.CloudSync.init({
                     onDataMerged: (updatedList) => {
                         votersState = updatedList;
+                        rebuildVotersMap();
                         applyContactFilters();
                         updateKPIs();
                     }
@@ -379,6 +386,7 @@
                 }
             }
 
+            rebuildVotersMap();
             buildPhoneticIndex();
             applyContactFilters();
             updateKPIs();
@@ -431,6 +439,70 @@
             return res;
         }
 
+        const consMap = {
+            'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'n',
+            'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'n',
+            'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+            'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+            'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+            'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
+            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
+            'श्र': 'shr', 'ऋ': 'ri'
+        };
+        const matraMap = {'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','ः':'h'};
+        const vowelsMap = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
+
+        function transliterateHindiClean(text) {
+            if (!text) return "";
+            let res = "";
+            const len = text.length;
+            for (let i = 0; i < len; i++) {
+                const ch = text[i];
+                if (consMap[ch]) {
+                    res += consMap[ch];
+                    const nextCh = i + 1 < len ? text[i + 1] : '';
+                    if (nextCh !== '्' && !matraMap[nextCh] && nextCh !== ' ' && i + 1 < len) res += 'a';
+                } else if (matraMap[ch]) res += matraMap[ch];
+                else if (vowelsMap[ch]) res += vowelsMap[ch];
+                else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') res += ch;
+            }
+            return res.toLowerCase().trim();
+        }
+
+        // Soundex / Double Metaphone Hindi-English Phonetic Key Engine
+        function getPhoneticKey(str) {
+            if (!str) return '';
+            return str.toLowerCase().trim()
+                .replace(/aa+/g, 'a')
+                .replace(/ee+|ea|ii+/g, 'i')
+                .replace(/oo+|ou|au+/g, 'u')
+                .replace(/ai+|ay|ey/g, 'e')
+                .replace(/w/g, 'v')
+                .replace(/shh?|zh/g, 's')
+                .replace(/c(?=[eiy])/g, 's')
+                .replace(/c|q|ck/g, 'k')
+                .replace(/ph/g, 'f')
+                .replace(/bhh?/g, 'b')
+                .replace(/dhh?/g, 'd')
+                .replace(/ghh?/g, 'g')
+                .replace(/jhh?/g, 'j')
+                .replace(/khh?/g, 'k')
+                .replace(/thh?/g, 't')
+                .replace(/chh?/g, 'c')
+                .replace(/ksh|x/g, 'ks')
+                .replace(/gya?|jya?/g, 'gy')
+                .replace(/ng|nh|m(?=[bpfv])/g, 'n')
+                .replace(/ri|ree/g, 'r')
+                .replace(/[^a-z0-9]/g, '');
+        }
+
+        // Skeleton Key (Consonants Skeleton) for handling missing/extra internal vowels
+        function getSkeletonKey(str) {
+            const p = getPhoneticKey(str);
+            if (!p) return '';
+            return p[0] + p.slice(1).replace(/[aeiou]/g, '');
+        }
+
         // Comprehensive Hindi Phonetic Index
         let phoneticWordMap = new Map();
 
@@ -438,13 +510,33 @@
             phoneticWordMap.clear();
             const source = [...(votersState || []), ...(CONTACTS || [])];
             source.forEach(v => {
+                const nameRoman = transliterateHindiClean(v.name);
+                const relRoman = transliterateHindiClean(v.rel_name);
+                const fullRoman = (nameRoman + ' ' + relRoman).trim();
+                
+                v._nameRoman = nameRoman;
+                v._relRoman = relRoman;
+                v._fullRoman = fullRoman;
+                v._namePKey = getPhoneticKey(nameRoman);
+                v._nameSKey = getSkeletonKey(nameRoman);
+                v._relPKey = getPhoneticKey(relRoman);
+                v._relSKey = getSkeletonKey(relRoman);
+                v._fullPKey = getPhoneticKey(fullRoman);
+                v._fullSKey = getSkeletonKey(fullRoman);
+
                 [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
                     const words = fullName.split(/\s+/);
                     words.forEach(w => {
                         const clean = w.replace(/[^\u0900-\u097F]/g, '');
                         if (clean.length >= 2) {
                             if (!phoneticWordMap.has(clean)) {
-                                phoneticWordMap.set(clean, { count: 0, roman: transliterateHindiClean(clean) });
+                                const roman = transliterateHindiClean(clean);
+                                phoneticWordMap.set(clean, { 
+                                    count: 0, 
+                                    roman: roman,
+                                    pKey: getPhoneticKey(roman),
+                                    sKey: getSkeletonKey(roman)
+                                });
                             }
                             phoneticWordMap.get(clean).count++;
                         }
@@ -454,24 +546,22 @@
         }
 
         function getMultiHindiSuggestions(englishQuery) {
-            const q = (englishQuery || '').toLowerCase().trim();
-            if (!q) return [];
+            const raw = (englishQuery || '').toLowerCase().trim();
+            if (!raw) return [];
             
-            const qNorm = q.replace(/aa+/g, 'a')
-                           .replace(/ee+/g, 'i')
-                           .replace(/oo+/g, 'u')
-                           .replace(/shh?/g, 'sh')
-                           .replace(/w/g, 'v')
-                           .replace(/x/g, 'ksh');
+            const qPhonetic = getPhoneticKey(raw);
+            const qSkeleton = getSkeletonKey(raw);
             
             const matches = [];
             phoneticWordMap.forEach((meta, word) => {
-                const rNorm = meta.roman.replace(/w/g, 'v');
                 let score = 0;
-                if (rNorm === qNorm) score = 100;
-                else if (rNorm.startsWith(qNorm)) score = 80;
-                else if (rNorm.includes(qNorm)) score = 50;
-                else if (qNorm.startsWith(rNorm) && rNorm.length >= 3) score = 60;
+                if (meta.pKey === qPhonetic) score = 100;
+                else if (meta.pKey.startsWith(qPhonetic)) score = 85;
+                else if (meta.pKey.includes(qPhonetic)) score = 70;
+                else if (meta.sKey === qSkeleton) score = 90;
+                else if (meta.sKey.startsWith(qSkeleton)) score = 75;
+                else if (meta.sKey.includes(qSkeleton)) score = 60;
+                else if (qPhonetic.startsWith(meta.pKey) && meta.pKey.length >= 3) score = 65;
                 
                 if (score > 0) {
                     matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
