@@ -425,47 +425,11 @@
             lucide.createIcons();
         }
 
-        function populateSectionDropdown() {
-            const secSelect = document.getElementById('sectionFilterSelect');
-            if (!secSelect) return;
-            const ward = document.getElementById('wardFilterSelect')?.value || 'ALL';
-            const part = document.getElementById('partFilterSelect')?.value || 'ALL';
-            
-            let filteredSections = SECTIONS_LIST;
-            if (ward !== 'ALL') {
-                filteredSections = [...new Set(votersData.filter(v => String(v.ward) === String(ward)).map(v => v.sec_name).filter(Boolean))];
-            } else if (part !== 'ALL') {
-                filteredSections = [...new Set(votersData.filter(v => v.part === part).map(v => v.sec_name).filter(Boolean))];
-            }
-            filteredSections.sort((a, b) => a.localeCompare(b, 'hi'));
-
-            function getSecLabel(s) {
-                if (s.includes('वार्ड')) return s;
-                const secWards = new Set();
-                votersData.forEach(v => {
-                    if (v.sec_name === s && v.ward) secWards.add(v.ward);
-                });
-                if (secWards.size === 0) return s;
-                const sortedW = Array.from(secWards).sort((a, b) => parseInt(a) - parseInt(b));
-                return `${s} (वार्ड ${sortedW.join(', ')})`;
-            }
-
-            secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (Anubhag)</option>';
-            filteredSections.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.textContent = getSecLabel(s);
-                secSelect.appendChild(opt);
-            });
-        }
-
         function onWardChange() {
-            populateSectionDropdown();
             applyFilters();
         }
 
         function onPartChange() {
-            populateSectionDropdown();
             applyFilters();
         }
 
@@ -820,7 +784,6 @@
             filteredVotersList = votersData.filter(v => {
                 if (wardFilter !== 'ALL' && String(v.ward) !== String(wardFilter)) return false;
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
-                if (secFilter !== 'ALL' && v.sec_name !== secFilter) return false;
                 if (houseFilter && !isHouseMatch(v.house, houseFilter)) return false;
 
                 const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
