@@ -95,16 +95,16 @@
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                     <!-- WARD FILTER (1 to 11) -->
-                    <select id="filterWard" onchange="applyFilters()" class="py-1.5 px-2.5 bg-amber-50 border-2 border-amber-300 rounded-lg text-xs font-extrabold text-amber-950 outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-sm">
+                    <select id="filterWard" onchange="onWardFilterChange()" class="py-1.5 px-2.5 bg-amber-50 border-2 border-amber-300 rounded-lg text-xs font-extrabold text-amber-950 outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-sm">
                         <option value="">🏛️ सभी 11 वार्ड</option>
                         <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
                         <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
                         <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
-                        <option value="4">वार्ड 4 (पिपलान्त्री कलां)</option>
+                        <option value="4">वार्ड 4 (पिपलान्त्री कलां / खुर्द)</option>
                         <option value="5">वार्ड 5 (पिपलान्त्री कलां)</option>
                         <option value="6">वार्ड 6 (पिपलान्त्री खुर्द)</option>
                         <option value="7">वार्ड 7 (बडी मोरवड़)</option>
-                        <option value="8">वार्ड 8 (मोरवड़ / काना तालाब)</option>
+                        <option value="8">वार्ड 8 (मोरवड़ / काना तालाब / धर्मेटा)</option>
                         <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
                         <option value="10">वार्ड 10 (उमटी भाग 1)</option>
                         <option value="11">वार्ड 11 (उमटी भाग 2)</option>
@@ -1261,17 +1261,17 @@
         
         
         const WARD_AREAS_INFO = {
-            '1': 'आरणा, शंकरबाईया, सेहदरो की भागल',
-            '2': 'मनावत, पिगाजी, मेणाव की भागल, गुगलेटा, बेडा रेंट',
-            '3': 'दीपाजी की भागल, कडेचो का गुडा, हिन्दूजी की भागल',
-            '4': 'पिपलान्त्री कलां (खेडा देवी / हनुमान जी भाग)',
-            '5': 'पिपलान्त्री कलां',
-            '6': 'पिपलान्त्री खुर्द / कलां',
-            '7': 'बडी मोरवड़ (शिवजी मंदिर, चोराया, भीलवाडी)',
-            '8': 'मोरवड़ (काना तालाब, धर्मेटा, बन्दा)',
-            '9': 'छोटी मोरवड़ (आर के रोड, बड, चढ़ाव, आंगनबाडी)',
-            '10': 'उमटी (भाग 1)',
-            '11': 'उमटी (भाग 2)'
+            '1': 'आरणा संपूर्ण, शेरूपाईरा संपूर्ण, सेन्दरों की भागल (बूथ 107)',
+            '2': 'मनावतों की भागल, नंगाजी की भागल, मेणाव की भागल, गुगलेटा, बेडा रहट (बूथ 107)',
+            '3': 'दीपाजी की भागल, कडेचों का गुडा, हिन्दुजी की भागल सम्पूर्ण (बूथ 107)',
+            '4': 'पिपलांत्री कलां / खुर्द (चारभुजा मंदिर / प्रजापत मोहल्ला) (बूथ 108)',
+            '5': 'पिपलांत्री कलां (हनुमान जी मंदिर / खेडा देवी भाग) (बूथ 108)',
+            '6': 'पिपलांत्री खुर्द (पंचायत भवन / एसटीडी चौराहा भाग) (बूथ 108)',
+            '7': 'बडी मोरवड संपूर्ण (शिवजी मंदिर, चोराया, भीलवाडी) (बूथ 108)',
+            '8': 'धर्मेटा, बन्दा, मजरा काना का तालाब संपूर्ण (बूथ 109)',
+            '9': 'छोटी मोरवड का संपूर्ण भाग (आर के रोड, बड, चढ़ाव, आंगनबाडी) (बूथ 109)',
+            '10': 'उमटी (वार्ड 10 - भील बस्ती, रेबारी मोहल्ला) (बूथ 109)',
+            '11': 'उमटी (वार्ड 11 - राव मोहल्ला, बलाई बस्ती) (बूथ 109)'
         };
 
         function openWardStatsModal() {
@@ -1344,6 +1344,45 @@
             closeWardStatsModal();
             const select = document.getElementById('filterWard');
             if (select) select.value = wardNo;
+            onWardFilterChange();
+        }
+
+        function populateSectionOptions() {
+            const secSelect = document.getElementById('filterSection');
+            if (!secSelect) return;
+            const currentVal = secSelect.value;
+            const wardVal = document.getElementById('filterWard')?.value;
+            const partVal = document.getElementById('filterPart')?.value;
+
+            let availableSections = [];
+            if (wardVal) {
+                availableSections = [...new Set(voters.filter(v => String(v.ward) === String(wardVal)).map(v => v.sec_name).filter(Boolean))];
+            } else if (partVal) {
+                availableSections = [...new Set(voters.filter(v => v.part === partVal).map(v => v.sec_name).filter(Boolean))];
+            } else {
+                availableSections = (window.PIPLANTRI_DATA && window.PIPLANTRI_DATA.sections) || [...new Set(voters.map(v => v.sec_name).filter(Boolean))];
+            }
+            availableSections.sort((a, b) => a.localeCompare(b, 'hi'));
+
+            secSelect.innerHTML = '<option value="">सभी अनुभाग (Anubhag)</option>' + 
+                availableSections.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            if (availableSections.includes(currentVal)) {
+                secSelect.value = currentVal;
+            }
+        }
+
+        function onWardFilterChange() {
+            populateSectionOptions();
+            applyFilters();
+        }
+
+        function onPartFilterChange() {
+            populateSectionOptions();
+            applyFilters();
+        }
+
+        function onSectionFilterChange() {
             applyFilters();
         }
 
