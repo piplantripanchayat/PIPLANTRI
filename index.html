@@ -94,22 +94,6 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
-                    <!-- WARD FILTER (1 to 11) -->
-                    <select id="filterWard" onchange="onWardFilterChange()" class="py-1.5 px-2.5 bg-amber-50 border-2 border-amber-300 rounded-lg text-xs font-extrabold text-amber-950 outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-sm">
-                        <option value="">🏛️ सभी 11 वार्ड</option>
-                        <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
-                        <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
-                        <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
-                        <option value="4">वार्ड 4 (पिपलान्त्री कलां / खुर्द)</option>
-                        <option value="5">वार्ड 5 (पिपलान्त्री कलां)</option>
-                        <option value="6">वार्ड 6 (पिपलान्त्री खुर्द)</option>
-                        <option value="7">वार्ड 7 (बडी मोरवड़)</option>
-                        <option value="8">वार्ड 8 (मोरवड़ / काना तालाब / धर्मेटा)</option>
-                        <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
-                        <option value="10">वार्ड 10 (उमटी भाग 1)</option>
-                        <option value="11">वार्ड 11 (उमटी भाग 2)</option>
-                    </select>
-
                         <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
                             चुनाव वार-रूम एवं मतदाता प्रबंधन पोर्टल
                         </h1>
@@ -304,13 +288,29 @@
                 <div class="flex items-center gap-2 flex-wrap">
                     <select id="filterPart" onchange="onPartFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none">
                         <option value="">सभी 4 भाग</option>
-                        <option value="59">भाग 59 - मोरवड</option>
+                        <option value="59">भाग 59 - मोरवड़</option>
                         <option value="60">भाग 60 - उमठी</option>
                         <option value="61">भाग 61 - पिपलांत्री दायां</option>
                         <option value="62">भाग 62 - पिपलांत्री बायां</option>
                     </select>
 
-                    <select id="filterSection" onchange="onSectionFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[160px]">
+                    <!-- WARD FILTER (1 to 11) -->
+                    <select id="filterWard" onchange="onWardFilterChange()" class="py-1.5 px-2 bg-amber-50 border-2 border-amber-300 rounded-lg text-xs font-extrabold text-amber-950 outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-sm">
+                        <option value="">🏛️ सभी 11 वार्ड</option>
+                        <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
+                        <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
+                        <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
+                        <option value="4">वार्ड 4 (पिपलांत्री कलां / खुर्द)</option>
+                        <option value="5">वार्ड 5 (पिपलांत्री कलां)</option>
+                        <option value="6">वार्ड 6 (पिपलांत्री खुर्द)</option>
+                        <option value="7">वार्ड 7 (बडी मोरवड़)</option>
+                        <option value="8">वार्ड 8 (मोरवड़ / काना तालाब / धर्मेटा)</option>
+                        <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
+                        <option value="10">वार्ड 10 (उमटी भाग 1)</option>
+                        <option value="11">वार्ड 11 (उमटी भाग 2)</option>
+                    </select>
+
+                    <select id="filterSection" onchange="onSectionFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[220px]">
                         <option value="">सभी अनुभाग (Anubhag)</option>
                     </select>
 
@@ -1364,8 +1364,19 @@
             }
             availableSections.sort((a, b) => a.localeCompare(b, 'hi'));
 
+            function getSecLabel(s) {
+                if (s.includes('वार्ड')) return s;
+                const secWards = new Set();
+                voters.forEach(v => {
+                    if (v.sec_name === s && v.ward) secWards.add(v.ward);
+                });
+                if (secWards.size === 0) return s;
+                const sortedW = Array.from(secWards).sort((a, b) => parseInt(a) - parseInt(b));
+                return `${s} (वार्ड ${sortedW.join(', ')})`;
+            }
+
             secSelect.innerHTML = '<option value="">सभी अनुभाग (Anubhag)</option>' + 
-                availableSections.map(s => `<option value="${s}">${s}</option>`).join('');
+                availableSections.map(s => `<option value="${s}">${getSecLabel(s)}</option>`).join('');
 
             if (availableSections.includes(currentVal)) {
                 secSelect.value = currentVal;

@@ -165,22 +165,6 @@
                     <div id="voterSearchDropdown" class="autocomplete-dropdown hidden"></div>
                 </div>
 
-                <!-- Ward Filter (1 to 11) -->
-                <select id="wardFilterSelect" onchange="onWardChange()" class="bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-2 text-xs text-amber-300 font-extrabold focus:outline-none focus:border-amber-400">
-                    <option value="ALL">🏛️ सभी 11 वार्ड</option>
-                    <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
-                    <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
-                    <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
-                    <option value="4">वार्ड 4 (पिपलान्त्री कलां)</option>
-                    <option value="5">वार्ड 5 (पिपलान्त्री कलां)</option>
-                    <option value="6">वार्ड 6 (पिपलान्त्री खुर्द)</option>
-                    <option value="7">वार्ड 7 (बडी मोरवड़)</option>
-                    <option value="8">वार्ड 8 (मोरवड़ / काना तालाब)</option>
-                    <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
-                    <option value="10">वार्ड 10 (उमटी भाग 1)</option>
-                    <option value="11">वार्ड 11 (उमटी भाग 2)</option>
-                </select>
-
                 <!-- Part Filter -->
                 <select id="partFilterSelect" onchange="onPartChange()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
                     <option value="ALL">सभी 4 भाग</option>
@@ -190,8 +174,24 @@
                     <option value="62">भाग 62 - पिपलांत्री खुर्द/आरणा</option>
                 </select>
 
+                <!-- Ward Filter (1 to 11) -->
+                <select id="wardFilterSelect" onchange="onWardChange()" class="bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-2 text-xs text-amber-300 font-extrabold focus:outline-none focus:border-amber-400">
+                    <option value="ALL">🏛️ सभी 11 वार्ड</option>
+                    <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
+                    <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
+                    <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
+                    <option value="4">वार्ड 4 (पिपलांत्री कलां / खुर्द)</option>
+                    <option value="5">वार्ड 5 (पिपलांत्री कलां)</option>
+                    <option value="6">वार्ड 6 (पिपलांत्री खुर्द)</option>
+                    <option value="7">वार्ड 7 (बडी मोरवड़)</option>
+                    <option value="8">वार्ड 8 (मोरवड़ / काना तालाब / धर्मेटा)</option>
+                    <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
+                    <option value="10">वार्ड 10 (उमटी भाग 1)</option>
+                    <option value="11">वार्ड 11 (उमटी भाग 2)</option>
+                </select>
+
                 <!-- Anubhag / Section Filter -->
-                <select id="sectionFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 max-w-[160px]">
+                <select id="sectionFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500 max-w-[220px]">
                     <option value="ALL">सभी अनुभाग (Anubhag)</option>
                 </select>
 
@@ -445,11 +445,22 @@
             }
             filteredSections.sort((a, b) => a.localeCompare(b, 'hi'));
 
+            function getSecLabel(s) {
+                if (s.includes('वार्ड')) return s;
+                const secWards = new Set();
+                votersData.forEach(v => {
+                    if (v.sec_name === s && v.ward) secWards.add(v.ward);
+                });
+                if (secWards.size === 0) return s;
+                const sortedW = Array.from(secWards).sort((a, b) => parseInt(a) - parseInt(b));
+                return `${s} (वार्ड ${sortedW.join(', ')})`;
+            }
+
             secSelect.innerHTML = '<option value="ALL">सभी अनुभाग (Anubhag)</option>';
             filteredSections.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s;
-                opt.textContent = s;
+                opt.textContent = getSecLabel(s);
                 secSelect.appendChild(opt);
             });
         }
