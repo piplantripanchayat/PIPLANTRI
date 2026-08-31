@@ -867,9 +867,33 @@
             renderNextBatch();
         }
 
+        let voterScrollObserver = null;
+
+        function setupVoterScrollObserver() {
+            if (voterScrollObserver) voterScrollObserver.disconnect();
+
+            const sentinel = document.getElementById('voterScrollSentinel');
+            if (!sentinel) return;
+
+            if ('IntersectionObserver' in window) {
+                voterScrollObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && currentlyRenderedCount < filteredVotersList.length) {
+                            renderNextBatch();
+                        }
+                    });
+                }, { root: null, rootMargin: '300px' });
+
+                voterScrollObserver.observe(sentinel);
+            }
+        }
+
         function renderNextBatch() {
             const container = document.getElementById('votersCardList');
             if (!container) return;
+
+            const oldSentinel = document.getElementById('voterScrollSentinel');
+            if (oldSentinel && oldSentinel.parentNode) oldSentinel.parentNode.removeChild(oldSentinel);
 
             const total = filteredVotersList.length;
             if (total === 0) {
@@ -940,21 +964,17 @@
                                     return `
                                         <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                                             <div class="flex-1 min-w-0">
-                                                <!-- Top Line: Match Badge + Phone + Village -->
                                                 <div class="flex items-center gap-2 flex-wrap">
                                                     <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${score}% Match</span>
                                                     <span class="font-mono font-bold text-white text-sm">${c.mobile}</span>
                                                     ${c.village ? `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700 font-medium">📍 ${c.village}</span>` : ''}
                                                 </div>
-                                                <!-- Second Line: Full Name & Relative in clear bold text (NO TRUNCATE) -->
                                                 <div class="mt-1 flex items-center gap-1.5 flex-wrap">
                                                     <span class="font-extrabold text-amber-300 text-xs">${c.name}</span>
                                                     ${c.rel_name ? `<span class="text-slate-400 text-[11px]">(${c.rel || 'पिता'}: <strong class="text-slate-300">${c.rel_name}</strong>)</span>` : ''}
                                                 </div>
-                                                <!-- Third Line: Match Reason (NO TRUNCATE) -->
                                                 ${s.reasons ? `<div class="text-[11px] text-slate-400 mt-0.5 break-words">${s.reasons}</div>` : ''}
                                             </div>
-                                            <!-- Action Button: Link -->
                                             <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
                                                 ${isMatchCurrent ? `
                                                     <span class="px-3 py-1.5 rounded-lg bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700 flex items-center gap-1">
@@ -1012,14 +1032,59 @@
             container.appendChild(fragment);
             currentlyRenderedCount = nextCount;
             document.getElementById('renderedCountDisplay').innerText = currentlyRenderedCount.toLocaleString('en-IN');
+
+            if (currentlyRenderedCount < total) {
+                const sentinel = document.createElement('div');
+                sentinel.id = 'voterScrollSentinel';
+                sentinel.className = 'py-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs border-t border-slate-800/80 bg-slate-950/40 rounded-xl mt-2';
+                sentinel.innerHTML = `
+                    <span class="text-slate-400 font-medium">दिख रहे: <strong class="text-emerald-400 font-bold">${currentlyRenderedCount}</strong> / ${total.toLocaleString('en-IN')} (नीचे स्क्रॉल करने पर और लोड होंगे)</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="renderNextBatch()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold border border-slate-700 shadow flex items-center gap-1.5 transition active:scale-95">
+                            <i data-lucide="arrow-down" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>⬇️ और लोड करें (+${Math.min(BATCH_SIZE, total - currentlyRenderedCount)})</span>
+                        </button>
+                        <button onclick="renderAllVotersAtOnce()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
+                            <span>⚡ सभी ${total.toLocaleString('en-IN')} लोड करें</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(sentinel);
+                setupVoterScrollObserver();
+            } else if (total > 0) {
+                const endBanner = document.createElement('div');
+                endBanner.className = 'py-3 text-center text-xs text-slate-500 font-semibold border-t border-slate-800/60 mt-2';
+                endBanner.innerHTML = `✅ सभी <strong class="text-white">${total.toLocaleString('en-IN')}</strong> मतदाता लोड हो चुके हैं`;
+                container.appendChild(endBanner);
+            }
+
             lucide.createIcons();
         }
 
+        function renderAllVotersAtOnce() {
+            BATCH_SIZE = 10000;
+            const container = document.getElementById('votersCardList');
+            container.innerHTML = '';
+            currentlyRenderedCount = 0;
+            renderNextBatch();
+        }
+
         function handleTableScroll(el) {
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
-                renderNextBatch();
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+                if (currentlyRenderedCount < filteredVotersList.length) {
+                    renderNextBatch();
+                }
             }
         }
+
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 400)) {
+                if (currentlyRenderedCount < filteredVotersList.length) {
+                    renderNextBatch();
+                }
+            }
+        }, { passive: true });
 
         function assignPhoneToVoter(voterId, mobileNumber) {
             const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');

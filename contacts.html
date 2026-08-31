@@ -901,9 +901,33 @@
         renderNextContactBatch();
     }
 
+    let contactScrollObserver = null;
+
+    function setupContactScrollObserver() {
+        if (contactScrollObserver) contactScrollObserver.disconnect();
+
+        const sentinel = document.getElementById('contactScrollSentinel');
+        if (!sentinel) return;
+
+        if ('IntersectionObserver' in window) {
+            contactScrollObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && currentlyRenderedContactCount < filteredContactsList.length) {
+                        renderNextContactBatch();
+                    }
+                });
+            }, { root: null, rootMargin: '300px' });
+
+            contactScrollObserver.observe(sentinel);
+        }
+    }
+
     function renderNextContactBatch() {
         const container = document.getElementById('contactsContainer');
         if (!container) return;
+
+        const oldSentinel = document.getElementById('contactScrollSentinel');
+        if (oldSentinel && oldSentinel.parentNode) oldSentinel.parentNode.removeChild(oldSentinel);
 
         const total = filteredContactsList.length;
         if (total === 0) {
@@ -1041,14 +1065,51 @@
         container.appendChild(fragment);
         currentlyRenderedContactCount = nextCount;
         document.getElementById('renderedContactCount').innerText = currentlyRenderedContactCount.toLocaleString('en-IN');
+
+        if (currentlyRenderedContactCount < total) {
+            const sentinel = document.createElement('div');
+            sentinel.id = 'contactScrollSentinel';
+            sentinel.className = 'py-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs border-t border-slate-800/80 bg-slate-950/40 rounded-xl mt-2';
+            sentinel.innerHTML = `
+                <span class="text-slate-400 font-medium">दिख रहे: <strong class="text-emerald-400 font-bold">${currentlyRenderedContactCount}</strong> / ${total.toLocaleString('en-IN')} (नीचे स्क्रॉल करने पर और लोड होंगे)</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="renderNextContactBatch()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold border border-slate-700 shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i data-lucide="arrow-down" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        <span>⬇️ और लोड करें (+${Math.min(BATCH_SIZE, total - currentlyRenderedContactCount)})</span>
+                    </button>
+                    <button onclick="renderAllContactsAtOnce()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
+                        <span>⚡ सभी ${total.toLocaleString('en-IN')} लोड करें</span>
+                    </button>
+                </div>
+            `;
+            container.appendChild(sentinel);
+            setupContactScrollObserver();
+        } else if (total > 0) {
+            const endBanner = document.createElement('div');
+            endBanner.className = 'py-3 text-center text-xs text-slate-500 font-semibold border-t border-slate-800/60 mt-2';
+            endBanner.innerHTML = `✅ सभी <strong class="text-white">${total.toLocaleString('en-IN')}</strong> संपर्क लोड हो चुके हैं`;
+            container.appendChild(endBanner);
+        }
+
         lucide.createIcons();
     }
 
     function handleContactScroll(el) {
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
-            renderNextContactBatch();
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+            if (currentlyRenderedContactCount < filteredContactsList.length) {
+                renderNextContactBatch();
+            }
         }
     }
+
+    window.addEventListener('scroll', () => {
+        if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 400)) {
+            if (currentlyRenderedContactCount < filteredContactsList.length) {
+                renderNextContactBatch();
+            }
+        }
+    }, { passive: true });
 
     function linkVoterToContact(voterId, mobileNumber) {
         const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');
