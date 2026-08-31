@@ -165,6 +165,22 @@
                     <div id="voterSearchDropdown" class="autocomplete-dropdown hidden"></div>
                 </div>
 
+                <!-- Ward Filter (1 to 11) -->
+                <select id="wardFilterSelect" onchange="applyFilters()" class="bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-2 text-xs text-amber-300 font-extrabold focus:outline-none focus:border-amber-400">
+                    <option value="ALL">🏛️ सभी 11 वार्ड</option>
+                    <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
+                    <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा)</option>
+                    <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
+                    <option value="4">वार्ड 4 (पिपलान्त्री कलां)</option>
+                    <option value="5">वार्ड 5 (पिपलान्त्री कलां)</option>
+                    <option value="6">वार्ड 6 (पिपलान्त्री खुर्द)</option>
+                    <option value="7">वार्ड 7 (बडी मोरवड़)</option>
+                    <option value="8">वार्ड 8 (मोरवड़ / काना तालाब)</option>
+                    <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
+                    <option value="10">वार्ड 10 (उमटी भाग 1)</option>
+                    <option value="11">वार्ड 11 (उमटी भाग 2)</option>
+                </select>
+
                 <!-- Part Filter -->
                 <select id="partFilterSelect" onchange="onPartChange()" class="bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
                     <option value="ALL">सभी 4 भाग</option>
@@ -778,6 +794,7 @@
         // Fast Filter with Exact House Filter Support
         function applyFilters() {
             const rawQuery = (document.getElementById('voterSearchInput')?.value || '').trim();
+            const wardFilter = document.getElementById('wardFilterSelect')?.value || 'ALL';
             const partFilter = document.getElementById('partFilterSelect')?.value || 'ALL';
             const secFilter = document.getElementById('sectionFilterSelect')?.value || 'ALL';
             const houseFilter = (document.getElementById('houseFilterInput')?.value || '').trim();
@@ -786,6 +803,7 @@
             const searchTokens = rawQuery ? rawQuery.split(/\s+/).filter(Boolean) : [];
 
             filteredVotersList = votersData.filter(v => {
+                if (wardFilter !== 'ALL' && String(v.ward) !== String(wardFilter)) return false;
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
                 if (secFilter !== 'ALL' && v.sec_name !== secFilter) return false;
                 if (houseFilter && !isHouseMatch(v.house, houseFilter)) return false;
@@ -979,6 +997,7 @@
                 card.innerHTML = `
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-extrabold text-[10px] border border-amber-500/40">🏛️ वार्ड ${v.ward || '-'}</span>
                             <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${v.part} • क्र. ${v.sr || v.id}</span>
                             <strong class="text-white text-sm">${v.name}</strong>
                             <span class="text-xs text-slate-400">(${v.age} वर्ष / ${v.gender})</span>
