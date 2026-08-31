@@ -124,6 +124,10 @@
                     <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>कांटेक्ट लिंकर</span>
                 </a>
+                <button onclick="openReportsModal()" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold flex items-center gap-1.5 shadow transition active:scale-95" title="लिंक्ड, पेंडिंग व वार्ड रिपोर्ट देखें व A4 प्रिंट करें">
+                    <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-300"></i>
+                    <span>🖨️ रिपोर्ट व प्रिंट</span>
+                </button>
                 <button onclick="switchTab('slips')" class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm">
                     <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">पर्ची प्रिंट</span>
@@ -2273,7 +2277,7 @@
             const secNos = [...new Set(selectedList.map(v => {
                 if (v.sec_no) return v.sec_no;
                 if (v.sec_name) {
-                    const m = v.sec_name.match(/^(\d+)/);
+                    const m = v.sec_name.match(/^(d+)/);
                     return m ? m[1] : '1';
                 }
                 return '1';
@@ -2284,11 +2288,9 @@
                 const h = houses.length === 1 ? houses[0] : 'NA';
                 basePrefix = `भाग ${parts.join(',')} | अनु. ${secNos.join(',')} | म.${h} - परिवार `;
             } else {
-                // Multi-house joint family group
                 basePrefix = `भाग ${parts.join(',')} | म.${houses.join(',')} - संयुक्त परिवार `;
             }
 
-            // Find next available letter (A, B, C, D...)
             const existingLetters = new Set();
             voters.forEach(v => {
                 if (v.family_group && v.family_group.startsWith(basePrefix)) {
@@ -2316,7 +2318,9 @@
             selectedVoterIds.clear();
             updateBulkActionBtn();
             renderVotersTable();
-            alert(`✅ नया फैमिली ग्रुप सफलतापूर्वक बन गया:\n\n• ${generatedFamilyId} (${selectedList.length} मतदाता)`);
+            alert(`✅ नया फैमिली ग्रुप सफलतापूर्वक बन गया:
+
+• ${generatedFamilyId} (${selectedList.length} मतदाता)`);
         }
 
         function autoRemoveFamilyGroup() {
@@ -2408,7 +2412,551 @@
             XLSX.utils.book_append_sheet(wb, ws, "Voters_Master");
             XLSX.writeFile(wb, `Piplantri_Voters_Master_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
+
+        
+        let activeReportTab = 'linked';
+
+        function getDataSourceForReports() {
+            if (typeof voters !== 'undefined' && Array.isArray(voters)) return voters;
+            if (typeof votersData !== 'undefined' && Array.isArray(votersData)) return votersData;
+            if (typeof votersState !== 'undefined' && Array.isArray(votersState)) return votersState;
+            if (window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.voters)) return window.PIPLANTRI_DATA.voters;
+            return [];
+        }
+
+        function openReportsModal(initialTab = 'linked') {
+            activeReportTab = initialTab;
+            const modal = document.getElementById('reportsModal');
+            if (modal) modal.classList.remove('hidden');
+            updateReportBadges();
+            switchReportTab(initialTab);
+            lucide.createIcons();
+        }
+
+        function closeReportsModal() {
+            const modal = document.getElementById('reportsModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateReportBadges() {
+            const data = getDataSourceForReports();
+            const linked = data.filter(v => v.mobile && v.mobile.trim().length >= 10).length;
+            const unlinked = data.length - linked;
+
+            const badgeLinked = document.getElementById('repBadgeLinked');
+            const badgeUnlinked = document.getElementById('repBadgeUnlinked');
+            if (badgeLinked) badgeLinked.innerText = linked.toLocaleString('en-IN');
+            if (badgeUnlinked) badgeUnlinked.innerText = unlinked.toLocaleString('en-IN');
+        }
+
+        function switchReportTab(tabName) {
+            activeReportTab = tabName;
+            
+            const tabs = ['linked', 'unlinked', 'ward'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('repTab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-indigo-600 bg-white text-indigo-700 shadow-sm";
+                    } else {
+                        btn.className = "px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200";
+                    }
+                }
+            });
+
+            renderActiveReport();
+        }
+
+        function getFilteredReportList() {
+            const data = getDataSourceForReports();
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
+            const q = (document.getElementById('reportSearchInput')?.value || '').trim().toLowerCase();
+
+            return data.filter(v => {
+                const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
+                
+                if (activeReportTab === 'linked' && !hasMobile) return false;
+                if (activeReportTab === 'unlinked' && hasMobile) return false;
+
+                if (wardFilter !== 'ALL' && String(v.ward) !== String(wardFilter)) return false;
+                if (partFilter !== 'ALL' && v.part !== partFilter) return false;
+
+                if (q) {
+                    const match = (v.name && v.name.toLowerCase().includes(q)) ||
+                                  (v.rel_name && v.rel_name.toLowerCase().includes(q)) ||
+                                  (v.house && String(v.house).toLowerCase().includes(q)) ||
+                                  (v.epic && String(v.epic).toLowerCase().includes(q)) ||
+                                  (v.mobile && String(v.mobile).includes(q));
+                    if (!match) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function renderActiveReport() {
+            const container = document.getElementById('reportContentArea');
+            if (!container) return;
+
+            updateReportBadges();
+            const list = getFilteredReportList();
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
+
+            let reportTitle = "";
+            if (activeReportTab === 'linked') {
+                reportTitle = "🟢 लिंक्ड मोबाइल मतदाता सूची";
+            } else if (activeReportTab === 'unlinked') {
+                reportTitle = "🔴 पेंडिंग / बिना मोबाइल मतदाता चेकलिस्ट";
+            } else {
+                reportTitle = "🏛️ वार्ड-वार संपूर्ण मतदाता रजिस्टर " + (wardFilter !== 'ALL' ? '(वार्ड ' + wardFilter + ')' : '(सभी 11 वार्ड)');
+            }
+
+            const statusText = document.getElementById('reportSummaryStatusText');
+            if (statusText) {
+                statusText.innerHTML = "कुल चयनित रिकॉर्ड: <strong class='text-slate-900 font-bold'>" + list.length.toLocaleString('en-IN') + "</strong> | फ़िल्टर: वार्ड: <strong>" + wardFilter + "</strong>, भाग: <strong>" + partFilter + "</strong>";
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="py-12 text-center text-slate-400">
+                        <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                        <p class="font-bold text-sm text-slate-600">चयनित फ़िल्टर में कोई रिकॉर्ड नहीं मिला</p>
+                        <p class="text-xs text-slate-400 mt-1">कृपया वार्ड या भाग फ़िल्टर बदलें</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let tableHeader = "";
+            if (activeReportTab === 'linked') {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2 w-28">EPIC नंबर</th>
+                        <th class="p-2 w-36 font-bold text-emerald-800">📱 मोबाइल नंबर</th>
+                        <th class="p-2 w-24">रुझान/स्थिति</th>
+                    </tr>
+                `;
+            } else if (activeReportTab === 'unlinked') {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2">अनुभाग / मोहल्ला</th>
+                        <th class="p-2 w-44 bg-rose-50 text-rose-800">नया मोबाइल नंबर लिखें</th>
+                    </tr>
+                `;
+            } else {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2 w-28">EPIC नंबर</th>
+                        <th class="p-2 w-32">मोबाइल नंबर</th>
+                        <th class="p-2 w-24 text-center">मतदान स्थिति</th>
+                    </tr>
+                `;
+            }
+
+            let rowsHtml = list.map((v, idx) => {
+                const srNo = idx + 1;
+                const wardDisplay = v.ward ? ('वार्ड ' + v.ward) : '-';
+                const partHouse = 'भाग ' + v.part + '<br><span class="font-mono text-slate-500">म.' + (v.house || '-') + '</span>';
+                const ageGender = v.age + ' / ' + (v.gender === 'पुरुष' ? 'M' : 'F');
+
+                if (activeReportTab === 'linked') {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 font-mono text-[11px] text-slate-600">${v.epic || '-'}</td>
+                            <td class="p-2 font-mono font-bold text-emerald-700 bg-emerald-50/50 text-xs">${v.mobile}</td>
+                            <td class="p-2 text-[11px]">${v.category || v.location_status || 'Local'}</td>
+                        </tr>
+                    `;
+                } else if (activeReportTab === 'unlinked') {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 text-[11px] text-slate-500 truncate max-w-[150px]">${v.sec_name || '-'}</td>
+                            <td class="p-2 font-mono text-slate-400 bg-rose-50/30 border border-dashed border-rose-200 text-center">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 font-mono text-[11px] text-slate-600">${v.epic || '-'}</td>
+                            <td class="p-2 font-mono ${v.mobile ? 'font-bold text-emerald-700' : 'text-slate-400 italic'}">${v.mobile || 'अनलिंक्ड'}</td>
+                            <td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] ${v.voted ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${v.voted ? 'Voted' : 'Pending'}</span></td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                        <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5">
+                            <span>${reportTitle}</span>
+                        </h4>
+                        <span class="text-xs text-slate-500 font-bold">दिख रहे रिकॉर्ड: ${list.length.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>${tableHeader}</thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function printCurrentReport() {
+            const list = getFilteredReportList();
+            if (!list || list.length === 0) {
+                alert("प्रिंट करने के लिए कोई रिकॉर्ड उपलब्ध नहीं है!");
+                return;
+            }
+
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
+            
+            let reportHeaderTitle = "";
+            let tableColumns = "";
+            let tableBody = "";
+
+            if (activeReportTab === 'linked') {
+                reportHeaderTitle = "🟢 लिंक्ड मोबाइल मतदाता सूची (Linked Mobile Numbers Report)";
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th style="width: 90px;">EPIC नंबर</th>
+                        <th style="width: 110px;">मोबाइल नंबर</th>
+                        <th style="width: 80px;">हस्ताक्षर/स्थिति</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td style="font-family:monospace;">${v.epic || '-'}</td>
+                        <td style="font-family:monospace; font-weight:bold; color:#065f46;">${v.mobile}</td>
+                        <td></td>
+                    </tr>
+                `).join('');
+            } else if (activeReportTab === 'unlinked') {
+                reportHeaderTitle = "🔴 पेंडिंग / बिना मोबाइल मतदाता चेकलिस्ट (Missing Mobile Verification Sheet)";
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th>अनुभाग / मोहल्ला</th>
+                        <th style="width: 140px;">मोबाइल नंबर लिखें</th>
+                        <th style="width: 70px;">सत्यापन</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td>${v.sec_name || '-'}</td>
+                        <td style="border: 1px dashed #666;"></td>
+                        <td></td>
+                    </tr>
+                `).join('');
+            } else {
+                reportHeaderTitle = "🏛️ वार्ड-वार संपूर्ण मतदाता रजिस्टर " + (wardFilter !== 'ALL' ? '(वार्ड ' + wardFilter + ')' : '(समस्त वार्ड)');
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th style="width: 90px;">EPIC नंबर</th>
+                        <th style="width: 100px;">मोबाइल नंबर</th>
+                        <th style="width: 70px; text-align:center;">मतदान स्थिति</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td style="font-family:monospace;">${v.epic || '-'}</td>
+                        <td style="font-family:monospace;">${v.mobile || '-'}</td>
+                        <td style="text-align:center;">[ &nbsp; ]</td>
+                    </tr>
+                `).join('');
+            }
+
+            const printHtml = `
+                <!DOCTYPE html>
+                <html lang="hi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${reportHeaderTitle} - पिपलांत्री चुनाव</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 8mm; }
+                        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #111; margin: 0; padding: 0; background: #fff; }
+                        .header { border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        .header h1 { margin: 0; font-size: 14pt; font-weight: 800; color: #000; }
+                        .header h2 { margin: 2px 0 0 0; font-size: 11pt; color: #b45309; font-weight: bold; }
+                        .meta { font-size: 8pt; color: #444; text-align: right; }
+                        .summary-bar { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; margin-bottom: 8px; font-size: 8.5pt; font-weight: bold; display: flex; justify-content: space-between; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+                        th, td { border: 1px solid #333; padding: 4px 5px; font-size: 8.5pt; line-height: 1.2; }
+                        th { background-color: #e2e8f0; font-weight: bold; text-align: left; }
+                        tr { page-break-inside: avoid; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <h1>ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द)</h1>
+                            <h2>सरपंच चुनाव • प्रत्याशी: नविन पालीवाल</h2>
+                        </div>
+                        <div class="meta">
+                            <div><strong>${reportHeaderTitle}</strong></div>
+                            <div>वार्ड: ${wardFilter} | भाग: ${partFilter}</div>
+                            <div>प्रिंट दिनांक: ${new Date().toLocaleDateString('hi-IN')} ${new Date().toLocaleTimeString('hi-IN')}</div>
+                        </div>
+                    </div>
+                    <div class="summary-bar">
+                        <span>कुल रिकॉर्ड: ${list.length.toLocaleString('en-IN')} मतदाता</span>
+                        <span>प्रत्याशी: नविन पालीवाल</span>
+                        <span>वार-रूम अधिकृत प्रति</span>
+                    </div>
+                    <table>
+                        <thead>${tableColumns}</thead>
+                        <tbody>${tableBody}</tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const printFrame = document.createElement('iframe');
+            printFrame.style.position = 'fixed';
+            printFrame.style.right = '0';
+            printFrame.style.bottom = '0';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = '0';
+            document.body.appendChild(printFrame);
+
+            const frameDoc = printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(printHtml);
+            frameDoc.close();
+
+            printFrame.contentWindow.focus();
+            setTimeout(() => {
+                printFrame.contentWindow.print();
+                setTimeout(() => { document.body.removeChild(printFrame); }, 1000);
+            }, 300);
+        }
+
+        function exportCurrentReportCSV() {
+            const list = getFilteredReportList();
+            if (!list || list.length === 0) {
+                alert("एक्सपोर्ट करने के लिए कोई रिकॉर्ड उपलब्ध नहीं है!");
+                return;
+            }
+
+            const rows = [
+                ["ID", "Part", "Ward", "House No", "Voter Name", "Relation", "Relative Name", "Age", "Gender", "EPIC No", "Mobile", "Category", "Location"]
+            ];
+
+            list.forEach(v => {
+                rows.push([
+                    v.id,
+                    v.part,
+                    v.ward || '',
+                    v.house || '',
+                    v.name,
+                    v.rel || '',
+                    v.rel_name || '',
+                    v.age || '',
+                    v.gender || '',
+                    v.epic || '',
+                    v.mobile || '',
+                    v.category || '',
+                    v.location_status || ''
+                ]);
+            });
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            rows.forEach(r => {
+                csvContent += r.map(f => '"' + String(f).replace(/"/g, '""') + '"').join(",") + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Piplantri_" + activeReportTab + "_Report_" + new Date().toISOString().slice(0,10) + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
     </script>
+
+    
+    <!-- COMPREHENSIVE REPORTS & PRINT MODAL (ALL 3 PAGES) -->
+    <div id="reportsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white border border-slate-200 w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-900">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                        <i data-lucide="printer" class="w-5 h-5 text-amber-400"></i>
+                        <span>ग्राम पंचायत पिपलांत्री - चुनावी रिपोर्ट व प्रिंट सेंटर</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">सरपंच चुनाव वार-रूम • प्रत्याशी: <strong class="text-amber-400">नविन पालीवाल</strong> (AC 175 राजसमन्द)</p>
+                </div>
+                <button onclick="closeReportsModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Report Navigation Tabs -->
+            <div class="px-4 pt-3 bg-slate-100 border-b border-slate-200 flex flex-wrap gap-2">
+                <button id="repTabLinked" onclick="switchReportTab('linked')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-emerald-600 bg-white text-emerald-700 shadow-sm">
+                    <i data-lucide="phone-call" class="w-4 h-4 text-emerald-600"></i>
+                    <span>🟢 लिंक्ड मोबाइल रिपोर्ट</span>
+                    <span id="repBadgeLinked" class="px-2 py-0.5 text-[11px] bg-emerald-100 text-emerald-800 rounded-full font-extrabold">0</span>
+                </button>
+                <button id="repTabUnlinked" onclick="switchReportTab('unlinked')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                    <i data-lucide="phone-off" class="w-4 h-4 text-rose-500"></i>
+                    <span>🔴 पेंडिंग / बिना मोबाइल रिपोर्ट</span>
+                    <span id="repBadgeUnlinked" class="px-2 py-0.5 text-[11px] bg-rose-100 text-rose-800 rounded-full font-extrabold">0</span>
+                </button>
+                <button id="repTabWard" onclick="switchReportTab('ward')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                    <i data-lucide="building-2" class="w-4 h-4 text-amber-600"></i>
+                    <span>🏛️ वार्ड-वार मतदाता रजिस्टर</span>
+                    <span id="repBadgeWard" class="px-2 py-0.5 text-[11px] bg-amber-100 text-amber-800 rounded-full font-extrabold">11 वार्ड</span>
+                </button>
+            </div>
+
+            <!-- Report Filter Controls & Actions Bar -->
+            <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Ward Filter -->
+                    <div class="flex items-center gap-1">
+                        <span class="font-bold text-slate-700">वार्ड:</span>
+                        <select id="reportWardSelect" onchange="renderActiveReport()" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm">
+                            <option value="ALL">🏛️ सभी 11 वार्ड</option>
+                            <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
+                            <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा रेंट)</option>
+                            <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
+                            <option value="4">वार्ड 4 (पिपलान्त्री खुर्द - STD)</option>
+                            <option value="5">वार्ड 5 (पिपलान्त्री कलां - हनुमान मंदिर)</option>
+                            <option value="6">वार्ड 6 (पिपलान्त्री कलां - खेडा देवी)</option>
+                            <option value="7">वार्ड 7 (बडी मोरवड़)</option>
+                            <option value="8">वार्ड 8 (धर्मेटा / बन्दा / काना का तालाब)</option>
+                            <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
+                            <option value="10">वार्ड 10 (उमटी भाग 1)</option>
+                            <option value="11">वार्ड 11 (उमटी भाग 2)</option>
+                        </select>
+                    </div>
+
+                    <!-- Booth Part Filter -->
+                    <div class="flex items-center gap-1">
+                        <span class="font-bold text-slate-700">भाग:</span>
+                        <select id="reportPartSelect" onchange="renderActiveReport()" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm">
+                            <option value="ALL">सभी 4 भाग</option>
+                            <option value="59">भाग 59 (मोरवड़)</option>
+                            <option value="60">भाग 60 (उमटी)</option>
+                            <option value="61">भाग 61 (पिपलांत्री)</option>
+                            <option value="62">भाग 62 (आरणा/गुगलेटा)</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input in Report -->
+                    <div class="relative w-44 sm:w-56">
+                        <input type="text" id="reportSearchInput" oninput="renderActiveReport()" placeholder="खोजें: नाम, पिता, मकान..." class="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-2 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Print & Export Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="printCurrentReport()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center gap-1.5 shadow transition active:scale-95">
+                        <i data-lucide="printer" class="w-4 h-4 text-amber-400"></i>
+                        <span>🖨️ A4 शीट प्रिंट</span>
+                    </button>
+                    <button onclick="exportCurrentReportCSV()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow transition active:scale-95">
+                        <i data-lucide="download" class="w-4 h-4 text-emerald-200"></i>
+                        <span>📊 CSV / Excel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Content Body (Scrollable Screen View) -->
+            <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50" id="reportContentArea">
+                <!-- Dynamic report table loaded here -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-between items-center text-xs text-slate-600 font-medium">
+                <span id="reportSummaryStatusText">लोड हो रहा है...</span>
+                <button onclick="closeReportsModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold">बंद करें</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- WARD STATS MODAL -->
     <div id="wardStatsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
@@ -2434,6 +2982,9 @@
             </div>
         </div>
     </div>
+
+    
+
 
     <!-- 2026 NEW VOTERS MODAL -->
     <div id="newVotersModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">

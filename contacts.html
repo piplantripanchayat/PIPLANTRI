@@ -32,7 +32,6 @@
 </head>
 <body class="h-full flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white bg-slate-950 text-slate-100">
 
-    
     <!-- GLOBAL SECURITY PIN LOCK MODAL (PIN: 1111) -->
     <div id="pinLockModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center flex flex-col items-center">
@@ -68,7 +67,6 @@
         </div>
     </div>
 
-
     <!-- Top Navigation Header -->
     <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
@@ -98,11 +96,15 @@
                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">ऐप इंस्टॉल</span>
                 </button>
-                <a href="linker.html" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1">
-                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-orange-400"></i>
+                <button onclick="openReportsModal()" class="px-2.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow transition active:scale-95" title="लिंक्ड, पेंडिंग व वार्ड रिपोर्ट देखें व प्रिंट करें">
+                    <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-300"></i>
+                    <span>🖨️ रिपोर्ट व प्रिंट</span>
+                </button>
+                <a href="linker.html" class="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-amber-200"></i>
                     <span class="hidden md:inline">वोटर ➔ कांटेक्ट</span> लिंकर
                 </a>
-                <button onclick="lockPortal()" title="लॉक करें" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700">
+                <button onclick="lockPortal()" title="सुरक्षा लॉक करें" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition">
                     <i data-lucide="lock" class="w-3.5 h-3.5"></i>
                 </button>
             </div>
@@ -140,17 +142,18 @@
             </div>
         </div>
 
-        <!-- Search & Filter Controls -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col md:flex-row gap-2 items-stretch md:items-center justify-between relative">
-            <div class="flex-1 flex flex-col sm:flex-row gap-2 relative flex-wrap">
+        <!-- Comprehensive Multi-Factor Filter Controls -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-2.5 relative shadow-sm">
+            <!-- Row 1: Search and Primary Filters -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-center">
                 <!-- Search Input with Live Transliteration -->
-                <div class="relative flex-1 min-w-[200px]">
+                <div class="relative col-span-1 sm:col-span-2">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                     <input 
                         type="text" 
                         id="contactSearchInput" 
                         placeholder="कांटेक्ट खोजें: नाम (English/Hindi), फोन, संबंधी, रिमार्क..." 
-                        class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                        class="w-full bg-slate-950 border border-slate-700/90 rounded-lg pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
                         oninput="handleContactSearchInput(this.value)"
                         onfocus="handleContactSearchInput(this.value)"
                         autocomplete="off"
@@ -161,34 +164,83 @@
                     <div id="contactSearchDropdown" class="autocomplete-dropdown hidden"></div>
                 </div>
 
-                <!-- Village Filter -->
-                <select id="villageFilterSelect" onchange="applyContactFilters()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-                    <option value="ALL">सभी गाँव/स्थान</option>
-                    <option value="MORWAR">मोरवड़ (Morwad)</option>
-                    <option value="OMTHI">उमठी (Omthi)</option>
-                    <option value="PEEPALANTRI KALAN">पिपलांत्री कलां</option>
-                    <option value="PIPLANTRI KHURD">पिपलांत्री खुर्द</option>
-                    <option value="AARNA">आरणा (Aarna)</option>
-                    <option value="DHARMETA">धर्मेटा (Dharmeta)</option>
-                    <option value="GUGLETA">गुगलेटा (Gugleta)</option>
-                </select>
+                <!-- Dynamic Village / Location Filter -->
+                <div>
+                    <select id="villageFilterSelect" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium">
+                        <option value="ALL">📍 सभी गाँव / स्थान (All Locations)</option>
+                        <option value="PIPLANTRI KHURD">पिपलांत्री खुर्द</option>
+                        <option value="PEEPALANTRI KALAN">पिपलांत्री कलां</option>
+                        <option value="MORWAR">मोरवड़ (Morwad)</option>
+                        <option value="BADI MORWAD">बडी मोरवड़</option>
+                        <option value="CHHOTI MORWAD">छोटी मोरवड़</option>
+                        <option value="OMTHI">उमठी (Omthi)</option>
+                        <option value="AARNA">आरणा (Aarna)</option>
+                        <option value="GUGLETA">गुगलेटा (Gugleta)</option>
+                        <option value="DHARMETA">धर्मेटा (Dharmeta)</option>
+                        <option value="BANDA">बन्दा (Banda)</option>
+                        <option value="KANATALAB">काना का तालाब</option>
+                        <option value="KADECHO KA GUDA">कडेचो का गुडा</option>
+                        <option value="DIPAJI KI BHAGAL">दीपाजी की भागल</option>
+                        <option value="MENAV KI BHAGAL">मेणाव की भागल</option>
+                        <option value="SENDRO KI BHAGAL">सेहदरो की भागल</option>
+                        <option value="HINDUJI KI BHAGAL">हिन्दूजी की भागल</option>
+                        <option value="BLANK_VILLAGE">⚪ बिना गाँव (No Village)</option>
+                    </select>
+                </div>
 
-                <!-- Status Filter -->
-                <select id="contactStatusFilter" onchange="applyContactFilters()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-                    <option value="ALL">सभी संपर्क</option>
-                    <option value="HAS_SUGGESTION">⚡ AI वोटर सुझाव उपलब्ध</option>
-                    <option value="LINKED">🟢 वोटर से लिंक हो चुके</option>
-                    <option value="UNLINKED">🔴 बिना लिंक वाले</option>
-                </select>
+                <!-- Mobile Link Status Filter -->
+                <div>
+                    <select id="contactStatusFilter" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium">
+                        <option value="ALL">⚡ सभी स्थिति (All Status)</option>
+                        <option value="HAS_SUGGESTION">✨ AI वोटर सुझाव उपलब्ध</option>
+                        <option value="LINKED">🟢 वोटर से लिंक हो चुके</option>
+                        <option value="UNLINKED">🔴 बिना लिंक वाले कांटेक्ट</option>
+                    </select>
+                </div>
+            </div>
 
-                <!-- Sort Dropdown -->
-                <select id="contactSortSelect" onchange="applyContactFilters()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-semibold">
-                    <option value="name_asc">🔤 नाम (A ➔ Z / अ ➔ ज्ञ)</option>
-                    <option value="name_desc">🔤 नाम (Z ➔ A / ज्ञ ➔ अ)</option>
-                    <option value="village_asc">📍 गाँव अनुसार (Village)</option>
-                    <option value="linked_first">🟢 लिंक्ड पहले</option>
-                    <option value="unlinked_first">🔴 बिना लिंक वाले पहले</option>
-                </select>
+            <!-- Row 2: Secondary Precision Filters & Sorting -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-center text-xs">
+                <!-- Name Presence Filter -->
+                <div>
+                    <select id="nameFilterSelect" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium">
+                        <option value="ALL">👤 सभी नाम स्थिति</option>
+                        <option value="NAMED">✅ नाम मौजूद (Named)</option>
+                        <option value="UNNAMED">❓ बिना नाम वाले (Only Phone)</option>
+                    </select>
+                </div>
+
+                <!-- Father/Relative Name Filter -->
+                <div>
+                    <select id="relFilterSelect" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium">
+                        <option value="ALL">👨‍👦 सभी संबंध स्थिति</option>
+                        <option value="HAS_REL">👨‍👦 पिता/पति नाम सहित</option>
+                        <option value="NO_REL">⚪ बिना पिता/पति नाम</option>
+                    </select>
+                </div>
+
+                <!-- Remarks / User Type Filter -->
+                <div>
+                    <select id="remarksFilterSelect" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-medium">
+                        <option value="ALL">🏷️ सभी प्रकार / रिमार्क्स</option>
+                        <option value="SINGLE">👤 सिंगल यूजर (Single)</option>
+                        <option value="FAMILY">👨‍👩‍👧 परिवार के सदस्य (Family)</option>
+                        <option value="HAS_REMARKS">📝 रिमार्क्स मौजूद</option>
+                        <option value="NO_REMARKS">⚪ बिना रिमार्क्स</option>
+                    </select>
+                </div>
+
+                <!-- Enhanced Sort Dropdown -->
+                <div>
+                    <select id="contactSortSelect" onchange="applyContactFilters()" class="w-full bg-slate-950 border border-slate-700/90 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold">
+                        <option value="name_asc">🔤 नाम (A ➔ Z / अ ➔ ज्ञ)</option>
+                        <option value="name_desc">🔤 नाम (Z ➔ A / ज्ञ ➔ अ)</option>
+                        <option value="village_asc">📍 गाँव अनुसार (Village)</option>
+                        <option value="sugg_first">✨ AI सुझाव पहले (Top Match)</option>
+                        <option value="linked_first">🟢 लिंक्ड पहले</option>
+                        <option value="unlinked_first">🔴 बिना लिंक वाले पहले</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -241,19 +293,123 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2" id="modalVoterListBody"></div>
 
-            <div class="px-4 py-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span>कुल मतदाता: <strong class="text-white">2,607</strong></span>
-                <button onclick="closeVoterPickerModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">बंद करें</button>
+            <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 flex justify-end">
+                <button onclick="closeVoterPickerModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
+                    बंद करें
+                </button>
             </div>
         </div>
     </div>
+
+    
+    <!-- COMPREHENSIVE REPORTS & PRINT MODAL (ALL 3 PAGES) -->
+    <div id="reportsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white border border-slate-200 w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-900">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                        <i data-lucide="printer" class="w-5 h-5 text-amber-400"></i>
+                        <span>ग्राम पंचायत पिपलांत्री - चुनावी रिपोर्ट व प्रिंट सेंटर</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">सरपंच चुनाव वार-रूम • प्रत्याशी: <strong class="text-amber-400">नविन पालीवाल</strong> (AC 175 राजसमन्द)</p>
+                </div>
+                <button onclick="closeReportsModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Report Navigation Tabs -->
+            <div class="px-4 pt-3 bg-slate-100 border-b border-slate-200 flex flex-wrap gap-2">
+                <button id="repTabLinked" onclick="switchReportTab('linked')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-emerald-600 bg-white text-emerald-700 shadow-sm">
+                    <i data-lucide="phone-call" class="w-4 h-4 text-emerald-600"></i>
+                    <span>🟢 लिंक्ड मोबाइल रिपोर्ट</span>
+                    <span id="repBadgeLinked" class="px-2 py-0.5 text-[11px] bg-emerald-100 text-emerald-800 rounded-full font-extrabold">0</span>
+                </button>
+                <button id="repTabUnlinked" onclick="switchReportTab('unlinked')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                    <i data-lucide="phone-off" class="w-4 h-4 text-rose-500"></i>
+                    <span>🔴 पेंडिंग / बिना मोबाइल रिपोर्ट</span>
+                    <span id="repBadgeUnlinked" class="px-2 py-0.5 text-[11px] bg-rose-100 text-rose-800 rounded-full font-extrabold">0</span>
+                </button>
+                <button id="repTabWard" onclick="switchReportTab('ward')" class="px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                    <i data-lucide="building-2" class="w-4 h-4 text-amber-600"></i>
+                    <span>🏛️ वार्ड-वार मतदाता रजिस्टर</span>
+                    <span id="repBadgeWard" class="px-2 py-0.5 text-[11px] bg-amber-100 text-amber-800 rounded-full font-extrabold">11 वार्ड</span>
+                </button>
+            </div>
+
+            <!-- Report Filter Controls & Actions Bar -->
+            <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Ward Filter -->
+                    <div class="flex items-center gap-1">
+                        <span class="font-bold text-slate-700">वार्ड:</span>
+                        <select id="reportWardSelect" onchange="renderActiveReport()" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm">
+                            <option value="ALL">🏛️ सभी 11 वार्ड</option>
+                            <option value="1">वार्ड 1 (आरणा / सेहदरो)</option>
+                            <option value="2">वार्ड 2 (मनावत / गुगलेटा / बेडा रेंट)</option>
+                            <option value="3">वार्ड 3 (दीपाजी / कडेचो / हिन्दूजी)</option>
+                            <option value="4">वार्ड 4 (पिपलान्त्री खुर्द - STD)</option>
+                            <option value="5">वार्ड 5 (पिपलान्त्री कलां - हनुमान मंदिर)</option>
+                            <option value="6">वार्ड 6 (पिपलान्त्री कलां - खेडा देवी)</option>
+                            <option value="7">वार्ड 7 (बडी मोरवड़)</option>
+                            <option value="8">वार्ड 8 (धर्मेटा / बन्दा / काना का तालाब)</option>
+                            <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
+                            <option value="10">वार्ड 10 (उमटी भाग 1)</option>
+                            <option value="11">वार्ड 11 (उमटी भाग 2)</option>
+                        </select>
+                    </div>
+
+                    <!-- Booth Part Filter -->
+                    <div class="flex items-center gap-1">
+                        <span class="font-bold text-slate-700">भाग:</span>
+                        <select id="reportPartSelect" onchange="renderActiveReport()" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 focus:outline-none focus:border-indigo-500 shadow-sm">
+                            <option value="ALL">सभी 4 भाग</option>
+                            <option value="59">भाग 59 (मोरवड़)</option>
+                            <option value="60">भाग 60 (उमटी)</option>
+                            <option value="61">भाग 61 (पिपलांत्री)</option>
+                            <option value="62">भाग 62 (आरणा/गुगलेटा)</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input in Report -->
+                    <div class="relative w-44 sm:w-56">
+                        <input type="text" id="reportSearchInput" oninput="renderActiveReport()" placeholder="खोजें: नाम, पिता, मकान..." class="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-2 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Print & Export Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="printCurrentReport()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center gap-1.5 shadow transition active:scale-95">
+                        <i data-lucide="printer" class="w-4 h-4 text-amber-400"></i>
+                        <span>🖨️ A4 शीट प्रिंट</span>
+                    </button>
+                    <button onclick="exportCurrentReportCSV()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow transition active:scale-95">
+                        <i data-lucide="download" class="w-4 h-4 text-emerald-200"></i>
+                        <span>📊 CSV / Excel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Content Body (Scrollable Screen View) -->
+            <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50" id="reportContentArea">
+                <!-- Dynamic report table loaded here -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-between items-center text-xs text-slate-600 font-medium">
+                <span id="reportSummaryStatusText">लोड हो रहा है...</span>
+                <button onclick="closeReportsModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold">बंद करें</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- External Cached Master Data Source -->
     <script src="data.js"></script>
 
     <!-- Contacts Page Logic -->
     <script>
-        
     // SECURITY PIN SYSTEM (PIN: 1111)
     const CORRECT_PIN = "1111";
     const AUTH_KEY = "piplantri_auth_pin_verified";
@@ -325,522 +481,573 @@
         }
     }
 
+    const VOTERS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.voters : [];
+    const CONTACTS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contacts : [];
+    const REVERSE_SUGGESTIONS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contactSuggestions : {};
+    const STORAGE_KEY = 'ac175_voters_db_v6_preindexed';
 
-        const VOTERS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.voters : [];
-        const CONTACTS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contacts : [];
-        const REVERSE_SUGGESTIONS = window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.contactSuggestions : {};
-        const STORAGE_KEY = 'ac175_voters_db_v6_preindexed';
+    let votersState = [];
+    let votersMap = new Map();
+    let filteredContactsList = [];
+    let currentlyRenderedContactCount = 0;
+    const BATCH_SIZE = 40;
+    let activeContactForModal = null;
+    let searchDebounceTimer = null;
 
-        let votersState = [];
-        let votersMap = new Map();
-        let filteredContactsList = [];
-        let currentlyRenderedContactCount = 0;
-        const BATCH_SIZE = 40;
-        let activeContactForModal = null;
-        let searchDebounceTimer = null;
+    function rebuildVotersMap() {
+        votersMap.clear();
+        votersState.forEach(v => votersMap.set(Number(v.id), v));
+    }
 
-        function rebuildVotersMap() {
-            votersMap.clear();
-            votersState.forEach(v => votersMap.set(Number(v.id), v));
-        }
+    function initContactsApp() {
+        checkAuth();
 
-        function initContactsApp() {
-            checkAuth();
-
-            if (window.CloudSync) {
-                votersState = window.CloudSync.applyDeltas(VOTERS);
-                window.CloudSync.init({
-                    onDataMerged: (updatedList) => {
-                        votersState = updatedList;
-                        rebuildVotersMap();
-                        applyContactFilters();
-                        updateKPIs();
-                    }
-                });
-            } else {
-                try {
-                    const saved = localStorage.getItem(STORAGE_KEY) || 
-                                  localStorage.getItem('ac175_voters_db_bilingual_v5') || 
-                                  localStorage.getItem('ac175_voters_db_final_v4');
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
-                            const map = new Map();
-                            parsed.forEach(v => map.set(Number(v.id), v));
-                            votersState = VOTERS.map(v => {
-                                const found = map.get(Number(v.id));
-                                if (found && found.mobile) {
-                                    return { ...v, mobile: String(found.mobile).trim() };
-                                }
-                                return { ...v, mobile: v.mobile || '' };
-                            });
-                        } else {
-                            votersState = [...VOTERS];
-                        }
+        if (window.CloudSync) {
+            votersState = window.CloudSync.applyDeltas(VOTERS);
+            window.CloudSync.init({
+                onDataMerged: (updatedList) => {
+                    votersState = updatedList;
+                    rebuildVotersMap();
+                    applyContactFilters();
+                    updateKPIs();
+                }
+            });
+        } else {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY) || 
+                              localStorage.getItem('ac175_voters_db_bilingual_v5') || 
+                              localStorage.getItem('ac175_voters_db_final_v4');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const map = new Map();
+                        parsed.forEach(v => map.set(Number(v.id), v));
+                        votersState = VOTERS.map(v => {
+                            const found = map.get(Number(v.id));
+                            if (found && found.mobile) {
+                                return { ...v, mobile: String(found.mobile).trim() };
+                            }
+                            return { ...v, mobile: v.mobile || '' };
+                        });
                     } else {
                         votersState = [...VOTERS];
                     }
-                } catch (e) {
-                    console.error("Local storage load error:", e);
+                } else {
                     votersState = [...VOTERS];
                 }
+            } catch (e) {
+                console.error("Local storage load error:", e);
+                votersState = [...VOTERS];
             }
-
-            rebuildVotersMap();
-            buildPhoneticIndex();
-            applyContactFilters();
-            updateKPIs();
-            lucide.createIcons();
         }
 
-        // Transliteration Helpers
-        const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
-        const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
-        const HINDI_CONSONANTS = [
-            ['chh','छ'],['ksh','क्ष'],['gya','ज्ञ'],['gy','ज्ञ'],['tra','त्र'],['tr','त्र'],
-            ['kh','ख'],['gh','घ'],['ch','च'],['jh','झ'],['th','थ'],['dh','ध'],
-            ['ph','फ'],['bh','भ'],['sh','श'],['shh','ष'],
-            ['k','क'],['g','ग'],['c','क'],['j','ज'],['z','ज़'],
-            ['t','त'],['d','द'],['n','न'],['p','प'],['f','फ़'],
-            ['b','ब'],['m','म'],['y','य'],['r','र'],['l','ल'],
-            ['v','व'],['w','व'],['s','स'],['h','ह'],['q','क']
-        ];
+        rebuildVotersMap();
+        buildPhoneticIndex();
+        applyContactFilters();
+        updateKPIs();
+        lucide.createIcons();
+    }
 
-        function romanToHindiTransliterate(roman) {
-            if (!roman) return "";
-            let str = roman.toLowerCase().trim();
-            let res = "";
-            let i = 0;
-            const len = str.length;
-            while (i < len) {
-                let matchedCons = null, consLen = 0;
-                for (const [eng, dev] of HINDI_CONSONANTS) {
-                    if (str.startsWith(eng, i)) { matchedCons = dev; consLen = eng.length; break; }
+    // Transliteration Helpers
+    const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
+    const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
+    const HINDI_CONSONANTS = [
+        ['chh','छ'],['ksh','क्ष'],['gya','ज्ञ'],['gy','ज्ञ'],['tra','त्र'],['tr','त्र'],
+        ['kh','ख'],['gh','घ'],['ch','च'],['jh','झ'],['th','थ'],['dh','ध'],
+        ['ph','फ'],['bh','भ'],['sh','श'],['shh','ष'],
+        ['k','क'],['g','ग'],['c','क'],['j','ज'],['z','ज़'],
+        ['t','त'],['d','द'],['n','न'],['p','प'],['f','फ़'],
+        ['b','ब'],['m','म'],['y','य'],['r','र'],['l','ल'],
+        ['v','व'],['w','व'],['s','स'],['h','ह'],['q','क']
+    ];
+
+    function romanToHindiTransliterate(roman) {
+        if (!roman) return "";
+        let str = roman.toLowerCase().trim();
+        let res = "";
+        let i = 0;
+        const len = str.length;
+        while (i < len) {
+            let matchedCons = null, consLen = 0;
+            for (const [eng, dev] of HINDI_CONSONANTS) {
+                if (str.startsWith(eng, i)) { matchedCons = dev; consLen = eng.length; break; }
+            }
+            if (matchedCons) {
+                i += consLen;
+                let matra = null, vowelLen = 0;
+                const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
+                for (const v of vowelCombos) {
+                    if (str.startsWith(v, i)) { matra = HINDI_MATRAS[v]; vowelLen = v.length; break; }
                 }
-                if (matchedCons) {
-                    i += consLen;
-                    let matra = null, vowelLen = 0;
-                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
-                    for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) { matra = HINDI_MATRAS[v]; vowelLen = v.length; break; }
-                    }
-                    if (matra !== null) { res += matchedCons + matra; i += vowelLen; }
-                    else { res += (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) ? matchedCons : matchedCons + '्'; }
-                } else {
-                    let standalone = null, vLen = 0;
-                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
-                    for (const v of vowelCombos) {
-                        if (str.startsWith(v, i)) { standalone = HINDI_VOWELS[v]; vLen = v.length; break; }
-                    }
-                    if (standalone) { res += standalone; i += vLen; }
-                    else { res += str[i]; i++; }
+                if (matra !== null) { res += matchedCons + matra; i += vowelLen; }
+                else { res += (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) ? matchedCons : matchedCons + '्'; }
+            } else {
+                let standalone = null, vLen = 0;
+                const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
+                for (const v of vowelCombos) {
+                    if (str.startsWith(v, i)) { standalone = HINDI_VOWELS[v]; vLen = v.length; break; }
                 }
+                if (standalone) { res += standalone; i += vLen; }
+                else { res += str[i]; i++; }
             }
-            return res;
         }
+        return res;
+    }
 
-        const consMap = {
-            'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'n',
-            'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'n',
-            'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
-            'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
-            'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
-            'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
-            'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
-            'श्र': 'shr', 'ऋ': 'ri'
-        };
-        const matraMap = {'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','ः':'h'};
-        const vowelsMap = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
+    const consMap = {
+        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'n',
+        'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'n',
+        'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+        'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+        'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+        'य': 'y', 'r': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh',
+        'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
+        'श्र': 'shr', 'ऋ': 'ri'
+    };
+    const matraMap = {'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','ः':'h'};
+    const vowelsMap = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au'};
 
-        function transliterateHindiClean(text) {
-            if (!text) return "";
-            let res = "";
-            const len = text.length;
-            for (let i = 0; i < len; i++) {
-                const ch = text[i];
-                if (consMap[ch]) {
-                    res += consMap[ch];
-                    const nextCh = i + 1 < len ? text[i + 1] : '';
-                    if (nextCh !== '्' && !matraMap[nextCh] && nextCh !== ' ' && i + 1 < len) res += 'a';
-                } else if (matraMap[ch]) res += matraMap[ch];
-                else if (vowelsMap[ch]) res += vowelsMap[ch];
-                else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') res += ch;
-            }
-            return res.toLowerCase().trim();
+    function transliterateHindiClean(text) {
+        if (!text) return "";
+        let res = "";
+        const len = text.length;
+        for (let i = 0; i < len; i++) {
+            const ch = text[i];
+            if (consMap[ch]) {
+                res += consMap[ch];
+                const nextCh = i + 1 < len ? text[i + 1] : '';
+                if (nextCh !== '्' && !matraMap[nextCh] && nextCh !== ' ' && i + 1 < len) res += 'a';
+            } else if (matraMap[ch]) res += matraMap[ch];
+            else if (vowelsMap[ch]) res += vowelsMap[ch];
+            else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' || ch === ' ') res += ch;
         }
+        return res.toLowerCase().trim();
+    }
 
-        // Soundex / Double Metaphone Hindi-English Phonetic Key Engine
-        function getPhoneticKey(str) {
-            if (!str) return '';
-            return str.toLowerCase().trim()
-                .replace(/aa+/g, 'a')
-                .replace(/ee+|ea|ii+/g, 'i')
-                .replace(/oo+|ou|au+/g, 'u')
-                .replace(/ai+|ay|ey/g, 'e')
-                .replace(/w/g, 'v')
-                .replace(/shh?|zh/g, 's')
-                .replace(/c(?=[eiy])/g, 's')
-                .replace(/c|q|ck/g, 'k')
-                .replace(/ph/g, 'f')
-                .replace(/bhh?/g, 'b')
-                .replace(/dhh?/g, 'd')
-                .replace(/ghh?/g, 'g')
-                .replace(/jhh?/g, 'j')
-                .replace(/khh?/g, 'k')
-                .replace(/thh?/g, 't')
-                .replace(/chh?/g, 'c')
-                .replace(/ksh|x/g, 'ks')
-                .replace(/gya?|jya?/g, 'gy')
-                .replace(/ng|nh|m(?=[bpfv])/g, 'n')
-                .replace(/ri|ree/g, 'r')
-                .replace(/[^a-z0-9]/g, '');
-        }
+    function getPhoneticKey(str) {
+        if (!str) return '';
+        return str.toLowerCase().trim()
+            .replace(/aa+/g, 'a')
+            .replace(/ee+|ea|ii+/g, 'i')
+            .replace(/oo+|ou|au+/g, 'u')
+            .replace(/ai+|ay|ey/g, 'e')
+            .replace(/w/g, 'v')
+            .replace(/shh?|zh/g, 's')
+            .replace(/c(?=[eiy])/g, 's')
+            .replace(/c|q|ck/g, 'k')
+            .replace(/ph/g, 'f')
+            .replace(/bhh?/g, 'b')
+            .replace(/dhh?/g, 'd')
+            .replace(/ghh?/g, 'g')
+            .replace(/jhh?/g, 'j')
+            .replace(/khh?/g, 'k')
+            .replace(/thh?/g, 't')
+            .replace(/chh?/g, 'c')
+            .replace(/ksh|x/g, 'ks')
+            .replace(/gya?|jya?/g, 'gy')
+            .replace(/ng|nh|m(?=[bpfv])/g, 'n')
+            .replace(/ri|ree/g, 'r')
+            .replace(/[^a-z0-9]/g, '');
+    }
 
-        // Skeleton Key (Consonants Skeleton) for handling missing/extra internal vowels
-        function getSkeletonKey(str) {
-            const p = getPhoneticKey(str);
-            if (!p) return '';
-            return p[0] + p.slice(1).replace(/[aeiou]/g, '');
-        }
+    function getSkeletonKey(str) {
+        const p = getPhoneticKey(str);
+        if (!p) return '';
+        return p[0] + p.slice(1).replace(/[aeiou]/g, '');
+    }
 
-        // Comprehensive Hindi Phonetic Index
-        let phoneticWordMap = new Map();
+    let phoneticWordMap = new Map();
 
-        function buildPhoneticIndex() {
-            phoneticWordMap.clear();
-            const source = [...(votersState || []), ...(CONTACTS || [])];
-            source.forEach(v => {
-                const nameRoman = transliterateHindiClean(v.name);
-                const relRoman = transliterateHindiClean(v.rel_name);
-                const fullRoman = (nameRoman + ' ' + relRoman).trim();
-                
-                v._nameRoman = nameRoman;
-                v._relRoman = relRoman;
-                v._fullRoman = fullRoman;
-                v._namePKey = getPhoneticKey(nameRoman);
-                v._nameSKey = getSkeletonKey(nameRoman);
-                v._relPKey = getPhoneticKey(relRoman);
-                v._relSKey = getSkeletonKey(relRoman);
-                v._fullPKey = getPhoneticKey(fullRoman);
-                v._fullSKey = getSkeletonKey(fullRoman);
+    function buildPhoneticIndex() {
+        phoneticWordMap.clear();
+        const source = [...(votersState || []), ...(CONTACTS || [])];
+        source.forEach(v => {
+            const nameRoman = transliterateHindiClean(v.name);
+            const relRoman = transliterateHindiClean(v.rel_name);
+            const fullRoman = (nameRoman + ' ' + relRoman).trim();
+            
+            v._nameRoman = nameRoman;
+            v._relRoman = relRoman;
+            v._fullRoman = fullRoman;
+            v._namePKey = getPhoneticKey(nameRoman);
+            v._nameSKey = getSkeletonKey(nameRoman);
+            v._relPKey = getPhoneticKey(relRoman);
+            v._relSKey = getSkeletonKey(relRoman);
+            v._fullPKey = getPhoneticKey(fullRoman);
+            v._fullSKey = getSkeletonKey(fullRoman);
 
-                [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
-                    const words = fullName.split(/\s+/);
-                    words.forEach(w => {
-                        const clean = w.replace(/[^\u0900-\u097F]/g, '');
-                        if (clean.length >= 2) {
-                            if (!phoneticWordMap.has(clean)) {
-                                const roman = transliterateHindiClean(clean);
-                                phoneticWordMap.set(clean, { 
-                                    count: 0, 
-                                    roman: roman,
-                                    pKey: getPhoneticKey(roman),
-                                    sKey: getSkeletonKey(roman)
-                                });
-                            }
-                            phoneticWordMap.get(clean).count++;
+            [v.name, v.rel_name].filter(Boolean).forEach(fullName => {
+                const words = fullName.split(/\s+/);
+                words.forEach(w => {
+                    const clean = w.replace(/[^\u0900-\u097F]/g, '');
+                    if (clean.length >= 2) {
+                        if (!phoneticWordMap.has(clean)) {
+                            const roman = transliterateHindiClean(clean);
+                            phoneticWordMap.set(clean, { 
+                                count: 0, 
+                                roman: roman,
+                                pKey: getPhoneticKey(roman),
+                                sKey: getSkeletonKey(roman)
+                            });
                         }
-                    });
+                        phoneticWordMap.get(clean).count++;
+                    }
                 });
             });
-        }
+        });
+    }
 
-        function getMultiHindiSuggestions(englishQuery) {
-            const raw = (englishQuery || '').toLowerCase().trim();
-            if (!raw) return [];
+    function getMultiHindiSuggestions(englishQuery) {
+        const raw = (englishQuery || '').toLowerCase().trim();
+        if (!raw) return [];
+        
+        const qPhonetic = getPhoneticKey(raw);
+        const qSkeleton = getSkeletonKey(raw);
+        
+        const matches = [];
+        phoneticWordMap.forEach((meta, word) => {
+            let score = 0;
+            if (meta.pKey === qPhonetic) score = 100;
+            else if (meta.pKey.startsWith(qPhonetic)) score = 85;
+            else if (meta.pKey.includes(qPhonetic)) score = 70;
+            else if (meta.sKey === qSkeleton) score = 90;
+            else if (meta.sKey.startsWith(qSkeleton)) score = 75;
+            else if (meta.sKey.includes(qSkeleton)) score = 60;
+            else if (qPhonetic.startsWith(meta.pKey) && meta.pKey.length >= 3) score = 65;
             
-            const qPhonetic = getPhoneticKey(raw);
-            const qSkeleton = getSkeletonKey(raw);
-            
-            const matches = [];
-            phoneticWordMap.forEach((meta, word) => {
-                let score = 0;
-                if (meta.pKey === qPhonetic) score = 100;
-                else if (meta.pKey.startsWith(qPhonetic)) score = 85;
-                else if (meta.pKey.includes(qPhonetic)) score = 70;
-                else if (meta.sKey === qSkeleton) score = 90;
-                else if (meta.sKey.startsWith(qSkeleton)) score = 75;
-                else if (meta.sKey.includes(qSkeleton)) score = 60;
-                else if (qPhonetic.startsWith(meta.pKey) && meta.pKey.length >= 3) score = 65;
-                
-                if (score > 0) {
-                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
-                }
-            });
-            
-            matches.sort((a, b) => b.score - a.score);
-            return matches.slice(0, 8);
-        }
+            if (score > 0) {
+                matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+            }
+        });
+        
+        matches.sort((a, b) => b.score - a.score);
+        return matches.slice(0, 8);
+    }
 
-        // Get linked voters for a mobile number
-        function getLinkedVotersForMobile(mobile) {
-            if (!mobile || String(mobile).length < 10) return [];
-            const clean = String(mobile).trim().slice(-10);
-            return votersState.filter(v => v.mobile && v.mobile.includes(clean));
-        }
+    function getLinkedVotersForMobile(mobile) {
+        if (!mobile || String(mobile).length < 10) return [];
+        const clean = String(mobile).trim().slice(-10);
+        return votersState.filter(v => v.mobile && v.mobile.includes(clean));
+    }
 
-        function handleContactSearchInput(query) {
-            const clearBtn = document.getElementById('clearContactSearchBtn');
-            const q = (query || '').trim();
-            if (q.length > 0) clearBtn?.classList.remove('hidden');
-            else clearBtn?.classList.add('hidden');
+    function handleContactSearchInput(query) {
+        const clearBtn = document.getElementById('clearContactSearchBtn');
+        const q = (query || '').trim();
+        if (q.length > 0) clearBtn?.classList.remove('hidden');
+        else clearBtn?.classList.add('hidden');
 
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-                applyContactFilters();
-            }, 30);
-        }
-
-        function clearContactSearch() {
-            const input = document.getElementById('contactSearchInput');
-            input.value = '';
-            document.getElementById('clearContactSearchBtn')?.classList.add('hidden');
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
             applyContactFilters();
-        }
+        }, 30);
+    }
 
-        function applyContactFilters() {
-            const rawQuery = (document.getElementById('contactSearchInput')?.value || '').trim();
-            const villageFilter = document.getElementById('villageFilterSelect')?.value || 'ALL';
-            const statusFilter = document.getElementById('contactStatusFilter')?.value || 'ALL';
+    function clearContactSearch() {
+        const input = document.getElementById('contactSearchInput');
+        input.value = '';
+        document.getElementById('clearContactSearchBtn')?.classList.add('hidden');
+        applyContactFilters();
+    }
 
-            const qLower = rawQuery.toLowerCase();
-            const isEnglish = /[a-zA-Z]/.test(rawQuery);
-            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawQuery) : [];
-            const qHindi = romanToHindiTransliterate(rawQuery);
+    // MULTI-FACTOR CONTACT FILTERING ENGINE
+    function applyContactFilters() {
+        const rawQuery = (document.getElementById('contactSearchInput')?.value || '').trim();
+        const villageFilter = document.getElementById('villageFilterSelect')?.value || 'ALL';
+        const statusFilter = document.getElementById('contactStatusFilter')?.value || 'ALL';
+        const nameFilter = document.getElementById('nameFilterSelect')?.value || 'ALL';
+        const relFilter = document.getElementById('relFilterSelect')?.value || 'ALL';
+        const remarksFilter = document.getElementById('remarksFilterSelect')?.value || 'ALL';
 
-            filteredContactsList = CONTACTS.filter(c => {
-                // Village filter
-                if (villageFilter !== 'ALL') {
-                    if (!c.village || !c.village.toUpperCase().includes(villageFilter)) return false;
+        const qLower = rawQuery.toLowerCase();
+        const isEnglish = /[a-zA-Z]/.test(rawQuery);
+        const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(rawQuery) : [];
+        const qHindi = romanToHindiTransliterate(rawQuery);
+
+        filteredContactsList = CONTACTS.filter(c => {
+            // 1. Village / Location Filter
+            if (villageFilter !== 'ALL') {
+                if (villageFilter === 'BLANK_VILLAGE') {
+                    if (c.village && c.village.trim().length > 0) return false;
+                } else {
+                    if (!c.village || !c.village.toUpperCase().includes(villageFilter.toUpperCase())) return false;
                 }
-
-                const linkedVoters = getLinkedVotersForMobile(c.mobile);
-                const hasLinked = linkedVoters.length > 0;
-                const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
-                const hasSuggestions = suggestions.length > 0;
-
-                if (statusFilter === 'LINKED' && !hasLinked) return false;
-                if (statusFilter === 'UNLINKED' && hasLinked) return false;
-                if (statusFilter === 'HAS_SUGGESTION' && !hasSuggestions) return false;
-
-                if (qLower) {
-                    const n = (c.name || '').toLowerCase();
-                    const r = (c.rel_name || '').toLowerCase();
-                    const v = (c.village || '').toLowerCase();
-                    const m = String(c.mobile || '').toLowerCase();
-                    const rem = (c.remarks || '').toLowerCase();
-                    const nameClean = transliterateHindiClean(c.name);
-                    const relClean = transliterateHindiClean(c.rel_name);
-                    const matchHindiSugg = hindiSuggestions.some(s => (c.name && c.name.includes(s.word)) || (c.rel_name && c.rel_name.includes(s.word)));
-
-                    const match = n.includes(qLower) || r.includes(qLower) || v.includes(qLower) || m.includes(qLower) || rem.includes(qLower) ||
-                                  nameClean.includes(qLower) || relClean.includes(qLower) ||
-                                  n.includes(qHindi) || r.includes(qHindi) || matchHindiSugg;
-                    if (!match) return false;
-                }
-
-                return true;
-            });
-
-            const sortBy = document.getElementById('contactSortSelect')?.value || 'name_asc';
-            if (sortBy === 'name_asc') {
-                filteredContactsList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hi'));
-            } else if (sortBy === 'name_desc') {
-                filteredContactsList.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'hi'));
-            } else if (sortBy === 'village_asc') {
-                filteredContactsList.sort((a, b) => (a.village || '').localeCompare(b.village || '', 'hi'));
-            } else if (sortBy === 'linked_first') {
-                filteredContactsList.sort((a, b) => {
-                    const lA = getLinkedVotersForMobile(a.mobile).length;
-                    const lB = getLinkedVotersForMobile(b.mobile).length;
-                    return lB - lA;
-                });
-            } else if (sortBy === 'unlinked_first') {
-                filteredContactsList.sort((a, b) => {
-                    const lA = getLinkedVotersForMobile(a.mobile).length;
-                    const lB = getLinkedVotersForMobile(b.mobile).length;
-                    return lA - lB;
-                });
             }
 
-            document.getElementById('visibleContactCount').innerText = filteredContactsList.length.toLocaleString('en-IN');
-            
-            const container = document.getElementById('contactsContainer');
-            container.innerHTML = '';
-            currentlyRenderedContactCount = 0;
+            // 2. Link Status Filter
+            const linkedVoters = getLinkedVotersForMobile(c.mobile);
+            const hasLinked = linkedVoters.length > 0;
+            const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
+            const hasSuggestions = suggestions.length > 0;
+
+            if (statusFilter === 'LINKED' && !hasLinked) return false;
+            if (statusFilter === 'UNLINKED' && hasLinked) return false;
+            if (statusFilter === 'HAS_SUGGESTION' && !hasSuggestions) return false;
+
+            // 3. Name Presence Filter
+            const hasName = Boolean(c.name && c.name.trim().length > 0 && !/^\d+$/.test(c.name.trim()));
+            if (nameFilter === 'NAMED' && !hasName) return false;
+            if (nameFilter === 'UNNAMED' && hasName) return false;
+
+            // 4. Relative (Father/Husband) Filter
+            const hasRel = Boolean(c.rel_name && c.rel_name.trim().length > 0);
+            if (relFilter === 'HAS_REL' && !hasRel) return false;
+            if (relFilter === 'NO_REL' && hasRel) return false;
+
+            // 5. Remarks / User Type Filter
+            const remStr = String(c.remarks || '').trim();
+            if (remarksFilter === 'SINGLE') {
+                if (!remStr.includes('सिंगल') && !remStr.includes('Single')) return false;
+            } else if (remarksFilter === 'FAMILY') {
+                if (!remStr.includes('परिवार') && !remStr.includes('Family')) return false;
+            } else if (remarksFilter === 'HAS_REMARKS') {
+                if (remStr.length === 0) return false;
+            } else if (remarksFilter === 'NO_REMARKS') {
+                if (remStr.length > 0) return false;
+            }
+
+            // 6. Search Token Query Filter
+            if (qLower) {
+                const n = (c.name || '').toLowerCase();
+                const r = (c.rel_name || '').toLowerCase();
+                const v = (c.village || '').toLowerCase();
+                const m = String(c.mobile || '').toLowerCase();
+                const rem = (c.remarks || '').toLowerCase();
+                const nameClean = transliterateHindiClean(c.name);
+                const relClean = transliterateHindiClean(c.rel_name);
+                const matchHindiSugg = hindiSuggestions.some(s => (c.name && c.name.includes(s.word)) || (c.rel_name && c.rel_name.includes(s.word)));
+
+                const match = n.includes(qLower) || r.includes(qLower) || v.includes(qLower) || m.includes(qLower) || rem.includes(qLower) ||
+                              nameClean.includes(qLower) || relClean.includes(qLower) ||
+                              n.includes(qHindi) || r.includes(qHindi) || matchHindiSugg;
+                if (!match) return false;
+            }
+
+            return true;
+        });
+
+        // Sorting
+        const sortBy = document.getElementById('contactSortSelect')?.value || 'name_asc';
+        if (sortBy === 'name_asc') {
+            filteredContactsList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hi'));
+        } else if (sortBy === 'name_desc') {
+            filteredContactsList.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'hi'));
+        } else if (sortBy === 'village_asc') {
+            filteredContactsList.sort((a, b) => (a.village || '').localeCompare(b.village || '', 'hi'));
+        } else if (sortBy === 'sugg_first') {
+            filteredContactsList.sort((a, b) => {
+                const sA = (REVERSE_SUGGESTIONS[a.cid] && REVERSE_SUGGESTIONS[a.cid].length > 0) ? 1 : 0;
+                const sB = (REVERSE_SUGGESTIONS[b.cid] && REVERSE_SUGGESTIONS[b.cid].length > 0) ? 1 : 0;
+                return sB - sA;
+            });
+        } else if (sortBy === 'linked_first') {
+            filteredContactsList.sort((a, b) => {
+                const lA = getLinkedVotersForMobile(a.mobile).length;
+                const lB = getLinkedVotersForMobile(b.mobile).length;
+                return lB - lA;
+            });
+        } else if (sortBy === 'unlinked_first') {
+            filteredContactsList.sort((a, b) => {
+                const lA = getLinkedVotersForMobile(a.mobile).length;
+                const lB = getLinkedVotersForMobile(b.mobile).length;
+                return lA - lB;
+            });
+        }
+
+        document.getElementById('visibleContactCount').innerText = filteredContactsList.length.toLocaleString('en-IN');
+        
+        const container = document.getElementById('contactsContainer');
+        container.innerHTML = '';
+        currentlyRenderedContactCount = 0;
+        renderNextContactBatch();
+    }
+
+    function renderNextContactBatch() {
+        const container = document.getElementById('contactsContainer');
+        if (!container) return;
+
+        const total = filteredContactsList.length;
+        if (total === 0) {
+            container.innerHTML = `
+                <div class="py-12 text-center text-slate-500">
+                    <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                    <p class="font-medium text-sm">कोई संपर्क रिकॉर्ड नहीं मिला</p>
+                </div>
+            `;
+            lucide.createIcons();
+            document.getElementById('renderedContactCount').innerText = '0';
+            return;
+        }
+
+        if (currentlyRenderedContactCount >= total) return;
+
+        const nextCount = Math.min(currentlyRenderedContactCount + BATCH_SIZE, total);
+        const batch = filteredContactsList.slice(currentlyRenderedContactCount, nextCount);
+
+        const fragment = document.createDocumentFragment();
+
+        batch.forEach(c => {
+            const card = document.createElement('div');
+            card.className = "bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition shadow-sm";
+
+            const linkedVoters = getLinkedVotersForMobile(c.mobile);
+            const hasLinked = linkedVoters.length > 0;
+            const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
+
+            let linkedVotersHtml = '';
+            if (hasLinked) {
+                linkedVotersHtml = `
+                    <div class="mt-2 pt-2 border-t border-slate-800">
+                        <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                            <i data-lucide="users" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
+                        </span>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${linkedVoters.map(v => `
+                                <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
+                                    <span class="font-extrabold text-amber-300">🏛️ वार्ड ${v.ward || '-'}</span>
+                                    <span class="font-bold text-white">${v.name}</span>
+                                    <span class="text-[10px] text-emerald-400 font-mono">भाग ${v.part}/म.${v.house}</span>
+                                    <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
+                                        <i data-lucide="x" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let suggestionsHtml = '';
+            if (suggestions.length > 0) {
+                suggestionsHtml = `
+                    <div class="mt-2 pt-2 border-t border-slate-800/80">
+                        <span class="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1 mb-1">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-400"></i> AI संभावित मतदाता सुझाव:
+                        </span>
+                        <div class="space-y-2">
+                            ${suggestions.map(s => {
+                                const isAlreadyLinked = hasLinked && linkedVoters.some(lv => lv.id === s.voterId);
+                                return `
+                                    <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                        <div class="flex-1 min-w-0">
+                                            <!-- Top Line: Match Badge + Ward + Part/House -->
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${s.score}% Match</span>
+                                                <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/40">🏛️ वार्ड ${s.ward || (votersMap.get(s.voterId)?.ward || '-')}</span>
+                                                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${s.part} • म.${s.house}</span>
+                                            </div>
+                                            <!-- Second Line: Full Voter Name & Relative -->
+                                            <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                <strong class="text-white text-xs font-bold">${s.voterName}</strong>
+                                                <span class="text-[11px] text-slate-400">(${s.voterRel}: <strong class="text-slate-300">${s.voterRelName}</strong>)</span>
+                                            </div>
+                                            <!-- Third Line: Reasons -->
+                                            ${s.reasons ? `<div class="text-[11px] text-slate-400 mt-0.5 break-words">${s.reasons}</div>` : ''}
+                                        </div>
+                                        <!-- Action Button: Link -->
+                                        <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                                            ${isAlreadyLinked ? `
+                                                <span class="px-3 py-1.5 rounded-lg bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700 flex items-center gap-1">
+                                                    <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                                                    <span>लिंक है</span>
+                                                </span>
+                                            ` : `
+                                                <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                                                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                                                    <span>लिंक करें</span>
+                                                </button>
+                                            `}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <strong class="text-white text-sm font-bold">${c.name || 'अज्ञात नाम'}</strong>
+                        ${c.rel_name ? `<span class="text-xs text-slate-400">(${c.rel || 'पिता'}: <strong class="text-slate-300">${c.rel_name}</strong>)</span>` : ''}
+                        ${c.village ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700 font-medium">📍 ${c.village}</span>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span class="font-mono font-bold text-orange-400 text-xs">${c.mobile}</span>
+                        ${c.remarks ? `<span class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${c.remarks}</span>` : ''}
+                    </div>
+
+                    ${linkedVotersHtml}
+                    ${suggestionsHtml}
+                </div>
+
+                <div class="flex items-center space-x-1.5 flex-shrink-0 self-start md:self-center">
+                    <button onclick="openVoterPickerForContact(${c.cid})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                        <span>+ वोटर खोजें व जोड़ें</span>
+                    </button>
+                    <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल">
+                        <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    </a>
+                    <a href="https://wa.me/91${c.mobile}" target="_blank" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="व्हाट्सएप">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5 text-green-400"></i>
+                    </a>
+                </div>
+            `;
+
+            fragment.appendChild(card);
+        });
+
+        container.appendChild(fragment);
+        currentlyRenderedContactCount = nextCount;
+        document.getElementById('renderedContactCount').innerText = currentlyRenderedContactCount.toLocaleString('en-IN');
+        lucide.createIcons();
+    }
+
+    function handleContactScroll(el) {
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
             renderNextContactBatch();
         }
+    }
 
-        function renderNextContactBatch() {
-            const container = document.getElementById('contactsContainer');
-            if (!container) return;
+    function linkVoterToContact(voterId, mobileNumber) {
+        const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');
+        if (mob.length < 10) return;
+        const clean10 = mob.slice(-10);
 
-            const total = filteredContactsList.length;
-            if (total === 0) {
-                container.innerHTML = `
-                    <div class="py-12 text-center text-slate-500">
-                        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
-                        <p class="font-medium text-sm">कोई संपर्क रिकॉर्ड नहीं मिला</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                document.getElementById('renderedContactCount').innerText = '0';
-                return;
+        const v = votersState.find(x => x.id === voterId);
+        if (!v) return;
+
+        if (v.mobile && v.mobile.trim().length >= 10) {
+            const existingList = v.mobile.split(',').map(m => m.trim()).filter(Boolean);
+            if (!existingList.includes(clean10)) {
+                const choice = confirm(`${v.name} के पास पहले से मोबाइल ${v.mobile} दर्ज है।\n\nक्या आप ${clean10} को अतिरिक्त (Alternate) नंबर के रूप में जोड़ना चाहते हैं?\n\n[OK] = दोनों नंबर रखें\n[Cancel] = बदलें (Replace)`);
+                if (choice) {
+                    v.mobile = existingList.concat(clean10).join(', ');
+                } else {
+                    v.mobile = clean10;
+                }
             }
-
-            if (currentlyRenderedContactCount >= total) return;
-
-            const nextCount = Math.min(currentlyRenderedContactCount + BATCH_SIZE, total);
-            const batch = filteredContactsList.slice(currentlyRenderedContactCount, nextCount);
-
-            const fragment = document.createDocumentFragment();
-
-            batch.forEach(c => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition shadow-sm";
-
-                const linkedVoters = getLinkedVotersForMobile(c.mobile);
-                const hasLinked = linkedVoters.length > 0;
-                const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
-
-                let linkedVotersHtml = '';
-                if (hasLinked) {
-                    linkedVotersHtml = `
-                        <div class="mt-2 pt-2 border-t border-slate-800">
-                            <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
-                                <i data-lucide="users" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
-                            </span>
-                            <div class="flex flex-wrap gap-1.5">
-                                ${linkedVoters.map(v => `
-                                    <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
-                                        <span class="font-bold">${v.name}</span>
-                                        <span class="text-[10px] text-emerald-400 font-mono">भाग ${v.part}/म.${v.house}</span>
-                                        <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
-                                            <i data-lucide="x" class="w-3 h-3"></i>
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                let suggestionsHtml = '';
-                if (suggestions.length > 0) {
-                    suggestionsHtml = `
-                        <div class="mt-2 pt-2 border-t border-slate-800/80">
-                            <span class="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1 mb-1">
-                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-400"></i> AI संभावित मतदाता सुझाव:
-                            </span>
-                            <div class="space-y-2">
-                                ${suggestions.map(s => {
-                                    const isAlreadyLinked = hasLinked && linkedVoters.some(lv => lv.id === s.voterId);
-                                    return `
-                                        <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                                            <div class="flex-1 min-w-0">
-                                                <!-- Top Line: Match Badge + Ward + Part/House -->
-                                                <div class="flex items-center gap-2 flex-wrap">
-                                                    <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${s.score}% Match</span>
-                                                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/40">🏛️ वार्ड ${votersMap.get(s.voterId)?.ward || '-'}</span>
-                                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${s.part} • म.${s.house}</span>
-                                                </div>
-                                                <!-- Second Line: Full Voter Name & Relative (NO TRUNCATE) -->
-                                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
-                                                    <strong class="text-white text-xs font-bold">${s.voterName}</strong>
-                                                    <span class="text-[11px] text-slate-400">(${s.voterRel}: <strong class="text-slate-300">${s.voterRelName}</strong>)</span>
-                                                </div>
-                                                <!-- Third Line: Reasons -->
-                                                ${s.reasons ? `<div class="text-[11px] text-slate-400 mt-0.5 break-words">${s.reasons}</div>` : ''}
-                                            </div>
-                                            <!-- Action Button: Link -->
-                                            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-                                                ${isAlreadyLinked ? `
-                                                    <span class="px-3 py-1.5 rounded-lg bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700 flex items-center gap-1">
-                                                        <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
-                                                        <span>लिंक है</span>
-                                                    </span>
-                                                ` : `
-                                                    <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
-                                                        <i data-lucide="link" class="w-3.5 h-3.5"></i>
-                                                        <span>लिंक करें</span>
-                                                    </button>
-                                                `}
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                card.innerHTML = `
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-bold text-white text-sm">${c.name}</span>
-                            <span class="text-xs text-slate-400 font-mono">(${c.rel_name || 'संबंधी नहीं'})</span>
-                            ${c.village ? `<span class="px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800 text-[10px] font-bold">${c.village}</span>` : ''}
-                        </div>
-                        <div class="text-xs text-slate-400 flex items-center gap-3 mt-1 font-mono">
-                            <span class="font-bold text-orange-400">${c.mobile}</span>
-                            ${c.household_id ? `<span class="text-slate-500">${c.household_id}</span>` : ''}
-                        </div>
-                        ${c.remarks ? `<div class="text-[11px] text-slate-400 mt-1 truncate">${c.remarks}</div>` : ''}
-                        ${linkedVotersHtml}
-                        ${suggestionsHtml}
-                    </div>
-
-                    <div class="flex items-center space-x-1.5 flex-shrink-0 self-start md:self-center">
-                        <button onclick="openVoterPickerForContact(${c.cid})" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-                            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-blue-400"></i>
-                            <span>वोटर खोजें व जोड़ें</span>
-                        </button>
-                        <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल करें">
-                            <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        </a>
-                        <a href="https://wa.me/91${c.mobile}" target="_blank" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="व्हाट्सएप">
-                            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-green-400"></i>
-                        </a>
-                    </div>
-                `;
-
-                fragment.appendChild(card);
-            });
-
-            container.appendChild(fragment);
-            currentlyRenderedContactCount = nextCount;
-            document.getElementById('renderedContactCount').innerText = currentlyRenderedContactCount.toLocaleString('en-IN');
-            lucide.createIcons();
+        } else {
+            v.mobile = clean10;
         }
 
-        function handleContactScroll(el) {
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
-                renderNextContactBatch();
-            }
+        if (window.CloudSync) {
+            window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
         }
+        saveVotersState();
+        applyContactFilters();
+        updateKPIs();
+    }
 
-        function linkVoterToContact(voterId, mobileNumber) {
-            const mob = String(mobileNumber).trim().replace(/[^0-9]/g, '');
-            if (mob.length < 10) return;
-            const clean10 = mob.slice(-10);
+    function unlinkVoterFromMobile(voterId, mobileNumber) {
+        const clean10 = String(mobileNumber).trim().slice(-10);
+        const v = votersState.find(x => x.id === voterId);
+        if (!v) return;
 
-            const v = votersState.find(x => x.id === voterId);
-            if (!v) return;
-
-            if (v.mobile && v.mobile.trim().length >= 10) {
-                const existingList = v.mobile.split(',').map(m => m.trim()).filter(Boolean);
-                if (!existingList.includes(clean10)) {
-                    const choice = confirm(`${v.name} के पास पहले से मोबाइल ${v.mobile} दर्ज है।\n\nक्या आप ${clean10} को अतिरिक्त (Alternate) नंबर के रूप में जोड़ना चाहते हैं?\n\n[OK] = दोनों नंबर रखें\n[Cancel] = बदलें (Replace)`);
-                    if (choice) {
-                        v.mobile = existingList.concat(clean10).join(', ');
-                    } else {
-                        v.mobile = clean10;
-                    }
-                }
-            } else {
-                v.mobile = clean10;
-            }
-
+        if (v.mobile) {
+            const nums = v.mobile.split(',').map(m => m.trim()).filter(m => m !== clean10 && m.length >= 10);
+            v.mobile = nums.join(', ');
             if (window.CloudSync) {
                 window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
             }
@@ -848,160 +1055,567 @@
             applyContactFilters();
             updateKPIs();
         }
+    }
 
-        function unlinkVoterFromMobile(voterId, mobileNumber) {
-            const clean10 = String(mobileNumber).trim().slice(-10);
-            const v = votersState.find(x => x.id === voterId);
-            if (!v) return;
-
-            if (v.mobile) {
-                const nums = v.mobile.split(',').map(m => m.trim()).filter(m => m !== clean10 && m.length >= 10);
-                v.mobile = nums.join(', ');
-                if (window.CloudSync) {
-                    window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
-                }
-                saveVotersState();
-                applyContactFilters();
-                updateKPIs();
-            }
+    function saveVotersState() {
+        try {
+            const serialized = JSON.stringify(votersState);
+            localStorage.setItem(STORAGE_KEY, serialized);
+            localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+            localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
+            localStorage.setItem('ac175_voters_db_final_v4', serialized);
+            localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
+        } catch (e) {
+            console.error("Save error:", e);
         }
+    }
 
-        function saveVotersState() {
-            try {
-                const serialized = JSON.stringify(votersState);
-                localStorage.setItem(STORAGE_KEY, serialized);
-                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
-                localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
-                localStorage.setItem('ac175_voters_db_final_v4', serialized);
-                localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
-            } catch (e) {
-                console.error("Save error:", e);
-            }
-        }
+    function updateKPIs() {
+        const total = CONTACTS.length;
+        const linked = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length > 0).length;
+        const unlinked = total - linked;
+        const suggested = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length === 0 && REVERSE_SUGGESTIONS[c.cid] && REVERSE_SUGGESTIONS[c.cid].length > 0).length;
 
-        function updateKPIs() {
-            const total = CONTACTS.length;
-            const linked = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length > 0).length;
-            const unlinked = total - linked;
-            const suggested = CONTACTS.filter(c => getLinkedVotersForMobile(c.mobile).length === 0 && REVERSE_SUGGESTIONS[c.cid] && REVERSE_SUGGESTIONS[c.cid].length > 0).length;
+        document.getElementById('kpiTotalContacts').innerText = total.toLocaleString('en-IN');
+        document.getElementById('kpiLinkedContacts').innerText = linked.toLocaleString('en-IN');
+        document.getElementById('kpiUnlinkedContacts').innerText = unlinked.toLocaleString('en-IN');
+        document.getElementById('kpiSuggestedContacts').innerText = suggested.toLocaleString('en-IN');
+    }
 
-            document.getElementById('kpiTotalContacts').innerText = total.toLocaleString('en-IN');
-            document.getElementById('kpiLinkedContacts').innerText = linked.toLocaleString('en-IN');
-            document.getElementById('kpiUnlinkedContacts').innerText = unlinked.toLocaleString('en-IN');
-            document.getElementById('kpiSuggestedContacts').innerText = suggested.toLocaleString('en-IN');
-        }
+    // Manual Voter Picker Modal
+    function openVoterPickerForContact(cid) {
+        activeContactForModal = CONTACTS.find(c => c.cid === cid);
+        if (!activeContactForModal) return;
 
-        // Manual Voter Picker Modal
-        function openVoterPickerForContact(cid) {
-            activeContactForModal = CONTACTS.find(c => c.cid === cid);
-            if (!activeContactForModal) return;
+        document.getElementById('modalContactTargetDisplay').innerHTML = `
+            कांटेक्ट: <strong class="text-orange-400">${activeContactForModal.name}</strong> (${activeContactForModal.mobile}) • ${activeContactForModal.village || ''}
+        `;
 
-            document.getElementById('modalContactTargetDisplay').innerHTML = `
-                कांटेक्ट: <strong class="text-orange-400">${activeContactForModal.name}</strong> (${activeContactForModal.mobile}) • ${activeContactForModal.village || ''}
+        const modalInput = document.getElementById('modalVoterSearchInput');
+        modalInput.value = '';
+        document.getElementById('voterPickerModal').classList.remove('hidden');
+
+        renderModalVoters('');
+        modalInput.focus();
+        lucide.createIcons();
+    }
+
+    function closeVoterPickerModal() {
+        document.getElementById('voterPickerModal').classList.add('hidden');
+        activeContactForModal = null;
+    }
+
+    function handleModalVoterSearchInput(query) {
+        renderModalVoters(query);
+    }
+
+    function renderModalVoters(query) {
+        const container = document.getElementById('modalVoterListBody');
+        if (!container) return;
+
+        const q = (query || '').trim();
+        const qLower = q.toLowerCase();
+        const isEnglish = /[a-zA-Z]/.test(q);
+        const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
+
+        const filtered = votersState.filter(v => {
+            if (!q) return true;
+            const n = (v.name || '').toLowerCase();
+            const r = (v.rel_name || '').toLowerCase();
+            const epic = String(v.epic || '').toLowerCase();
+            const house = String(v.house || '').toLowerCase();
+            const nameTranslit = transliterateHindiClean(v.name);
+            const relTranslit = transliterateHindiClean(v.rel_name);
+
+            const matchHindiSugg = hindiSuggestions.some(s => (v.name && v.name.includes(s.word)) || (v.rel_name && v.rel_name.includes(s.word)));
+
+            return n.includes(qLower) || r.includes(qLower) || epic.includes(qLower) || house.includes(qLower) ||
+                   nameTranslit.includes(qLower) || relTranslit.includes(qLower) || matchHindiSugg;
+        }).slice(0, 40);
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="py-8 text-center text-slate-500">
+                    <i data-lucide="user-x" class="w-6 h-6 mx-auto mb-1 text-slate-600"></i>
+                    <p class="text-xs">कोई मतदाता नहीं मिला</p>
+                </div>
             `;
+            lucide.createIcons();
+            return;
+        }
 
-            const modalInput = document.getElementById('modalVoterSearchInput');
-            modalInput.value = '';
-            document.getElementById('voterPickerModal').classList.remove('hidden');
+        container.innerHTML = filtered.map(v => `
+            <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-3 transition">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/40">🏛️ वार्ड ${v.ward || '-'}</span>
+                        <strong class="text-white text-xs truncate">${v.name}</strong>
+                        <span class="text-[10px] text-slate-400">(${v.rel}: ${v.rel_name})</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                        <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] font-mono border border-slate-700">भाग ${v.part} / म.${v.house}</span>
+                        <span class="font-mono text-indigo-400 text-[10px]">EPIC: ${v.epic || '-'}</span>
+                        ${v.mobile ? `<span class="text-emerald-400 font-mono text-[10px]">📱 ${v.mobile}</span>` : ''}
+                    </div>
+                </div>
+                <button onclick="assignVoterFromModal(${v.id})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 flex-shrink-0">
+                    <i data-lucide="check" class="w-3 h-3"></i>
+                    <span>जोड़ें</span>
+                </button>
+            </div>
+        `).join('');
 
-            renderModalVoters('');
-            modalInput.focus();
+        lucide.createIcons();
+    }
+
+    function assignVoterFromModal(voterId) {
+        if (activeContactForModal) {
+            linkVoterToContact(voterId, activeContactForModal.mobile);
+            closeVoterPickerModal();
+        }
+    }
+
+    
+        let activeReportTab = 'linked';
+
+        function getDataSourceForReports() {
+            if (typeof voters !== 'undefined' && Array.isArray(voters)) return voters;
+            if (typeof votersData !== 'undefined' && Array.isArray(votersData)) return votersData;
+            if (typeof votersState !== 'undefined' && Array.isArray(votersState)) return votersState;
+            if (window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.voters)) return window.PIPLANTRI_DATA.voters;
+            return [];
+        }
+
+        function openReportsModal(initialTab = 'linked') {
+            activeReportTab = initialTab;
+            const modal = document.getElementById('reportsModal');
+            if (modal) modal.classList.remove('hidden');
+            updateReportBadges();
+            switchReportTab(initialTab);
             lucide.createIcons();
         }
 
-        function closeVoterPickerModal() {
-            document.getElementById('voterPickerModal').classList.add('hidden');
-            activeContactForModal = null;
+        function closeReportsModal() {
+            const modal = document.getElementById('reportsModal');
+            if (modal) modal.classList.add('hidden');
         }
 
-        function handleModalVoterSearchInput(query) {
-            renderModalVoters(query);
+        function updateReportBadges() {
+            const data = getDataSourceForReports();
+            const linked = data.filter(v => v.mobile && v.mobile.trim().length >= 10).length;
+            const unlinked = data.length - linked;
+
+            const badgeLinked = document.getElementById('repBadgeLinked');
+            const badgeUnlinked = document.getElementById('repBadgeUnlinked');
+            if (badgeLinked) badgeLinked.innerText = linked.toLocaleString('en-IN');
+            if (badgeUnlinked) badgeUnlinked.innerText = unlinked.toLocaleString('en-IN');
         }
 
-        // Exact House Matching Engine for Dedicated House Filter
-        function isHouseMatch(voterHouse, houseQuery) {
-            if (!houseQuery) return true;
-            const h = String(voterHouse || '').trim().toLowerCase();
-            let q = String(houseQuery).trim().toLowerCase();
-            if (!h || !q) return false;
-            const matchPrefix = q.match(/^(?:मकान\s*|म\.\s*|house\s*)(\d+[a-zA-Z\/-]?\w*)$/i);
-            if (matchPrefix) q = matchPrefix[1];
-            if (h === q) return true;
-            const hNum = parseInt(h, 10);
-            const qNum = parseInt(q, 10);
-            if (!isNaN(hNum) && !isNaN(qNum) && hNum === qNum) {
-                const match = h.match(/^0*(\d+)$/);
-                if (match && parseInt(match[1], 10) === qNum) return true;
-            }
-            return false;
+        function switchReportTab(tabName) {
+            activeReportTab = tabName;
+            
+            const tabs = ['linked', 'unlinked', 'ward'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('repTab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-indigo-600 bg-white text-indigo-700 shadow-sm";
+                    } else {
+                        btn.className = "px-3.5 py-2 rounded-t-xl font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200";
+                    }
+                }
+            });
+
+            renderActiveReport();
         }
 
-        function renderModalVoters(query) {
-            const container = document.getElementById('modalVoterListBody');
+        function getFilteredReportList() {
+            const data = getDataSourceForReports();
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
+            const q = (document.getElementById('reportSearchInput')?.value || '').trim().toLowerCase();
+
+            return data.filter(v => {
+                const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
+                
+                if (activeReportTab === 'linked' && !hasMobile) return false;
+                if (activeReportTab === 'unlinked' && hasMobile) return false;
+
+                if (wardFilter !== 'ALL' && String(v.ward) !== String(wardFilter)) return false;
+                if (partFilter !== 'ALL' && v.part !== partFilter) return false;
+
+                if (q) {
+                    const match = (v.name && v.name.toLowerCase().includes(q)) ||
+                                  (v.rel_name && v.rel_name.toLowerCase().includes(q)) ||
+                                  (v.house && String(v.house).toLowerCase().includes(q)) ||
+                                  (v.epic && String(v.epic).toLowerCase().includes(q)) ||
+                                  (v.mobile && String(v.mobile).includes(q));
+                    if (!match) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function renderActiveReport() {
+            const container = document.getElementById('reportContentArea');
             if (!container) return;
 
-            const q = (query || '').trim();
-            const qLower = q.toLowerCase();
-            const isEnglish = /[a-zA-Z]/.test(q);
-            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
+            updateReportBadges();
+            const list = getFilteredReportList();
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
 
-            const filtered = votersState.filter(v => {
-                if (!q) return true;
-                const n = (v.name || '').toLowerCase();
-                const r = (v.rel_name || '').toLowerCase();
-                const epic = String(v.epic || '').toLowerCase();
-                const house = String(v.house || '').toLowerCase();
-                const nameTranslit = transliterateHindiClean(v.name);
-                const relTranslit = transliterateHindiClean(v.rel_name);
+            let reportTitle = "";
+            if (activeReportTab === 'linked') {
+                reportTitle = "🟢 लिंक्ड मोबाइल मतदाता सूची";
+            } else if (activeReportTab === 'unlinked') {
+                reportTitle = "🔴 पेंडिंग / बिना मोबाइल मतदाता चेकलिस्ट";
+            } else {
+                reportTitle = "🏛️ वार्ड-वार संपूर्ण मतदाता रजिस्टर " + (wardFilter !== 'ALL' ? '(वार्ड ' + wardFilter + ')' : '(सभी 11 वार्ड)');
+            }
 
-                const matchHindiSugg = hindiSuggestions.some(s => (v.name && v.name.includes(s.word)) || (v.rel_name && v.rel_name.includes(s.word)));
+            const statusText = document.getElementById('reportSummaryStatusText');
+            if (statusText) {
+                statusText.innerHTML = "कुल चयनित रिकॉर्ड: <strong class='text-slate-900 font-bold'>" + list.length.toLocaleString('en-IN') + "</strong> | फ़िल्टर: वार्ड: <strong>" + wardFilter + "</strong>, भाग: <strong>" + partFilter + "</strong>";
+            }
 
-                return n.includes(qLower) || r.includes(qLower) || epic.includes(qLower) || house.includes(qLower) ||
-                       nameTranslit.includes(qLower) || relTranslit.includes(qLower) || matchHindiSugg;
-            }).slice(0, 40);
-
-            if (filtered.length === 0) {
+            if (list.length === 0) {
                 container.innerHTML = `
-                    <div class="py-8 text-center text-slate-500">
-                        <i data-lucide="user-x" class="w-6 h-6 mx-auto mb-1 text-slate-600"></i>
-                        <p class="text-xs">कोई मतदाता नहीं मिला</p>
+                    <div class="py-12 text-center text-slate-400">
+                        <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                        <p class="font-bold text-sm text-slate-600">चयनित फ़िल्टर में कोई रिकॉर्ड नहीं मिला</p>
+                        <p class="text-xs text-slate-400 mt-1">कृपया वार्ड या भाग फ़िल्टर बदलें</p>
                     </div>
                 `;
                 lucide.createIcons();
                 return;
             }
 
-            container.innerHTML = filtered.map(v => `
-                <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-3 transition">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-white text-xs truncate">${v.name}</span>
-                            <span class="text-[10px] text-slate-400">(${v.rel}: ${v.rel_name})</span>
-                        </div>
-                        <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                            <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] font-mono border border-slate-700">भाग ${v.part} / म.${v.house}</span>
-                            <span class="font-mono text-indigo-400 text-[10px]">EPIC: ${v.epic || '-'}</span>
-                            ${v.mobile ? `<span class="text-emerald-400 font-mono text-[10px]">📱 ${v.mobile}</span>` : ''}
-                        </div>
-                    </div>
-                    <button onclick="assignVoterFromModal(${v.id})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 flex-shrink-0">
-                        <i data-lucide="check" class="w-3 h-3"></i>
-                        <span>जोड़ें</span>
-                    </button>
-                </div>
-            `).join('');
+            let tableHeader = "";
+            if (activeReportTab === 'linked') {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2 w-28">EPIC नंबर</th>
+                        <th class="p-2 w-36 font-bold text-emerald-800">📱 मोबाइल नंबर</th>
+                        <th class="p-2 w-24">रुझान/स्थिति</th>
+                    </tr>
+                `;
+            } else if (activeReportTab === 'unlinked') {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2">अनुभाग / मोहल्ला</th>
+                        <th class="p-2 w-44 bg-rose-50 text-rose-800">नया मोबाइल नंबर लिखें</th>
+                    </tr>
+                `;
+            } else {
+                tableHeader = `
+                    <tr class="bg-slate-100 text-slate-700 text-[11px] font-bold border-b border-slate-300">
+                        <th class="p-2 w-12 text-center">क्र.</th>
+                        <th class="p-2 w-16 text-center">वार्ड</th>
+                        <th class="p-2 w-16 text-center">भाग/म.</th>
+                        <th class="p-2">मतदाता का नाम</th>
+                        <th class="p-2">पिता / पति का नाम</th>
+                        <th class="p-2 w-16 text-center">आयु/लिंग</th>
+                        <th class="p-2 w-28">EPIC नंबर</th>
+                        <th class="p-2 w-32">मोबाइल नंबर</th>
+                        <th class="p-2 w-24 text-center">मतदान स्थिति</th>
+                    </tr>
+                `;
+            }
 
+            let rowsHtml = list.map((v, idx) => {
+                const srNo = idx + 1;
+                const wardDisplay = v.ward ? ('वार्ड ' + v.ward) : '-';
+                const partHouse = 'भाग ' + v.part + '<br><span class="font-mono text-slate-500">म.' + (v.house || '-') + '</span>';
+                const ageGender = v.age + ' / ' + (v.gender === 'पुरुष' ? 'M' : 'F');
+
+                if (activeReportTab === 'linked') {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 font-mono text-[11px] text-slate-600">${v.epic || '-'}</td>
+                            <td class="p-2 font-mono font-bold text-emerald-700 bg-emerald-50/50 text-xs">${v.mobile}</td>
+                            <td class="p-2 text-[11px]">${v.category || v.location_status || 'Local'}</td>
+                        </tr>
+                    `;
+                } else if (activeReportTab === 'unlinked') {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 text-[11px] text-slate-500 truncate max-w-[150px]">${v.sec_name || '-'}</td>
+                            <td class="p-2 font-mono text-slate-400 bg-rose-50/30 border border-dashed border-rose-200 text-center">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 text-xs">
+                            <td class="p-2 text-center font-bold text-slate-500">${srNo}</td>
+                            <td class="p-2 text-center font-extrabold text-amber-700 bg-amber-50/50">${wardDisplay}</td>
+                            <td class="p-2 text-center text-[11px]">${partHouse}</td>
+                            <td class="p-2 font-bold text-slate-900">${v.name}</td>
+                            <td class="p-2 text-slate-600">${v.rel_name || '-'}</td>
+                            <td class="p-2 text-center font-mono">${ageGender}</td>
+                            <td class="p-2 font-mono text-[11px] text-slate-600">${v.epic || '-'}</td>
+                            <td class="p-2 font-mono ${v.mobile ? 'font-bold text-emerald-700' : 'text-slate-400 italic'}">${v.mobile || 'अनलिंक्ड'}</td>
+                            <td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] ${v.voted ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${v.voted ? 'Voted' : 'Pending'}</span></td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                        <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5">
+                            <span>${reportTitle}</span>
+                        </h4>
+                        <span class="text-xs text-slate-500 font-bold">दिख रहे रिकॉर्ड: ${list.length.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>${tableHeader}</thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
             lucide.createIcons();
         }
 
-        function assignVoterFromModal(voterId) {
-            if (activeContactForModal) {
-                linkVoterToContact(voterId, activeContactForModal.mobile);
-                closeVoterPickerModal();
+        function printCurrentReport() {
+            const list = getFilteredReportList();
+            if (!list || list.length === 0) {
+                alert("प्रिंट करने के लिए कोई रिकॉर्ड उपलब्ध नहीं है!");
+                return;
             }
+
+            const wardFilter = document.getElementById('reportWardSelect')?.value || 'ALL';
+            const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
+            
+            let reportHeaderTitle = "";
+            let tableColumns = "";
+            let tableBody = "";
+
+            if (activeReportTab === 'linked') {
+                reportHeaderTitle = "🟢 लिंक्ड मोबाइल मतदाता सूची (Linked Mobile Numbers Report)";
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th style="width: 90px;">EPIC नंबर</th>
+                        <th style="width: 110px;">मोबाइल नंबर</th>
+                        <th style="width: 80px;">हस्ताक्षर/स्थिति</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td style="font-family:monospace;">${v.epic || '-'}</td>
+                        <td style="font-family:monospace; font-weight:bold; color:#065f46;">${v.mobile}</td>
+                        <td></td>
+                    </tr>
+                `).join('');
+            } else if (activeReportTab === 'unlinked') {
+                reportHeaderTitle = "🔴 पेंडिंग / बिना मोबाइल मतदाता चेकलिस्ट (Missing Mobile Verification Sheet)";
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th>अनुभाग / मोहल्ला</th>
+                        <th style="width: 140px;">मोबाइल नंबर लिखें</th>
+                        <th style="width: 70px;">सत्यापन</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td>${v.sec_name || '-'}</td>
+                        <td style="border: 1px dashed #666;"></td>
+                        <td></td>
+                    </tr>
+                `).join('');
+            } else {
+                reportHeaderTitle = "🏛️ वार्ड-वार संपूर्ण मतदाता रजिस्टर " + (wardFilter !== 'ALL' ? '(वार्ड ' + wardFilter + ')' : '(समस्त वार्ड)');
+                tableColumns = `
+                    <tr>
+                        <th style="width: 35px; text-align:center;">क्र.</th>
+                        <th style="width: 50px; text-align:center;">वार्ड</th>
+                        <th style="width: 60px; text-align:center;">भाग/म.</th>
+                        <th>मतदाता का नाम</th>
+                        <th>पिता / पति का नाम</th>
+                        <th style="width: 50px; text-align:center;">आयु/लिंग</th>
+                        <th style="width: 90px;">EPIC नंबर</th>
+                        <th style="width: 100px;">मोबाइल नंबर</th>
+                        <th style="width: 70px; text-align:center;">मतदान स्थिति</th>
+                    </tr>
+                `;
+                tableBody = list.map((v, i) => `
+                    <tr>
+                        <td style="text-align:center; font-weight:bold;">${i+1}</td>
+                        <td style="text-align:center; font-weight:bold;">वार्ड ${v.ward || '-'}</td>
+                        <td style="text-align:center;">भाग ${v.part}<br>म.${v.house || '-'}</td>
+                        <td style="font-weight:bold;">${v.name}</td>
+                        <td>${v.rel_name || '-'}</td>
+                        <td style="text-align:center;">${v.age}/${v.gender === 'पुरुष' ? 'M' : 'F'}</td>
+                        <td style="font-family:monospace;">${v.epic || '-'}</td>
+                        <td style="font-family:monospace;">${v.mobile || '-'}</td>
+                        <td style="text-align:center;">[ &nbsp; ]</td>
+                    </tr>
+                `).join('');
+            }
+
+            const printHtml = `
+                <!DOCTYPE html>
+                <html lang="hi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${reportHeaderTitle} - पिपलांत्री चुनाव</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 8mm; }
+                        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #111; margin: 0; padding: 0; background: #fff; }
+                        .header { border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        .header h1 { margin: 0; font-size: 14pt; font-weight: 800; color: #000; }
+                        .header h2 { margin: 2px 0 0 0; font-size: 11pt; color: #b45309; font-weight: bold; }
+                        .meta { font-size: 8pt; color: #444; text-align: right; }
+                        .summary-bar { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; margin-bottom: 8px; font-size: 8.5pt; font-weight: bold; display: flex; justify-content: space-between; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+                        th, td { border: 1px solid #333; padding: 4px 5px; font-size: 8.5pt; line-height: 1.2; }
+                        th { background-color: #e2e8f0; font-weight: bold; text-align: left; }
+                        tr { page-break-inside: avoid; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <h1>ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द)</h1>
+                            <h2>सरपंच चुनाव • प्रत्याशी: नविन पालीवाल</h2>
+                        </div>
+                        <div class="meta">
+                            <div><strong>${reportHeaderTitle}</strong></div>
+                            <div>वार्ड: ${wardFilter} | भाग: ${partFilter}</div>
+                            <div>प्रिंट दिनांक: ${new Date().toLocaleDateString('hi-IN')} ${new Date().toLocaleTimeString('hi-IN')}</div>
+                        </div>
+                    </div>
+                    <div class="summary-bar">
+                        <span>कुल रिकॉर्ड: ${list.length.toLocaleString('en-IN')} मतदाता</span>
+                        <span>प्रत्याशी: नविन पालीवाल</span>
+                        <span>वार-रूम अधिकृत प्रति</span>
+                    </div>
+                    <table>
+                        <thead>${tableColumns}</thead>
+                        <tbody>${tableBody}</tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const printFrame = document.createElement('iframe');
+            printFrame.style.position = 'fixed';
+            printFrame.style.right = '0';
+            printFrame.style.bottom = '0';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = '0';
+            document.body.appendChild(printFrame);
+
+            const frameDoc = printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(printHtml);
+            frameDoc.close();
+
+            printFrame.contentWindow.focus();
+            setTimeout(() => {
+                printFrame.contentWindow.print();
+                setTimeout(() => { document.body.removeChild(printFrame); }, 1000);
+            }, 300);
         }
 
-        window.addEventListener('DOMContentLoaded', initContactsApp);
+        function exportCurrentReportCSV() {
+            const list = getFilteredReportList();
+            if (!list || list.length === 0) {
+                alert("एक्सपोर्ट करने के लिए कोई रिकॉर्ड उपलब्ध नहीं है!");
+                return;
+            }
+
+            const rows = [
+                ["ID", "Part", "Ward", "House No", "Voter Name", "Relation", "Relative Name", "Age", "Gender", "EPIC No", "Mobile", "Category", "Location"]
+            ];
+
+            list.forEach(v => {
+                rows.push([
+                    v.id,
+                    v.part,
+                    v.ward || '',
+                    v.house || '',
+                    v.name,
+                    v.rel || '',
+                    v.rel_name || '',
+                    v.age || '',
+                    v.gender || '',
+                    v.epic || '',
+                    v.mobile || '',
+                    v.category || '',
+                    v.location_status || ''
+                ]);
+            });
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            rows.forEach(r => {
+                csvContent += r.map(f => '"' + String(f).replace(/"/g, '""') + '"').join(",") + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Piplantri_" + activeReportTab + "_Report_" + new Date().toISOString().slice(0,10) + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+
+    window.addEventListener('DOMContentLoaded', initContactsApp);
     </script>
 </body>
 </html>
