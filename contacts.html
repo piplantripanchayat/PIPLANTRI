@@ -421,6 +421,57 @@
         </div>
     </div>
 
+    <!-- HOUSEHOLD MEMBERS INSPECTION MODAL -->
+    <div id="houseMembersModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl shadow-inner">
+                        🏠
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2" id="houseModalTitle">
+                            <span>मकान सदस्य विवरण</span>
+                        </h3>
+                        <p class="text-xs text-indigo-300 font-medium" id="houseModalSubtitle">
+                            भाग: - • मकान: - • कुल सदस्य: 0
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeHouseMembersModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Target Contact / Search Info Bar -->
+            <div class="px-4 py-2.5 bg-slate-950/90 border-b border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2 text-slate-300" id="houseModalTargetContactBar">
+                    <span class="text-slate-400 font-medium">संपर्क:</span>
+                    <strong class="text-amber-400" id="houseModalContactName">-</strong>
+                    <span class="font-mono text-orange-400 font-bold" id="houseModalContactMobile">-</span>
+                </div>
+                <button id="houseModalLinkAllBtn" onclick="linkAllHouseMembersToContact()" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white rounded-lg font-bold shadow flex items-center gap-1.5 transition active:scale-95 text-xs">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    <span>⚡ सभी सदस्यों को लिंक करें</span>
+                </button>
+            </div>
+
+            <!-- Members List Body -->
+            <div class="p-3 sm:p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2.5" id="houseMembersListBody">
+                <!-- Dynamically injected house member cards -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 flex justify-between items-center text-xs">
+                <span class="text-slate-400" id="houseModalFooterStats">कुल 0 सदस्य</span>
+                <button onclick="closeHouseMembersModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">
+                    बंद करें
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- COMPREHENSIVE REPORTS & PRINT MODAL (ALL 3 PAGES) -->
     <div id="reportsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-white border border-slate-200 w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-900">
@@ -1132,8 +1183,11 @@
                             ${linkedVoters.map(v => `
                                 <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
                                     <span class="font-extrabold text-amber-300">🏛️ वार्ड ${v.ward || '-'}</span>
-                                    <span class="font-bold text-white">${v.name}</span>
-                                    <span class="text-[10px] text-emerald-400 font-mono">भाग ${v.part}/म.${v.house}</span>
+                                    <strong class="text-white font-bold">${v.name}</strong>
+                                    <button onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="text-[10px] text-emerald-300 hover:text-white underline font-mono cursor-pointer flex items-center gap-0.5 bg-emerald-900/50 hover:bg-emerald-800 px-1.5 py-0.5 rounded border border-emerald-700/60 transition">
+                                        <span>भाग ${v.part}/म.${v.house}</span>
+                                        <i data-lucide="search" class="w-2.5 h-2.5 text-cyan-300"></i>
+                                    </button>
                                     <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
                                         <i data-lucide="x" class="w-3 h-3"></i>
                                     </button>
@@ -1157,11 +1211,15 @@
                                 return `
                                     <div class="bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                                         <div class="flex-1 min-w-0">
-                                            <!-- Top Line: Match Badge + Ward + Part/House -->
-                                            <div class="flex items-center gap-2 flex-wrap">
+                                            <!-- Top Line: Match Badge + Ward + Part/House + SEARCH BUTTON -->
+                                            <div class="flex items-center gap-1.5 flex-wrap">
                                                 <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">${s.score}% Match</span>
                                                 <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/40">🏛️ वार्ड ${s.ward || (votersMap.get(s.voterId)?.ward || '-')}</span>
                                                 <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700 font-bold">भाग ${s.part} • म.${s.house}</span>
+                                                <button onclick="openHouseMembersModal('${s.part}', '${encodeURIComponent(s.house)}', '${s.ward || (votersMap.get(s.voterId)?.ward || '')}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[10px] font-bold shadow transition active:scale-95 cursor-pointer">
+                                                    <i data-lucide="search" class="w-3 h-3 text-cyan-300"></i>
+                                                    <span>मकान सदस्य 🔍</span>
+                                                </button>
                                             </div>
                                             <!-- Second Line: Full Voter Name & Relative -->
                                             <div class="mt-1 flex items-center gap-1.5 flex-wrap">
@@ -1579,6 +1637,186 @@
         `).join('');
 
         lucide.createIcons();
+    }
+
+    // ==========================================
+    // HOUSEHOLD MEMBERS INSPECTION ENGINE
+    // ==========================================
+    let currentHouseModalContext = {
+        part: '',
+        house: '',
+        ward: '',
+        mobile: '',
+        contactName: '',
+        members: []
+    };
+
+    function openHouseMembersModal(part, encodedHouse, ward, mobile, encodedContactName) {
+        const house = decodeURIComponent(encodedHouse || '');
+        const contactName = decodeURIComponent(encodedContactName || '');
+        
+        const pStr = String(part).trim();
+        const hStr = String(house).trim().toLowerCase();
+
+        const members = votersState.filter(v => {
+            const vp = String(v.part).trim();
+            const vh = String(v.house || '').trim().toLowerCase();
+            return vp === pStr && vh === hStr;
+        });
+
+        members.sort((a, b) => (parseInt(a.sr) || 0) - (parseInt(b.sr) || 0));
+
+        currentHouseModalContext = {
+            part: pStr,
+            house: house,
+            ward: ward || (members[0] ? members[0].ward : ''),
+            mobile: mobile || '',
+            contactName: contactName || '',
+            members: members
+        };
+
+        const titleEl = document.getElementById('houseModalTitle');
+        if (titleEl) {
+            titleEl.innerHTML = `
+                <span>🏠 मकान सं. ${house || '-'} के सदस्य</span>
+                <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/40">वार्ड ${currentHouseModalContext.ward || '-'}</span>
+            `;
+        }
+
+        const subEl = document.getElementById('houseModalSubtitle');
+        if (subEl) {
+            subEl.innerText = `भाग (बूथ): ${pStr} • अनुभाग: ${members[0]?.sec_name || '-'} • कुल सदस्य: ${members.length} मतदाता`;
+        }
+
+        const cNameEl = document.getElementById('houseModalContactName');
+        if (cNameEl) cNameEl.innerText = contactName || 'अज्ञात नाम';
+
+        const cMobEl = document.getElementById('houseModalContactMobile');
+        if (cMobEl) cMobEl.innerText = mobile || '-';
+
+        const linkAllBtn = document.getElementById('houseModalLinkAllBtn');
+        if (linkAllBtn) {
+            if (mobile && String(mobile).replace(/[^0-9]/g, '').length >= 10 && members.length > 0) {
+                linkAllBtn.classList.remove('hidden');
+                linkAllBtn.innerHTML = `
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    <span>⚡ सभी ${members.length} सदस्यों को यह नंबर लिंक करें</span>
+                `;
+            } else {
+                linkAllBtn.classList.add('hidden');
+            }
+        }
+
+        renderHouseMembersList();
+        document.getElementById('houseMembersModal')?.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function renderHouseMembersList() {
+        const container = document.getElementById('houseMembersListBody');
+        if (!container) return;
+
+        const { members, mobile } = currentHouseModalContext;
+        const clean10 = String(mobile || '').trim().replace(/[^0-9]/g, '').slice(-10);
+
+        if (members.length === 0) {
+            container.innerHTML = `
+                <div class="py-8 text-center text-slate-500">
+                    <p class="text-sm">इस मकान में कोई मतदाता रिकॉर्ड नहीं मिला।</p>
+                </div>
+            `;
+            return;
+        }
+
+        let linkedCount = 0;
+
+        container.innerHTML = members.map(v => {
+            const isThisMobileLinked = Boolean(clean10.length === 10 && v.mobile && v.mobile.includes(clean10));
+            const hasAnyMobile = Boolean(v.mobile && String(v.mobile).trim().length >= 10);
+            if (hasAnyMobile) linkedCount++;
+
+            return `
+                <div class="bg-slate-950/90 border ${isThisMobileLinked ? 'border-emerald-700 bg-emerald-950/20' : 'border-slate-800'} hover:border-slate-700 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="w-9 h-9 rounded-xl ${v.gender === 'महिला' ? 'bg-pink-950/70 text-pink-400 border border-pink-800/60' : 'bg-blue-950/70 text-blue-400 border border-blue-800/60'} flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">
+                            ${v.gender === 'महिला' ? '♀' : '♂'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <strong class="text-white text-sm font-bold">${v.name}</strong>
+                                <span class="text-xs text-slate-400">(${v.rel || 'संबंधी'}: <strong class="text-slate-300">${v.rel_name || '-'}</strong>)</span>
+                                <span class="px-2 py-0.5 text-[10px] rounded bg-slate-800 text-slate-300 font-mono font-semibold">${v.age || '-'} वर्ष</span>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap text-xs">
+                                <span class="px-2 py-0.5 rounded bg-slate-900 text-amber-300 font-mono text-[10px] font-bold border border-slate-800">क्र. ${v.sr || v.id}</span>
+                                <span class="font-mono text-slate-400 text-[11px]">EPIC: <strong class="text-slate-300">${v.epic || '-'}</strong></span>
+                                ${hasAnyMobile ? `
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-mono font-bold ${isThisMobileLinked ? 'text-emerald-400' : 'text-orange-400'}">
+                                        <i data-lucide="phone" class="w-3 h-3"></i>
+                                        <span>${v.mobile}</span>
+                                    </span>
+                                ` : `
+                                    <span class="text-[10px] text-slate-500">बिना मोबाइल</span>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                        ${isThisMobileLinked ? `
+                            <button onclick="toggleHouseMemberLink(${v.id}, false)" class="px-3 py-1.5 rounded-xl bg-emerald-950 text-emerald-300 hover:bg-red-950 hover:text-red-300 border border-emerald-800 hover:border-red-800 text-xs font-bold transition flex items-center gap-1 shadow group">
+                                <i data-lucide="check" class="w-3.5 h-3.5 group-hover:hidden text-emerald-400"></i>
+                                <i data-lucide="x" class="w-3.5 h-3.5 hidden group-hover:inline text-red-400"></i>
+                                <span class="group-hover:hidden">लिंक है</span>
+                                <span class="hidden group-hover:inline">अनलिंक</span>
+                            </button>
+                        ` : `
+                            <button onclick="toggleHouseMemberLink(${v.id}, true)" class="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                                <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                                <span>लिंक करें</span>
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const statsEl = document.getElementById('houseModalFooterStats');
+        if (statsEl) {
+            statsEl.innerHTML = `कुल <strong class="text-white">${members.length}</strong> सदस्य • <strong class="text-emerald-400">${linkedCount}</strong> के पास मोबाइल नंबर दर्ज है`;
+        }
+
+        lucide.createIcons();
+    }
+
+    function toggleHouseMemberLink(voterId, shouldLink) {
+        const { mobile } = currentHouseModalContext;
+        if (!mobile || mobile.length < 10) return;
+
+        if (shouldLink) {
+            linkVoterToContact(voterId, mobile);
+        } else {
+            unlinkVoterFromMobile(voterId, mobile);
+        }
+        renderHouseMembersList();
+    }
+
+    function linkAllHouseMembersToContact() {
+        const { members, mobile, house } = currentHouseModalContext;
+        if (!mobile || mobile.length < 10 || members.length === 0) return;
+
+        if (!confirm(`क्या आप मकान सं. ${house} के सभी ${members.length} सदस्यों को मोबाइल ${mobile} से लिंक करना चाहते हैं?`)) return;
+
+        members.forEach(v => {
+            linkVoterToContact(v.id, mobile);
+        });
+
+        renderHouseMembersList();
+        alert(`मकान सं. ${house} के सभी सदस्यों को सफलतापूर्वक लिंक कर दिया गया!`);
+    }
+
+    function closeHouseMembersModal() {
+        document.getElementById('houseMembersModal')?.classList.add('hidden');
     }
 
     function assignVoterFromModal(voterId) {
