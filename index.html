@@ -1244,9 +1244,11 @@
         }
 
         function saveVoterState() {
-            localStorage.setItem('ac175_voters_db_v6_preindexed', JSON.stringify(voters));
-            localStorage.setItem('ac175_voters_db_final_v4', JSON.stringify(voters));
-            localStorage.setItem('ac175_voters_db_bilingual_v5', JSON.stringify(voters));
+            const serialized = JSON.stringify(voters);
+            localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+            localStorage.setItem('ac175_voters_db_final_v4', serialized);
+            localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
+            localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
             populateFamilyIdDatalist();
             updateKPIs();
             if (currentTab === 'voters') renderVotersTable();

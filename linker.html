@@ -1005,6 +1005,9 @@
                     if (suggs && suggs.length > 0 && suggs[0].score >= 90) {
                         v.mobile = String(suggs[0].contact.mobile).trim().slice(-10);
                         count++;
+                        if (window.CloudSync) {
+                            window.CloudSync.recordUpdate(v.id, { mobile: v.mobile });
+                        }
                     }
                 }
             });
@@ -1012,13 +1015,17 @@
             saveToLocalStorage();
             applyFilters();
             updateKPIs();
-            alert(`सफलतापूर्वक ${count} पक्के AI मैच (≥90%) लिंक कर दिए गए हैं!`);
+            alert(`सफलतापूर्वक ${count} पक्के AI मैच (≥90%) लिंक कर दिए गए हैं और तुरंत क्लाउड में सुरक्षित हो गए हैं!`);
         }
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(votersData));
-                localStorage.setItem('ac175_voters_db_bilingual_v5', JSON.stringify(votersData));
+                const serialized = JSON.stringify(votersData);
+                localStorage.setItem(STORAGE_KEY, serialized);
+                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+                localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
+                localStorage.setItem('ac175_voters_db_final_v4', serialized);
+                localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
             } catch (e) {
                 console.error("Save error:", e);
             }

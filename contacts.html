@@ -777,8 +777,12 @@
 
         function saveVotersState() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(votersState));
-                localStorage.setItem('ac175_voters_db_bilingual_v5', JSON.stringify(votersState));
+                const serialized = JSON.stringify(votersState);
+                localStorage.setItem(STORAGE_KEY, serialized);
+                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+                localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
+                localStorage.setItem('ac175_voters_db_final_v4', serialized);
+                localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
             } catch (e) {
                 console.error("Save error:", e);
             }

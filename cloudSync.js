@@ -63,6 +63,19 @@
     function saveLocalDeltas() {
         try {
             localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(localDeltas));
+            
+            // Apply deltas to master list and save to all unified keys
+            if (window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.voters)) {
+                const fullUpdatedList = applyDeltas(window.PIPLANTRI_DATA.voters);
+                const serialized = JSON.stringify(fullUpdatedList);
+                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+                localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
+                localStorage.setItem('ac175_voters_db_final_v4', serialized);
+                localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
+            }
+            
+            // Dispatch cross-tab / cross-page custom event
+            window.dispatchEvent(new CustomEvent('piplantri-data-updated', { detail: { deltas: localDeltas } }));
         } catch (e) {
             console.error('[CloudSync] Delta save error:', e);
         }
@@ -549,6 +562,41 @@
         });
         window.addEventListener('offline', () => {
             triggerStatus('🔴 ऑफलाइन (लोकल सुरक्षित)', 'offline');
+        });
+
+        // Inter-Tab / Cross-Page Real-Time Sync Listeners
+        window.addEventListener('storage', (e) => {
+            if (e.key === CLOUD_STORAGE_KEY || e.key === 'ac175_voters_db_bilingual_v5' || e.key === 'piplantri_master_voters_unified_v1') {
+                initStorage();
+                if (callbacks.onDataMerged && window.PIPLANTRI_DATA) {
+                    const updated = applyDeltas(window.PIPLANTRI_DATA.voters);
+                    callbacks.onDataMerged(updated, Object.keys(localDeltas).length);
+                }
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            initStorage();
+            if (callbacks.onDataMerged && window.PIPLANTRI_DATA) {
+                const updated = applyDeltas(window.PIPLANTRI_DATA.voters);
+                callbacks.onDataMerged(updated, Object.keys(localDeltas).length);
+            }
+            pullFromCloud(window.PIPLANTRI_DATA ? window.PIPLANTRI_DATA.voters : null);
+        });
+
+        window.addEventListener('pageshow', () => {
+            initStorage();
+            if (callbacks.onDataMerged && window.PIPLANTRI_DATA) {
+                const updated = applyDeltas(window.PIPLANTRI_DATA.voters);
+                callbacks.onDataMerged(updated, Object.keys(localDeltas).length);
+            }
+        });
+
+        window.addEventListener('piplantri-data-updated', () => {
+            if (callbacks.onDataMerged && window.PIPLANTRI_DATA) {
+                const updated = applyDeltas(window.PIPLANTRI_DATA.voters);
+                callbacks.onDataMerged(updated, Object.keys(localDeltas).length);
+            }
         });
     }
 
