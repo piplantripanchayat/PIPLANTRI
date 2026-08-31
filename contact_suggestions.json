@@ -5605,18 +5605,6 @@
   ],
   "220": [
     {
-      "voterId": 22,
-      "voterName": "चन्नु देवी",
-      "voterRel": "पति",
-      "voterRelName": "दिलीप",
-      "part": "59",
-      "ward": "9",
-      "house": "3",
-      "epic": "NFW0180232",
-      "score": 88,
-      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Paliwal) • समान गाँव (MORWAR)"
-    },
-    {
       "voterId": 95,
       "voterName": "सानू",
       "voterRel": "पति",
@@ -5637,6 +5625,18 @@
       "ward": "9",
       "house": "मकान संख्या-18",
       "epic": "NFW1666817",
+      "score": 88,
+      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Paliwal) • समान गाँव (MORWAR)"
+    },
+    {
+      "voterId": 181,
+      "voterName": "सोहनलाल",
+      "voterRel": "पिता",
+      "voterRelName": "पोखरलाल",
+      "part": "59",
+      "ward": "9",
+      "house": "38",
+      "epic": "RJ/18/140/093208",
       "score": 88,
       "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Paliwal) • समान गाँव (MORWAR)"
     }
@@ -19843,18 +19843,6 @@
   ],
   "955": [
     {
-      "voterId": 22,
-      "voterName": "चन्नु देवी",
-      "voterRel": "पति",
-      "voterRelName": "दिलीप",
-      "part": "59",
-      "ward": "9",
-      "house": "3",
-      "epic": "NFW0180232",
-      "score": 88,
-      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Sani Morwad) • समान गाँव (MORWAR)"
-    },
-    {
       "voterId": 95,
       "voterName": "सानू",
       "voterRel": "पति",
@@ -19875,6 +19863,18 @@
       "ward": "9",
       "house": "मकान संख्या-18",
       "epic": "NFW1666817",
+      "score": 88,
+      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Sani Morwad) • समान गाँव (MORWAR)"
+    },
+    {
+      "voterId": 181,
+      "voterName": "सोहनलाल",
+      "voterRel": "पिता",
+      "voterRelName": "पोखरलाल",
+      "part": "59",
+      "ward": "9",
+      "house": "38",
+      "epic": "RJ/18/140/093208",
       "score": 88,
       "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Sani Morwad) • समान गाँव (MORWAR)"
     }
@@ -21545,18 +21545,6 @@
   ],
   "1026": [
     {
-      "voterId": 22,
-      "voterName": "चन्नु देवी",
-      "voterRel": "पति",
-      "voterRelName": "दिलीप",
-      "part": "59",
-      "ward": "9",
-      "house": "3",
-      "epic": "NFW0180232",
-      "score": 88,
-      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Ji Badi Morwad) • समान गाँव (MORWAR)"
-    },
-    {
       "voterId": 95,
       "voterName": "सानू",
       "voterRel": "पति",
@@ -21577,6 +21565,18 @@
       "ward": "9",
       "house": "मकान संख्या-18",
       "epic": "NFW1666817",
+      "score": 88,
+      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Ji Badi Morwad) • समान गाँव (MORWAR)"
+    },
+    {
+      "voterId": 181,
+      "voterName": "सोहनलाल",
+      "voterRel": "पिता",
+      "voterRelName": "पोखरलाल",
+      "part": "59",
+      "ward": "9",
+      "house": "38",
+      "epic": "RJ/18/140/093208",
       "score": 88,
       "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Chunni Lal Ji Badi Morwad) • समान गाँव (MORWAR)"
     }
@@ -25813,6 +25813,18 @@
   ],
   "1213": [
     {
+      "voterId": 22,
+      "voterName": "धन्नु देवी",
+      "voterRel": "पति",
+      "voterRelName": "दिलीप",
+      "part": "59",
+      "ward": "9",
+      "house": "3",
+      "epic": "NFW0180232",
+      "score": 80,
+      "reasons": "ध्वनि/नाम मैच (Tami bai) • सामान्य डायरेक्टरी"
+    },
+    {
       "voterId": 645,
       "voterName": "धनीबाई",
       "voterRel": "पति",
@@ -25833,18 +25845,6 @@
       "ward": "8",
       "house": "धर्मेटा",
       "epic": "NFW1738434",
-      "score": 80,
-      "reasons": "ध्वनि/नाम मैच (Tami bai) • सामान्य डायरेक्टरी"
-    },
-    {
-      "voterId": 724,
-      "voterName": "थानीबाई",
-      "voterRel": "पति",
-      "voterRelName": "शंकर लाल",
-      "part": "60",
-      "ward": "10",
-      "house": "11",
-      "epic": "RJ/18/140/094079",
       "score": 80,
       "reasons": "ध्वनि/नाम मैच (Tami bai) • सामान्य डायरेक्टरी"
     }
@@ -29911,6 +29911,18 @@
   ],
   "1449": [
     {
+      "voterId": 22,
+      "voterName": "धन्नु देवी",
+      "voterRel": "पति",
+      "voterRelName": "दिलीप",
+      "part": "59",
+      "ward": "9",
+      "house": "3",
+      "epic": "NFW0180232",
+      "score": 100,
+      "reasons": "गाँव: MORWAR, PEEPALANTRI KALAN • 🟢 100% पक्का मैच: नाम (Dhanu devi paliwal) व पिता (Dilip Kumar) दोनों मैच"
+    },
+    {
       "voterId": 143,
       "voterName": "टमुबाई",
       "voterRel": "पति",
@@ -29931,24 +29943,24 @@
       "ward": "8",
       "house": "88",
       "epic": "KQQ1753771",
-      "score": 88,
-      "reasons": "गाँव: MORWAR, PEEPALANTRI KALAN • ध्वनि/नाम मैच (Dhanu devi paliwal) • समान गाँव (MORWAR, PEEPALANTRI KALAN)"
-    },
-    {
-      "voterId": 669,
-      "voterName": "टीना गमेती",
-      "voterRel": "पति",
-      "voterRelName": "मुकेश",
-      "part": "59",
-      "ward": "8",
-      "house": "धर्मेटा",
-      "epic": "NFW1738434",
       "score": 88,
       "reasons": "गाँव: MORWAR, PEEPALANTRI KALAN • ध्वनि/नाम मैच (Dhanu devi paliwal) • समान गाँव (MORWAR, PEEPALANTRI KALAN)"
     }
   ],
   "1451": [
     {
+      "voterId": 22,
+      "voterName": "धन्नु देवी",
+      "voterRel": "पति",
+      "voterRelName": "दिलीप",
+      "part": "59",
+      "ward": "9",
+      "house": "3",
+      "epic": "NFW0180232",
+      "score": 88,
+      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Tamu devi) • समान गाँव (MORWAR)"
+    },
+    {
       "voterId": 143,
       "voterName": "टमुबाई",
       "voterRel": "पति",
@@ -29969,18 +29981,6 @@
       "ward": "8",
       "house": "88",
       "epic": "KQQ1753771",
-      "score": 88,
-      "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Tamu devi) • समान गाँव (MORWAR)"
-    },
-    {
-      "voterId": 669,
-      "voterName": "टीना गमेती",
-      "voterRel": "पति",
-      "voterRelName": "मुकेश",
-      "part": "59",
-      "ward": "8",
-      "house": "धर्मेटा",
-      "epic": "NFW1738434",
       "score": 88,
       "reasons": "गाँव: MORWAR • ध्वनि/नाम मैच (Tamu devi) • समान गाँव (MORWAR)"
     }
