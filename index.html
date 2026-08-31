@@ -171,15 +171,7 @@
     <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 w-full flex-grow flex flex-col gap-4">
 
         <!-- KPI Dashboard Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-10 gap-2">
-            <div onclick="openWardStatsModal()" class="cursor-pointer bg-white p-2.5 rounded-xl border-2 border-amber-300 shadow-sm hover:border-amber-500 transition group bg-gradient-to-b from-white to-amber-50/50">
-                <div class="flex items-center justify-between text-amber-800 text-[11px] font-extrabold mb-0.5">
-                    <span>🏛️ वार्ड सांख्यिकी</span>
-                    <i data-lucide="building-2" class="w-3.5 h-3.5 text-amber-600"></i>
-                </div>
-                <div class="text-lg font-extrabold text-amber-800">11 वार्ड</div>
-                <div class="text-[10px] text-amber-700 font-bold">वार्ड-वार विवरण ➔</div>
-            </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2">
 
             <div onclick="openNewVotersModal()" class="cursor-pointer bg-white p-2.5 rounded-xl border-2 border-orange-300 shadow-sm hover:border-orange-500 transition group bg-gradient-to-b from-white to-orange-50/50">
                 <div class="flex items-center justify-between text-orange-800 text-[11px] font-extrabold mb-0.5">
@@ -308,10 +300,6 @@
                         <option value="9">वार्ड 9 (छोटी मोरवड़)</option>
                         <option value="10">वार्ड 10 (उमटी भाग 1)</option>
                         <option value="11">वार्ड 11 (उमटी भाग 2)</option>
-                    </select>
-
-                    <select id="filterSection" onchange="onSectionFilterChange()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none max-w-[220px]">
-                        <option value="">सभी अनुभाग (Anubhag)</option>
                     </select>
 
                     <!-- SEARCHABLE & DROPDOWN HOUSE FILTER -->
@@ -948,28 +936,16 @@
             });
         }
 
-        function populateSectionOptions() {
-            const secSelect = document.getElementById('filterSection');
-            if (!secSelect) return;
-            secSelect.innerHTML = '<option value="">सभी अनुभाग (Anubhag)</option>';
-            SECTIONS_LIST.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.textContent = s;
-                secSelect.appendChild(opt);
-            });
-        }
-
         function populateHouseDatalist() {
             const dl = document.getElementById('houseListOptions');
             if (!dl) return;
             const part = document.getElementById('filterPart')?.value;
-            const sec = document.getElementById('filterSection')?.value;
+            const ward = document.getElementById('filterWard')?.value;
 
             const houseCounts = new Map();
             voters.forEach(v => {
                 if (part && v.part !== part) return;
-                if (sec && v.sec_name !== sec) return;
+                if (ward && String(v.ward) !== String(ward)) return;
                 const h = String(v.house || '').trim();
                 if (h) {
                     houseCounts.set(h, (houseCounts.get(h) || 0) + 1);
@@ -989,11 +965,13 @@
             const dl = document.getElementById('familyIdListOptions');
             if (!dl) return;
             const part = document.getElementById('filterPart')?.value;
+            const ward = document.getElementById('filterWard')?.value;
 
             const familyMap = new Map();
             voters.forEach(v => {
                 if (v.family_group && v.family_group.trim()) {
                     if (part && v.part !== part) return;
+                    if (ward && String(v.ward) !== String(ward)) return;
                     const fId = v.family_group.trim();
                     familyMap.set(fId, (familyMap.get(fId) || 0) + 1);
                 }
@@ -1001,34 +979,6 @@
 
             const sortedFamilies = Array.from(familyMap.entries()).sort((a, b) => a[0].localeCompare(b[0], 'hi'));
             dl.innerHTML = sortedFamilies.map(([fId, count]) => `<option value="${fId}">👨‍👩‍👧 ${fId} (${count} सदस्य)</option>`).join('');
-        }
-
-        function onPartFilterChange() {
-            const part = document.getElementById('filterPart').value;
-            const secSelect = document.getElementById('filterSection');
-            secSelect.innerHTML = '<option value="">सभी अनुभाग (Anubhag)</option>';
-            
-            const filteredSections = SECTIONS_LIST.filter(s => {
-                if (!part) return true;
-                return voters.some(v => v.part === part && v.sec_name === s);
-            });
-
-            filteredSections.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.textContent = s;
-                secSelect.appendChild(opt);
-            });
-
-            populateHouseDatalist();
-            populateFamilyIdDatalist();
-            applyFilters();
-        }
-
-        function onSectionFilterChange() {
-            populateHouseDatalist();
-            populateFamilyIdDatalist();
-            applyFilters();
         }
 
         // Exact Match Engine for the Dedicated House Filter Box
@@ -1347,54 +1297,40 @@
             onWardFilterChange();
         }
 
-        function populateSectionOptions() {
-            const secSelect = document.getElementById('filterSection');
-            if (!secSelect) return;
-            const currentVal = secSelect.value;
-            const wardVal = document.getElementById('filterWard')?.value;
-            const partVal = document.getElementById('filterPart')?.value;
-
-            let availableSections = [];
-            if (wardVal) {
-                availableSections = [...new Set(voters.filter(v => String(v.ward) === String(wardVal)).map(v => v.sec_name).filter(Boolean))];
-            } else if (partVal) {
-                availableSections = [...new Set(voters.filter(v => v.part === partVal).map(v => v.sec_name).filter(Boolean))];
-            } else {
-                availableSections = (window.PIPLANTRI_DATA && window.PIPLANTRI_DATA.sections) || [...new Set(voters.map(v => v.sec_name).filter(Boolean))];
-            }
-            availableSections.sort((a, b) => a.localeCompare(b, 'hi'));
-
-            function getSecLabel(s) {
-                if (s.includes('वार्ड')) return s;
-                const secWards = new Set();
-                voters.forEach(v => {
-                    if (v.sec_name === s && v.ward) secWards.add(v.ward);
-                });
-                if (secWards.size === 0) return s;
-                const sortedW = Array.from(secWards).sort((a, b) => parseInt(a) - parseInt(b));
-                return `${s} (वार्ड ${sortedW.join(', ')})`;
-            }
-
-            secSelect.innerHTML = '<option value="">सभी अनुभाग (Anubhag)</option>' + 
-                availableSections.map(s => `<option value="${s}">${getSecLabel(s)}</option>`).join('');
-
-            if (availableSections.includes(currentVal)) {
-                secSelect.value = currentVal;
-            }
-        }
-
         function onWardFilterChange() {
-            populateSectionOptions();
+            populateHouseDatalist();
+            populateFamilyIdDatalist();
             applyFilters();
         }
 
         function onPartFilterChange() {
-            populateSectionOptions();
+            populateHouseDatalist();
+            populateFamilyIdDatalist();
             applyFilters();
         }
 
-        function onSectionFilterChange() {
-            applyFilters();
+        function filterBySpecificHouse(houseNo) {
+            const cleanHouse = String(houseNo || '').trim();
+            if (!cleanHouse) return;
+            const input = document.getElementById('filterHouseInput');
+            if (input) {
+                input.value = cleanHouse;
+                applyFilters();
+                // Smooth scroll to results table
+                document.getElementById('votersTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function filterBySpecificFamilyGroup(famGroup) {
+            const cleanFam = String(famGroup || '').trim();
+            if (!cleanFam) return;
+            const input = document.getElementById('filterFamilyIdInput');
+            if (input) {
+                input.value = cleanFam;
+                applyFilters();
+                // Smooth scroll to results table
+                document.getElementById('votersTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function openNewVotersModal() {
@@ -1775,24 +1711,29 @@
 
                 tr.innerHTML = `
                     <td class="p-2.5 text-center">
-                        <input type="checkbox" onchange="toggleVoterSelection(${v.id}, this.checked)" ${selectedVoterIds.has(v.id) ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
+                        <input type="checkbox" onchange="toggleVoterSelection(${v.id}, this.checked)" ${selectedVoterIds.has(v.id) ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer" onclick="event.stopPropagation()">
                     </td>
                     <td class="p-2.5 text-center font-mono text-slate-400 font-bold">${v.sr || v.id}</td>
                     <td class="p-2.5">
                         <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono font-bold text-[10px]">भाग ${v.part}</span>
-                        <div class="text-[11px] text-slate-500 font-mono mt-0.5">म.${v.house || '-'}</div>
+                        <div class="mt-0.5">
+                            <span onclick="filterBySpecificHouse('${v.house}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-block" title="मकान नं. ${v.house} के सभी वोटर देखें">म.${v.house || '-'} 🔍</span>
+                        </div>
                     </td>
                     <td class="p-2.5">
-                        <div class="font-bold text-slate-900 text-xs flex items-center gap-1">
+                        <div onclick="openVoterModal(${v.id})" class="font-bold text-slate-900 text-xs flex items-center gap-1 cursor-pointer hover:text-indigo-600 transition">
                             <span>${v.name}</span>
                         </div>
-                        ${v.family_group ? `
-                            <div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold text-[10px]">
-                                <span onclick="filterBySpecificFamilyGroup('${v.family_group}')" class="cursor-pointer hover:underline" title="पूरा परिवार देखें">👨‍👩‍👧 ${v.family_group}</span>
-                                <button onclick="removeSingleVoterFromFamily(${v.id})" title="ग्रुप से हटाएं" class="text-indigo-400 hover:text-red-500 ml-0.5 font-bold">×</button>
-                            </div>
-                        ` : ''}
-                        <div class="text-[10px] text-slate-500 truncate max-w-[200px]">${v.sec_name || ''}</div>
+                        <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-950 font-extrabold border border-amber-300 text-[10px]">
+                                🏛️ वार्ड ${v.ward || '-'} • ${v.sec_name || '-'}
+                            </span>
+                            ${v.family_group ? `
+                                <span onclick="filterBySpecificFamilyGroup('${v.family_group}'); event.stopPropagation();" class="cursor-pointer hover:underline px-1.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold text-[10px]" title="पूरा परिवार देखें">
+                                    👨‍👩‍👧 ${v.family_group}
+                                </span>
+                            ` : ''}
+                        </div>
                     </td>
                     <td class="p-2.5">
                         <div class="text-xs font-semibold text-slate-800">${v.rel_name || '-'}</div>
@@ -1803,7 +1744,7 @@
                     <td class="p-2.5 text-center">${phoneHtml}</td>
                     <td class="p-2.5 text-center">${catBadge}</td>
                     <td class="p-2.5 text-center">
-                        <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="संपादित करें">
+                        <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="पूरा विवरण एवं संपादन">
                             <i data-lucide="edit" class="w-4 h-4"></i>
                         </button>
                     </td>
@@ -1818,34 +1759,45 @@
                     card.innerHTML = `
                         <!-- Top Row -->
                         <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" onchange="toggleVoterSelection(${v.id}, this.checked)" ${selectedVoterIds.has(v.id) ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <input type="checkbox" onchange="toggleVoterSelection(${v.id}, this.checked)" ${selectedVoterIds.has(v.id) ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer" onclick="event.stopPropagation()">
                                 <span class="font-mono text-xs font-extrabold text-slate-600">क्र. ${v.sr || v.id}</span>
-                                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[10px]">भाग ${v.part} / म.${v.house || '-'}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[10px]">भाग ${v.part}</span>
+                                <span onclick="filterBySpecificHouse('${v.house}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-block" title="मकान नं. ${v.house} के सभी वोटर देखें">म.${v.house || '-'} 🔍</span>
                             </div>
                             <div>${catBadge}</div>
                         </div>
 
-                        <!-- Name & Father/Husband -->
-                        <div class="flex items-start justify-between gap-2">
+                        <!-- Name & Father/Husband (Click to open modal) -->
+                        <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openVoterModal(${v.id})">
                             <div>
-                                <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                                <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 hover:text-indigo-600 transition">
                                     <span>${v.name}</span>
                                 </div>
                                 <div class="text-xs text-slate-600 mt-0.5">
                                     <span class="text-slate-400 font-medium">${v.rel || 'पिता'}:</span> <strong class="text-slate-800 font-bold">${v.rel_name || '-'}</strong>
                                 </div>
                             </div>
-                            <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 transition" title="एडिट">
+                            <button onclick="openVoterModal(${v.id}); event.stopPropagation();" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 transition" title="पूरा विवरण">
                                 <i data-lucide="edit" class="w-4 h-4"></i>
                             </button>
+                        </div>
+
+                        <!-- Ward and Anubhag Location Banner -->
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-950 font-extrabold border border-amber-300 text-[11px] flex items-center gap-1">
+                                <i data-lucide="building-2" class="w-3 h-3 text-amber-600"></i>
+                                <span>वार्ड ${v.ward || '-'}</span>
+                                <span class="text-amber-400">•</span>
+                                <span>${v.sec_name || '-'}</span>
+                            </span>
                         </div>
 
                         <!-- Family Group Badge (if present) -->
                         ${v.family_group ? `
                             <div class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold text-[11px]">
-                                <span onclick="filterBySpecificFamilyGroup('${v.family_group}')" class="cursor-pointer hover:underline">👨‍👩‍👧 ${v.family_group}</span>
-                                <button onclick="removeSingleVoterFromFamily(${v.id})" title="हटाएं" class="text-indigo-400 hover:text-red-500 ml-1 font-bold">×</button>
+                                <span onclick="filterBySpecificFamilyGroup('${v.family_group}'); event.stopPropagation();" class="cursor-pointer hover:underline">👨‍👩‍👧 ${v.family_group}</span>
+                                <button onclick="removeSingleVoterFromFamily(${v.id}); event.stopPropagation();" title="हटाएं" class="text-indigo-400 hover:text-red-500 ml-1 font-bold">×</button>
                             </div>
                         ` : ''}
 
@@ -1854,7 +1806,6 @@
                             <div>आयु/लिंग: <b class="text-slate-800">${v.age} वर्ष (${v.gender})</b></div>
                             <div>•</div>
                             <div>EPIC: <b class="font-mono text-indigo-700 font-bold">${v.epic || '-'}</b></div>
-                            ${v.sec_name ? `<div>•</div><div class="truncate max-w-[140px]">${v.sec_name}</div>` : ''}
                         </div>
 
                         <!-- Mobile Contact Action Bar -->
@@ -1874,13 +1825,13 @@
                                     `).join('')}
                                 </div>
                             ` : `
-                                <button onclick="openVoterModal(${v.id})" class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold flex items-center justify-center gap-1 transition">
+                                <button onclick="openVoterModal(${v.id}); event.stopPropagation();" class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold flex items-center justify-center gap-1 transition">
                                     <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-amber-600"></i>
                                     <span>+ मोबाइल नंबर जोड़ें</span>
                                 </button>
                             `}
                             
-                            <select onchange="changeVoterLoyalty(${v.id}, this.value)" class="py-1.5 px-2 rounded-lg border text-[11px] font-bold outline-none cursor-pointer ${v.category === 'Support' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : v.category === 'Target' ? 'bg-amber-50 text-amber-700 border-amber-300' : v.category === 'Opposition' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-slate-50 text-slate-600 border-slate-300'}">
+                            <select onchange="changeVoterLoyalty(${v.id}, this.value); event.stopPropagation();" class="py-1.5 px-2 rounded-lg border text-[11px] font-bold outline-none cursor-pointer ${v.category === 'Support' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : v.category === 'Target' ? 'bg-amber-50 text-amber-700 border-amber-300' : v.category === 'Opposition' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-slate-50 text-slate-600 border-slate-300'}">
                                 <option value="Support" ${v.category === 'Support' ? 'selected' : ''}>🟢 पक्का</option>
                                 <option value="Target" ${v.category === 'Target' ? 'selected' : ''}>🟡 टारगेट</option>
                                 <option value="Neutral" ${v.category === 'Neutral' ? 'selected' : ''}>🔵 तटस्थ</option>
@@ -2214,7 +2165,17 @@
             if (!v) return;
 
             document.getElementById('modalVoterId').value = v.id;
-            document.getElementById('modalVoterSubtitle').textContent = `${v.name} (${v.rel}: ${v.rel_name}) • भाग ${v.part}, क्रम ${v.sr || v.id}`;
+            document.getElementById('modalVoterSubtitle').innerHTML = `
+                <div class="text-sm font-extrabold text-white">${v.name} (${v.rel || 'पिता'}: ${v.rel_name || '-'})</div>
+                <div class="text-xs text-amber-300 font-bold mt-1.5 flex items-center gap-1.5 flex-wrap">
+                    <span class="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 border border-amber-400/50">🏛️ वार्ड ${v.ward || '-'}</span>
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/50">📍 ${v.sec_name || '-'}</span>
+                    <span onclick="filterBySpecificHouse('${v.house}'); closeVoterModal();" class="cursor-pointer hover:bg-amber-400 hover:text-slate-950 px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono" title="इस मकान के सभी वोटर देखें">🏠 म.${v.house || '-'} 🔍</span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-1 font-mono">
+                    भाग ${v.part} • क्रम ${v.sr || v.id} • ${v.age} वर्ष (${v.gender}) • EPIC: ${v.epic || '-'}
+                </div>
+            `;
             document.getElementById('modalMobile').value = v.mobile || '';
             document.getElementById('modalCategory').value = v.category || 'Unassigned';
             document.getElementById('modalFamilyGroup').value = v.family_group || '';
