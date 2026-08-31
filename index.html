@@ -1426,7 +1426,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
-            populateSectionOptions();
             loadSavedData();
             buildPhoneticIndex();
             populateHouseDatalist();
@@ -2409,17 +2408,6 @@
             XLSX.utils.book_append_sheet(wb, ws, "Voters_Master");
             XLSX.writeFile(wb, `Piplantri_Voters_Master_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            populateSectionOptions();
-            loadSavedData();
-            buildPhoneticIndex();
-            populateHouseDatalist();
-            updateKPIs();
-            applyFilters();
-            lucide.createIcons();
-        });
     </script>
 
     <!-- WARD STATS MODAL -->
