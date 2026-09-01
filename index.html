@@ -1372,7 +1372,12 @@
                         <td class="p-2.5 font-bold font-mono text-slate-500">${v.ward_sr || '-'}</td>
                         <td class="p-2.5 font-extrabold text-slate-900">${v.name}</td>
                         <td class="p-2.5 text-slate-700">${v.rel_name || '-'} <span class="text-slate-400 text-[10px]">(${v.rel || 'पिता'})</span></td>
-                        <td class="p-2.5 font-mono font-bold text-slate-800">म.${v.house || '-'}</td>
+                        <td class="p-2.5 font-mono font-bold text-slate-800">
+                            <button type="button" onclick="openHouseMembersModal('${v.part || ''}', '${encodeURIComponent(v.house || '')}', '${v.ward || ''}', '', '${encodeURIComponent(v.name || '')}');" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-200 text-amber-900 text-[10px] font-bold border border-amber-200 transition shadow-xs cursor-pointer" title="इस मकान के सभी सदस्य देखें">
+                                <span>म.${v.house || '-'}</span>
+                                <i data-lucide="search" class="w-2.5 h-2.5 text-amber-700"></i>
+                            </button>
+                        </td>
                         <td class="p-2.5 text-center font-bold font-mono ${v.gender === 'महिला' ? 'text-pink-700' : 'text-blue-700'}">${v.age} वर्ष (${v.gender})</td>
                         <td class="p-2.5 text-slate-600 text-[11px]">${v.sec_name || '-'}</td>
                     </tr>
@@ -1720,7 +1725,10 @@
                     <td class="p-2.5">
                         <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono font-bold text-[10px]">भाग ${v.part}</span>
                         <div class="mt-0.5">
-                            <span onclick="filterBySpecificHouse('${v.house}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-block" title="मकान नं. ${v.house} के सभी वोटर देखें">म.${v.house || '-'} 🔍</span>
+                            <button type="button" onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${v.mobile || ''}', '${encodeURIComponent(v.name || '')}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-flex items-center gap-0.5 transition active:scale-95" title="इस मकान के सभी सदस्य देखें">
+                                <span>म.${v.house || '-'}</span>
+                                <i data-lucide="search" class="w-2.5 h-2.5 text-amber-700"></i>
+                            </button>
                         </div>
                     </td>
                     <td class="p-2.5">
@@ -1766,7 +1774,10 @@
                                 <input type="checkbox" onchange="toggleVoterSelection(${v.id}, this.checked)" ${selectedVoterIds.has(v.id) ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer" onclick="event.stopPropagation()">
                                 <span class="font-mono text-xs font-extrabold text-slate-600">क्र. ${v.sr || v.id}</span>
                                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[10px]">भाग ${v.part}</span>
-                                <span onclick="filterBySpecificHouse('${v.house}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-block" title="मकान नं. ${v.house} के सभी वोटर देखें">म.${v.house || '-'} 🔍</span>
+                                <button type="button" onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${v.mobile || ''}', '${encodeURIComponent(v.name || '')}'); event.stopPropagation();" class="cursor-pointer hover:bg-amber-200 hover:text-amber-950 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-extrabold text-[10px] border border-amber-200 shadow-xs inline-flex items-center gap-0.5 transition active:scale-95" title="इस मकान के सभी सदस्य देखें">
+                                    <span>म.${v.house || '-'}</span>
+                                    <i data-lucide="search" class="w-2.5 h-2.5 text-amber-700"></i>
+                                </button>
                             </div>
                             <div>${catBadge}</div>
                         </div>
@@ -1950,7 +1961,15 @@
                         <div class="flex-1 min-w-0 pr-2">
                             <div class="flex items-center gap-1">
                                 <span class="font-bold text-slate-900 truncate">${m.name}</span>
-                                <span class="text-[10px] text-slate-400 font-mono">(${m.age}/${m.gender} • म.${m.house})</span>
+                                <span class="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                                    <span>(${m.age}/${m.gender}</span>
+                                    <span>•</span>
+                                    <button type="button" onclick="openHouseMembersModal('${m.part}', '${encodeURIComponent(m.house)}', '${m.ward || ''}', '${m.mobile || ''}', '${encodeURIComponent(m.name || '')}'); event.stopPropagation();" class="underline text-indigo-600 hover:text-indigo-900 inline-flex items-center gap-0.5 cursor-pointer font-bold" title="इस मकान के सभी सदस्य देखें">
+                                        <span>म.${m.house}</span>
+                                        <i data-lucide="search" class="w-2 h-2"></i>
+                                    </button>
+                                    <span>)</span>
+                                </span>
                             </div>
                             <div class="text-[10px] text-slate-500 truncate">
                                 ${m.rel}: ${m.rel_name} ${m.mobile ? '• 📱 ' + m.mobile : ''}
@@ -2057,7 +2076,12 @@
                 tr.className = 'hover:bg-purple-50/40 transition';
                 tr.innerHTML = `
                     <td class="p-2.5 text-center font-mono font-bold text-slate-400">${idx + 1}</td>
-                    <td class="p-2.5 font-mono">भाग ${v.part} / म.${v.house || '-'}</td>
+                    <td class="p-2.5 font-mono">
+                        <button type="button" onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${v.mobile || ''}', '${encodeURIComponent(v.name || '')}');" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 hover:bg-purple-200 text-purple-900 text-[10px] font-bold border border-purple-200 transition shadow-xs cursor-pointer" title="इस मकान के सभी सदस्य देखें">
+                            <span>भाग ${v.part}/म.${v.house || '-'}</span>
+                            <i data-lucide="search" class="w-2.5 h-2.5 text-purple-700"></i>
+                        </button>
+                    </td>
                     <td class="p-2.5 font-bold text-slate-900">${v.name} <span class="font-normal text-slate-500 text-[11px]">(${v.rel}: ${v.rel_name})</span></td>
                     <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold text-xs">${v.outstation_city || 'अज्ञात शहर'}</span></td>
                     <td class="p-2.5 text-center font-mono font-bold">${v.mobile || '-'}</td>
@@ -2086,7 +2110,12 @@
                 tr.className = `hover:bg-slate-50 transition ${v.voted ? 'bg-emerald-50/50' : ''}`;
                 tr.innerHTML = `
                     <td class="p-2.5 text-center font-mono font-bold text-slate-400">${idx + 1}</td>
-                    <td class="p-2.5 font-mono">भाग ${v.part} / म.${v.house}</td>
+                    <td class="p-2.5 font-mono">
+                        <button type="button" onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${v.mobile || ''}', '${encodeURIComponent(v.name || '')}');" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-bold border border-slate-300 transition shadow-xs cursor-pointer" title="इस मकान के सभी सदस्य देखें">
+                            <span>भाग ${v.part}/म.${v.house || '-'}</span>
+                            <i data-lucide="search" class="w-2.5 h-2.5 text-slate-600"></i>
+                        </button>
+                    </td>
                     <td class="p-2.5 font-bold text-slate-900">${v.name}</td>
                     <td class="p-2.5 text-slate-600">${v.rel_name || '-'}</td>
                     <td class="p-2.5 text-center font-mono font-bold text-indigo-700">${v.epic || '-'}</td>
@@ -2173,7 +2202,10 @@
                 <div class="text-xs text-amber-300 font-bold mt-1.5 flex items-center gap-1.5 flex-wrap">
                     <span class="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 border border-amber-400/50">🏛️ वार्ड ${v.ward || '-'}</span>
                     <span class="px-2 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/50">📍 ${v.sec_name || '-'}</span>
-                    <span onclick="filterBySpecificHouse('${v.house}'); closeVoterModal();" class="cursor-pointer hover:bg-amber-400 hover:text-slate-950 px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono" title="इस मकान के सभी वोटर देखें">🏠 म.${v.house || '-'} 🔍</span>
+                    <button type="button" onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${v.mobile || ''}', '${encodeURIComponent(v.name || '')}');" class="cursor-pointer hover:bg-amber-400 hover:text-slate-950 px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono inline-flex items-center gap-1 text-xs transition" title="इस मकान के सभी सदस्य देखें">
+                        <span>🏠 म.${v.house || '-'}</span>
+                        <i data-lucide="search" class="w-3 h-3 text-amber-300"></i>
+                    </button>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-1 font-mono">
                     भाग ${v.part} • क्रम ${v.sr || v.id} • ${v.age} वर्ष (${v.gender}) • EPIC: ${v.epic || '-'}
@@ -2852,6 +2884,142 @@
             document.body.removeChild(link);
         }
 
+        // ==========================================
+        // HOUSEHOLD MEMBERS INSPECTION ENGINE
+        // ==========================================
+        let currentHouseModalContext = {
+            part: '',
+            house: '',
+            ward: '',
+            mobile: '',
+            contactName: '',
+            members: []
+        };
+
+        function openHouseMembersModal(part, encodedHouse, ward, mobile, encodedContactName) {
+            const house = decodeURIComponent(encodedHouse || '');
+            const contactName = decodeURIComponent(encodedContactName || '');
+            
+            const pStr = String(part || '').trim();
+            const hStr = String(house || '').trim().toLowerCase();
+
+            const members = (voters || []).filter(v => {
+                const vp = String(v.part || '').trim();
+                const vh = String(v.house || '').trim().toLowerCase();
+                if (pStr && vp !== pStr) return false;
+                return vh === hStr;
+            });
+
+            members.sort((a, b) => (parseInt(a.sr || a.id) || 0) - (parseInt(b.sr || b.id) || 0));
+
+            currentHouseModalContext = {
+                part: pStr || (members[0] ? members[0].part : ''),
+                house: house,
+                ward: ward || (members[0] ? members[0].ward : ''),
+                mobile: mobile || '',
+                contactName: contactName || '',
+                members: members
+            };
+
+            const titleEl = document.getElementById('houseModalTitle');
+            if (titleEl) {
+                titleEl.innerHTML = `
+                    <span>🏠 मकान सं. ${house || '-'} के सदस्य</span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/40">वार्ड ${currentHouseModalContext.ward || '-'}</span>
+                `;
+            }
+
+            const subEl = document.getElementById('houseModalSubtitle');
+            if (subEl) {
+                subEl.innerText = `भाग (बूथ): ${currentHouseModalContext.part || '-'} • अनुभाग: ${members[0]?.sec_name || '-'} • कुल सदस्य: ${members.length} मतदाता`;
+            }
+
+            renderHouseMembersList();
+            document.getElementById('houseMembersModal')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function renderHouseMembersList() {
+            const container = document.getElementById('houseMembersListBody');
+            if (!container) return;
+
+            const { members } = currentHouseModalContext;
+
+            if (members.length === 0) {
+                container.innerHTML = `
+                    <div class="py-8 text-center text-slate-500">
+                        <p class="text-sm">इस मकान में कोई मतदाता रिकॉर्ड नहीं मिला।</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let linkedCount = 0;
+
+            container.innerHTML = members.map(v => {
+                const hasMobile = Boolean(v.mobile && String(v.mobile).trim().length >= 10);
+                if (hasMobile) linkedCount++;
+
+                const phoneNums = hasMobile ? v.mobile.split(',').map(m => m.trim()).filter(Boolean) : [];
+
+                return `
+                    <div class="bg-slate-950/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition">
+                        <div class="flex items-start gap-3 flex-1 min-w-0">
+                            <div class="w-9 h-9 rounded-xl ${v.gender === 'महिला' ? 'bg-pink-950/70 text-pink-400 border border-pink-800/60' : 'bg-blue-950/70 text-blue-400 border border-blue-800/60'} flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">
+                                ${v.gender === 'महिला' ? '♀' : '♂'}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <strong class="text-white text-sm font-bold cursor-pointer hover:text-orange-400 transition" onclick="openVoterModal(${v.id}); closeHouseMembersModal();">${v.name}</strong>
+                                    <span class="text-xs text-slate-400">(${v.rel || 'संबंधी'}: <strong class="text-slate-300">${v.rel_name || '-'}</strong>)</span>
+                                    <span class="px-2 py-0.5 text-[10px] rounded bg-slate-800 text-slate-300 font-mono font-semibold">${v.age || '-'} वर्ष</span>
+                                    <span class="px-1.5 py-0.5 text-[10px] font-bold rounded ${v.category === 'Support' ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700' : v.category === 'Target' ? 'bg-amber-900/60 text-amber-300 border border-amber-700' : 'bg-slate-800 text-slate-400'}">
+                                        ${v.category === 'Support' ? '🟢 पक्का' : v.category === 'Target' ? '🟡 टारगेट' : v.category === 'Opposition' ? '🔴 विपक्ष' : '⚪ अन-मार्क'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 mt-1 flex-wrap text-xs">
+                                    <span class="px-2 py-0.5 rounded bg-slate-900 text-amber-300 font-mono text-[10px] font-bold border border-slate-800">क्र. ${v.sr || v.id}</span>
+                                    <span class="font-mono text-slate-400 text-[11px]">EPIC: <strong class="text-slate-300">${v.epic || '-'}</strong></span>
+                                    ${hasMobile ? `
+                                        <div class="inline-flex items-center gap-1">
+                                            ${phoneNums.map(num => `
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-400 font-mono text-[11px] font-bold">
+                                                    <i data-lucide="phone" class="w-3 h-3"></i>
+                                                    <span>${num}</span>
+                                                    <a href="tel:${num}" class="hover:text-white" title="कॉल"><i data-lucide="phone-call" class="w-2.5 h-2.5"></i></a>
+                                                    <a href="https://wa.me/91${num}" target="_blank" class="hover:text-emerald-300 text-emerald-400" title="व्हाट्सएप"><i data-lucide="message-circle" class="w-2.5 h-2.5"></i></a>
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    ` : `
+                                        <span class="text-[10px] text-slate-500 italic">बिना मोबाइल</span>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                            <button onclick="openVoterModal(${v.id}); closeHouseMembersModal();" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition flex items-center gap-1 shadow cursor-pointer">
+                                <i data-lucide="edit" class="w-3.5 h-3.5 text-orange-400"></i>
+                                <span>विवरण / एडिट</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const statsEl = document.getElementById('houseModalFooterStats');
+            if (statsEl) {
+                statsEl.innerHTML = `कुल <strong class="text-white">${members.length}</strong> सदस्य • <strong class="text-emerald-400">${linkedCount}</strong> के पास मोबाइल नंबर दर्ज है`;
+            }
+
+            lucide.createIcons();
+        }
+
+        function closeHouseMembersModal() {
+            document.getElementById('houseMembersModal')?.classList.add('hidden');
+        }
+
     </script>
 
     
@@ -3002,11 +3170,47 @@
                 </button>
             </div>
             
-            <div class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-3" id="newVotersModalContent"></div>
-            
             <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
                 <span>कुल 69 नए युवा मतदाता (Supplement 2026)</span>
                 <button onclick="closeNewVotersModal()" class="px-4 py-2 bg-slate-800 text-white rounded-xl font-bold">बंद करें</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOUSEHOLD MEMBERS INSPECTION MODAL -->
+    <div id="houseMembersModal" class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl shadow-inner">
+                        🏠
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2" id="houseModalTitle">
+                            <span>मकान सदस्य विवरण</span>
+                        </h3>
+                        <p class="text-xs text-indigo-300 font-medium" id="houseModalSubtitle">
+                            भाग: - • मकान: - • कुल सदस्य: 0
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeHouseMembersModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Members List Body -->
+            <div class="p-3 sm:p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2.5" id="houseMembersListBody">
+                <!-- Dynamically injected house member cards -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 flex justify-between items-center text-xs">
+                <span class="text-slate-400" id="houseModalFooterStats">कुल 0 सदस्य</span>
+                <button onclick="closeHouseMembersModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">
+                    बंद करें
+                </button>
             </div>
         </div>
     </div>
