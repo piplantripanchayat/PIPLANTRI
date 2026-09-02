@@ -1,10 +1,11 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v5-exact-match';
+const CACHE_NAME = 'piplantri-election-v6-war-room';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './linker.html',
   './contacts.html',
+  './cloudSync.js',
   './data.js',
   './manifest.json',
   'https://cdn.tailwindcss.com',

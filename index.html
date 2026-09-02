@@ -39,10 +39,30 @@
         }
 
         @media print {
-            .no-print { display: none !important; }
+            .no-print, header, nav, #topFilterBar, .tab-btn { display: none !important; }
             .print-only { display: block !important; }
-            body { background-color: white !important; }
-            @page { margin: 0.5cm; }
+            body { background-color: white !important; font-size: 11px !important; margin: 0 !important; padding: 0 !important; }
+            @page { size: A4 portrait; margin: 0.6cm; }
+            #tabContent-slips { display: block !important; }
+            .a4-slips-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-auto-rows: 242px !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            .a4-voter-slip {
+                border: 1px dashed #64748b !important;
+                border-radius: 8px !important;
+                padding: 8px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                background: white !important;
+                box-sizing: border-box !important;
+            }
         }
     </style>
 </head>
@@ -124,6 +144,10 @@
                     <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>कांटेक्ट लिंकर</span>
                 </a>
+                <button onclick="openBackupRestoreModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold flex items-center gap-1.5 shadow transition" title="1-क्लिक डेटा बैकअप & रीस्टोर">
+                    <i data-lucide="database" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>डेटा बैकअप</span>
+                </button>
                 <button onclick="openReportsModal()" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold flex items-center gap-1.5 shadow transition active:scale-95" title="लिंक्ड, पेंडिंग व वार्ड रिपोर्ट देखें व A4 प्रिंट करें">
                     <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-300"></i>
                     <span>🖨️ रिपोर्ट व प्रिंट</span>
@@ -551,21 +575,83 @@
 
         <!-- TAB 4: POLLING BOOTH VIEW -->
         <div id="tabContent-polling" class="tab-content hidden flex flex-col gap-3">
-            <div class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white p-4 rounded-2xl shadow flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-bold flex items-center gap-2">
-                        <i data-lucide="check-square" class="w-5 h-5 text-emerald-300"></i>
-                        <span>मतदान दिवस लाइव बूथ मॉनिटर</span>
-                    </h2>
-                    <p class="text-xs text-emerald-200 mt-0.5">वोटर द्वारा वोट डालते ही 1-क्लिक में मार्क करें</p>
+            <!-- Top Dashboard Card -->
+            <div class="bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white p-4 rounded-2xl shadow-lg border border-emerald-800/40 flex flex-col gap-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                            <i data-lucide="check-square" class="w-5 h-5 text-emerald-400"></i>
+                            <span>मतदान दिवस लाइव बूथ मॉनिटर</span>
+                        </h2>
+                        <p class="text-xs text-emerald-200 mt-0.5">बूथ पर वोट डालते ही 1-क्लिक में मार्क करें • रियल-टाइम टर्नआउट ट्रैकर</p>
+                    </div>
+                    
+                    <!-- Turnout KPI summary -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="bg-emerald-900/60 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-center">
+                            <span class="text-[10px] text-emerald-300 font-bold block">वोट डल चुके</span>
+                            <span class="text-base font-extrabold text-white" id="pollStatVoted">0</span>
+                            <span class="text-[10px] text-emerald-300 font-bold ml-1" id="pollStatVotedPct">(0%)</span>
+                        </div>
+                        <div class="bg-amber-900/60 border border-amber-500/30 px-3 py-1.5 rounded-xl text-center">
+                            <span class="text-[10px] text-amber-300 font-bold block">वोट बाकी हैं</span>
+                            <span class="text-base font-extrabold text-amber-200" id="pollStatPending">0</span>
+                            <span class="text-[10px] text-amber-300 font-bold ml-1" id="pollStatPendingPct">(0%)</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="setPollingFilter('all')" id="pollFilter-all" class="px-3 py-1.5 rounded-lg bg-white/20 text-white font-bold text-xs">सभी</button>
-                    <button onclick="setPollingFilter('voted')" id="pollFilter-voted" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-bold text-xs shadow">डाल चुके (Voted)</button>
-                    <button onclick="setPollingFilter('pending')" id="pollFilter-pending" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs shadow">बाकी हैं (Pending)</button>
+
+                <!-- Turnout Progress Bar -->
+                <div class="w-full bg-slate-800/80 rounded-full h-3 overflow-hidden p-0.5 border border-emerald-500/20">
+                    <div id="pollTurnoutProgressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+                </div>
+
+                <!-- Live Ward Turnout Badges Grid -->
+                <div id="pollWardTurnoutGrid" class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5 pt-1 text-[10px]"></div>
+
+                <!-- Controls & Filters -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/40 text-xs">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="setPollingFilter('all')" id="pollFilter-all" class="px-3 py-1.5 rounded-lg bg-white/20 text-white font-bold transition">सभी (2,607)</button>
+                        <button onclick="setPollingFilter('voted')" id="pollFilter-voted" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition">वोट डाल चुके ✅</button>
+                        <button onclick="setPollingFilter('pending')" id="pollFilter-pending" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold shadow transition">वोट बाकी ⏳</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <select id="pollWardFilter" onchange="renderPollingView()" class="py-1.5 px-2.5 bg-slate-900/90 text-white border border-emerald-500/40 rounded-lg text-xs font-bold outline-none">
+                            <option value="">सभी 11 वार्ड</option>
+                            <option value="1">वार्ड 1</option>
+                            <option value="2">वार्ड 2</option>
+                            <option value="3">वार्ड 3</option>
+                            <option value="4">वार्ड 4</option>
+                            <option value="5">वार्ड 5</option>
+                            <option value="6">वार्ड 6</option>
+                            <option value="7">वार्ड 7</option>
+                            <option value="8">वार्ड 8</option>
+                            <option value="9">वार्ड 9</option>
+                            <option value="10">वार्ड 10</option>
+                            <option value="11">वार्ड 11</option>
+                        </select>
+
+                        <select id="pollPartFilter" onchange="renderPollingView()" class="py-1.5 px-2.5 bg-slate-900/90 text-white border border-emerald-500/40 rounded-lg text-xs font-bold outline-none">
+                            <option value="">सभी 4 भाग</option>
+                            <option value="59">भाग 59 - मोरवड</option>
+                            <option value="60">भाग 60 - उमठी</option>
+                            <option value="61">भाग 61 - पिपलांत्री दायां</option>
+                            <option value="62">भाग 62 - पिपलांत्री बायां</option>
+                        </select>
+
+                        <input type="text" id="pollSearchInput" oninput="renderPollingView()" placeholder="बूथ सर्च: नाम, क्र., म...." class="py-1.5 px-2.5 bg-slate-950/80 text-white border border-emerald-500/40 rounded-lg text-xs outline-none focus:ring-1 focus:ring-emerald-400 placeholder:text-slate-400">
+
+                        <button onclick="printPendingVotersList()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg flex items-center gap-1 shadow transition active:scale-95" title="दोपहर बाद बाकी वोटरों की A4 लिस्ट निकालें">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>बाकी वोटर A4</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- Polling Table -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-200">
@@ -574,10 +660,10 @@
                             <th class="p-2.5 w-24">भाग / मकान</th>
                             <th class="p-2.5">मतदाता का नाम</th>
                             <th class="p-2.5 w-32">पिता / पति</th>
-                            <th class="p-2.5 w-28 text-center">EPIC नंबर</th>
-                            <th class="p-2.5 w-36 text-center">मोबाइल</th>
-                            <th class="p-2.5 w-32 text-center">रुझान</th>
-                            <th class="p-2.5 w-32 text-center">मतदान स्थिति</th>
+                            <th class="p-2.5 w-28 text-center">वार्ड / EPIC</th>
+                            <th class="p-2.5 w-36 text-center">मोबाइल / पर्ची</th>
+                            <th class="p-2.5 w-24 text-center">रुझान</th>
+                            <th class="p-2.5 w-36 text-center">मतदान स्थिति (Toggle)</th>
                         </tr>
                     </thead>
                     <tbody id="pollingTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
@@ -587,30 +673,55 @@
 
         <!-- TAB 5: SLIPS GENERATOR -->
         <div id="tabContent-slips" class="tab-content hidden flex flex-col gap-3">
-            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs no-print">
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs no-print">
                 <div>
-                    <h2 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <h2 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
                         <i data-lucide="printer" class="w-4 h-4 text-indigo-600"></i>
-                        <span>मतदाता पर्ची प्रिंटर (Voter Slips Generator)</span>
+                        <span>कटिंग वाली A4 मतदाता पर्चियां (8 Slips per Page)</span>
                     </h2>
-                    <p class="text-[11px] text-slate-500">प्रत्याशी नविन पालीवाल के नाम के साथ प्रिंट-रेडी पर्चियां निकालें</p>
+                    <p class="text-[11px] text-slate-500">प्रत्याशी <b>नवीन पालीवाल</b> के नाम व चुनाव अपील सहित A4 पर 8 पर्चियां कटिंग लेआउट में निकालें</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <select id="slipPartSelect" onchange="generateSlipsFromFilters()" class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <select id="slipWardSelect" onchange="generateSlipsFromFilters()" class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold">
+                        <option value="">सभी 11 वार्ड</option>
+                        <option value="1">वार्ड 1</option>
+                        <option value="2">वार्ड 2</option>
+                        <option value="3">वार्ड 3</option>
+                        <option value="4">वार्ड 4</option>
+                        <option value="5">वार्ड 5</option>
+                        <option value="6">वार्ड 6</option>
+                        <option value="7">वार्ड 7</option>
+                        <option value="8">वार्ड 8</option>
+                        <option value="9">वार्ड 9</option>
+                        <option value="10">वार्ड 10</option>
+                        <option value="11">वार्ड 11</option>
+                    </select>
+
+                    <select id="slipPartSelect" onchange="generateSlipsFromFilters()" class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold">
                         <option value="">सभी 4 भाग</option>
                         <option value="59">भाग 59 - मोरवड</option>
                         <option value="60">भाग 60 - उमठी</option>
                         <option value="61">भाग 61 - पिपलांत्री दायां</option>
                         <option value="62">भाग 62 - पिपलांत्री बायां</option>
                     </select>
-                    <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow">
+
+                    <select id="slipStatusSelect" onchange="generateSlipsFromFilters()" class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold">
+                        <option value="all">सभी मतदाता</option>
+                        <option value="pending">केवल बाकी वोटर (Pending)</option>
+                        <option value="support">केवल पक्का समर्थक (Support)</option>
+                    </select>
+
+                    <input type="text" id="slipSearchInput" oninput="generateSlipsFromFilters()" placeholder="पर्ची खोजें: नाम, म...." class="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold">
+
+                    <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition active:scale-95">
                         <i data-lucide="printer" class="w-4 h-4"></i>
-                        <span>प्रिंट निकालें (Print Slips)</span>
+                        <span>A4 प्रिंट निकालें (8 Slips/Page)</span>
                     </button>
                 </div>
             </div>
 
-            <div id="slipsPrintContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+            <!-- A4 Grid for Slips (Screen + Print) -->
+            <div id="slipsPrintContainer" class="a4-slips-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         </div>
 
     </main>
@@ -693,9 +804,70 @@
                 </div>
             </div>
 
-            <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-end gap-2 text-xs">
-                <button onclick="closeVoterModal()" class="px-4 py-1.5 text-slate-600 hover:text-slate-800 font-semibold">रद्द करें</button>
-                <button onclick="saveVoterModalDetails()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow">सुरक्षित करें</button>
+            <div class="p-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between gap-2 text-xs">
+                <button type="button" onclick="shareVoterOnWhatsApp(document.getElementById('modalVoterId').value)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow flex items-center gap-1.5 transition active:scale-95" title="WhatsApp पर मतदाता पर्ची भेजें">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i>
+                    <span>WhatsApp पर्ची</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeVoterModal()" class="px-4 py-1.5 text-slate-600 hover:text-slate-800 font-semibold">रद्द करें</button>
+                    <button onclick="saveVoterModalDetails()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow">सुरक्षित करें</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1-CLICK DATA BACKUP & RESTORE MODAL -->
+    <div id="backupRestoreModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400">
+                        <i data-lucide="database" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-white">डेटा बैकअप एवं रीस्टोर (Backup & Restore)</h3>
+                        <p class="text-[11px] text-cyan-200">मतदाता लिंकिंग, मतदान स्थिति व नोट्स की सुरक्षा</p>
+                    </div>
+                </div>
+                <button onclick="closeBackupRestoreModal()" class="text-slate-300 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs">
+                <!-- Export Section -->
+                <div class="bg-indigo-50/70 p-4 rounded-xl border border-indigo-100 space-y-2">
+                    <div class="flex items-center gap-2 text-indigo-950 font-bold text-sm">
+                        <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i>
+                        <span>1-क्लिक पूर्ण डेटा बैकअप डाउनलोड करें</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600">
+                        कार्यकर्ताओं द्वारा जोड़े गए सभी मोबाइल नंबर, वोटिंग स्थिति (Voted), प्रवासी जानकारी और रणनीति नोट्स को एक सुरक्षित <b>.json</b> फ़ाइल में सेव करें।
+                    </p>
+                    <button onclick="exportFullDataBackup()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow flex items-center justify-center gap-2 transition active:scale-95">
+                        <i data-lucide="file-down" class="w-4 h-4"></i>
+                        <span>पूर्ण बैकअप डाउनलोड करें (.JSON)</span>
+                    </button>
+                </div>
+
+                <!-- Import Section -->
+                <div class="bg-amber-50/70 p-4 rounded-xl border border-amber-100 space-y-2">
+                    <div class="flex items-center gap-2 text-amber-950 font-bold text-sm">
+                        <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i>
+                        <span>दूसरे फोन/कंप्यूटर से बैकअप रीस्टोर करें</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600">
+                        यदि आपने किसी अन्य मोबाइल या लैपटॉप में बैकअप लिया था, तो उस फ़ाइल को यहाँ अपलोड करके तुरंत सारा डेटा लोड कर सकते हैं।
+                    </p>
+                    <input type="file" id="backupFileInput" accept=".json" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer">
+                    <button onclick="importFullDataBackup()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg shadow flex items-center justify-center gap-2 transition active:scale-95">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>बैकअप रीस्टोर करें (Restore Data)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-end text-xs">
+                <button onclick="closeBackupRestoreModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg">बंद करें</button>
             </div>
         </div>
     </div>
@@ -1814,9 +1986,17 @@
                     <td class="p-2.5 text-center">${phoneHtml}</td>
                     <td class="p-2.5 text-center">${catBadge}</td>
                     <td class="p-2.5 text-center">
-                        <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="पूरा विवरण एवं संपादन">
-                            <i data-lucide="edit" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex items-center justify-center gap-1">
+                            <button type="button" onclick="togglePollingVote(${v.id}); event.stopPropagation();" class="p-1.5 rounded-lg text-xs font-bold transition ${v.voted ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-500'}" title="${v.voted ? 'मतदान कर दिया (Voted)' : 'मतदान बाकी है (Mark Voted)'}">
+                                <i data-lucide="${v.voted ? 'check-circle-2' : 'circle'}" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" onclick="shareVoterOnWhatsApp(${v.id}); event.stopPropagation();" class="p-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition" title="WhatsApp पर मतदाता पर्ची भेजें">
+                                <i data-lucide="message-circle" class="w-4 h-4 text-emerald-700"></i>
+                            </button>
+                            <button onclick="openVoterModal(${v.id})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition" title="पूरा विवरण एवं संपादन">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1882,35 +2062,47 @@
                         </div>
 
                         <!-- Mobile Contact Action Bar -->
-                        <div class="flex items-center justify-between gap-2 pt-1">
+                        <div class="flex flex-col gap-2 pt-1 border-t border-slate-100">
+                            <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button type="button" onclick="togglePollingVote(${v.id}); event.stopPropagation();" class="py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs ${v.voted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                                        <i data-lucide="${v.voted ? 'check-circle-2' : 'circle'}" class="w-3.5 h-3.5"></i>
+                                        <span>${v.voted ? 'वोट दिया ✅' : 'वोट बाकी'}</span>
+                                    </button>
+                                    <button type="button" onclick="shareVoterOnWhatsApp(${v.id}); event.stopPropagation();" class="py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95" title="WhatsApp पर पर्ची भेजें">
+                                        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                                        <span>पर्ची</span>
+                                    </button>
+                                </div>
+                                <select onchange="changeVoterLoyalty(${v.id}, this.value); event.stopPropagation();" class="py-1 px-2 rounded-lg border text-[11px] font-bold outline-none cursor-pointer ${v.category === 'Support' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : v.category === 'Target' ? 'bg-amber-50 text-amber-700 border-amber-300' : v.category === 'Opposition' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-slate-50 text-slate-600 border-slate-300'}">
+                                    <option value="Support" ${v.category === 'Support' ? 'selected' : ''}>🟢 पक्का</option>
+                                    <option value="Target" ${v.category === 'Target' ? 'selected' : ''}>🟡 टारगेट</option>
+                                    <option value="Neutral" ${v.category === 'Neutral' ? 'selected' : ''}>🔵 तटस्थ</option>
+                                    <option value="Opposition" ${v.category === 'Opposition' ? 'selected' : ''}>🔴 विपक्ष</option>
+                                    <option value="Unassigned" ${v.category === 'Unassigned' ? 'selected' : ''}>⚪ अन-मार्क</option>
+                                </select>
+                            </div>
+
                             ${hasMobile ? `
-                                <div class="flex items-center gap-1.5 flex-1 flex-wrap">
+                                <div class="flex items-center gap-1.5 flex-wrap">
                                     ${phoneNumbers.map(num => `
                                         <div class="flex items-center gap-1 flex-1 min-w-[130px]">
-                                            <a href="tel:${num}" class="flex-1 py-1.5 px-2 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 text-xs font-bold flex items-center justify-center gap-1 shadow-sm transition">
+                                            <a href="tel:${num}" class="flex-1 py-1 px-2 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition">
                                                 <i data-lucide="phone" class="w-3.5 h-3.5 text-blue-600"></i>
                                                 <span class="font-mono">${num}</span>
                                             </a>
-                                            <a href="https://wa.me/91${num}?text=${encodeURIComponent(' सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition shadow-sm" title="व्हाट्सएप">
-                                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                            <a href="https://wa.me/91${num}?text=${encodeURIComponent(' सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition shadow-xs" title="व्हाट्सएप">
+                                                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                                             </a>
                                         </div>
                                     `).join('')}
                                 </div>
                             ` : `
-                                <button onclick="openVoterModal(${v.id}); event.stopPropagation();" class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold flex items-center justify-center gap-1 transition">
+                                <button onclick="openVoterModal(${v.id}); event.stopPropagation();" class="w-full py-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold flex items-center justify-center gap-1 transition">
                                     <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-amber-600"></i>
                                     <span>+ मोबाइल नंबर जोड़ें</span>
                                 </button>
                             `}
-                            
-                            <select onchange="changeVoterLoyalty(${v.id}, this.value); event.stopPropagation();" class="py-1.5 px-2 rounded-lg border text-[11px] font-bold outline-none cursor-pointer ${v.category === 'Support' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : v.category === 'Target' ? 'bg-amber-50 text-amber-700 border-amber-300' : v.category === 'Opposition' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-slate-50 text-slate-600 border-slate-300'}">
-                                <option value="Support" ${v.category === 'Support' ? 'selected' : ''}>🟢 पक्का</option>
-                                <option value="Target" ${v.category === 'Target' ? 'selected' : ''}>🟡 टारगेट</option>
-                                <option value="Neutral" ${v.category === 'Neutral' ? 'selected' : ''}>🔵 तटस्थ</option>
-                                <option value="Opposition" ${v.category === 'Opposition' ? 'selected' : ''}>🔴 विपक्ष</option>
-                                <option value="Unassigned" ${v.category === 'Unassigned' ? 'selected' : ''}>⚪ अन-मार्क</option>
-                            </select>
                         </div>
                     `;
                     mobileContainer.appendChild(card);
@@ -2088,12 +2280,10 @@
                                 🟡 सभी टारगेट
                             </button>
                         </div>
-                        ${sharedPhone ? `
-                            <a href="https://wa.me/91${sharedPhone.split(',')[0].trim()}" target="_blank" class="text-emerald-600 font-bold hover:underline text-[11px] flex items-center gap-0.5">
-                                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                                <span>व्हाट्सएप</span>
-                            </a>
-                        ` : ''}
+                        <button type="button" onclick="shareFamilyOnWhatsApp('${encodeURIComponent(fKey)}');" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer" title="पूरे परिवार की मतदाता पर्ची WhatsApp पर भेजें">
+                            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                            <span>📱 परिवार पर्ची</span>
+                        </button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -2167,15 +2357,91 @@
             lucide.createIcons();
         }
 
-        // Polling View
+        // ================= POLLING BOOTH WAR-ROOM ENGINE =================
         function renderPollingView() {
             const tbody = document.getElementById('pollingTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            let list = voters;
-            if (pollingFilterState === 'voted') list = voters.filter(v => v.voted);
-            else if (pollingFilterState === 'pending') list = voters.filter(v => !v.voted && v.location_status !== 'Deceased' && v.location_status !== 'ECIDeleted');
 
-            list.forEach((v, idx) => {
+            const ward = document.getElementById('pollWardFilter')?.value || '';
+            const part = document.getElementById('pollPartFilter')?.value || '';
+            const searchQ = (document.getElementById('pollSearchInput')?.value || '').trim().toLowerCase();
+            const isEnglish = /[a-zA-Z]/.test(searchQ);
+            const qDirectHindi = isEnglish ? romanToHindiTransliterate(searchQ) : '';
+            const qHindiSuggs = isEnglish ? getMultiHindiSuggestions(searchQ) : [];
+
+            // Calculate overall turnout stats
+            const activeVoters = voters.filter(v => v.location_status !== 'Deceased' && v.location_status !== 'ECIDeleted');
+            const totalActive = activeVoters.length || 2605;
+            const votedTotal = activeVoters.filter(v => v.voted).length;
+            const pendingTotal = totalActive - votedTotal;
+            const votedPct = ((votedTotal / totalActive) * 100).toFixed(1);
+            const pendingPct = ((pendingTotal / totalActive) * 100).toFixed(1);
+
+            const statVoted = document.getElementById('pollStatVoted');
+            const statVotedPct = document.getElementById('pollStatVotedPct');
+            const statPending = document.getElementById('pollStatPending');
+            const statPendingPct = document.getElementById('pollStatPendingPct');
+            const progressBar = document.getElementById('pollTurnoutProgressBar');
+
+            if (statVoted) statVoted.textContent = votedTotal.toLocaleString();
+            if (statVotedPct) statVotedPct.textContent = `(${votedPct}%)`;
+            if (statPending) statPending.textContent = pendingTotal.toLocaleString();
+            if (statPendingPct) statPendingPct.textContent = `(${pendingPct}%)`;
+            if (progressBar) progressBar.style.width = `${votedPct}%`;
+
+            // Ward-wise turnout grid
+            const wardGrid = document.getElementById('pollWardTurnoutGrid');
+            if (wardGrid) {
+                let wardHtml = '';
+                for (let w = 1; w <= 11; w++) {
+                    const wVoters = activeVoters.filter(v => Number(v.ward) === w);
+                    const wVoted = wVoters.filter(v => v.voted).length;
+                    const wPct = wVoters.length ? Math.round((wVoted / wVoters.length) * 100) : 0;
+                    wardHtml += `
+                        <div class="bg-slate-900/80 border border-emerald-500/20 rounded-lg p-1 text-center cursor-pointer hover:border-emerald-400 transition" onclick="document.getElementById('pollWardFilter').value='${w}'; renderPollingView();">
+                            <span class="text-slate-400 block text-[9px]">वार्ड ${w}</span>
+                            <span class="font-extrabold text-emerald-300 text-[11px]">${wPct}%</span>
+                            <span class="text-[8px] text-slate-500 block">${wVoted}/${wVoters.length}</span>
+                        </div>
+                    `;
+                }
+                wardGrid.innerHTML = wardHtml;
+            }
+
+            // Filter voters for table list
+            let list = activeVoters;
+            if (pollingFilterState === 'voted') list = list.filter(v => v.voted);
+            else if (pollingFilterState === 'pending') list = list.filter(v => !v.voted);
+
+            if (ward) list = list.filter(v => String(v.ward) === String(ward));
+            if (part) list = list.filter(v => String(v.part) === String(part));
+
+            if (searchQ) {
+                list = list.filter(v => {
+                    if (v.name.toLowerCase().includes(searchQ) ||
+                        v.rel_name.toLowerCase().includes(searchQ) ||
+                        String(v.sr || v.id).includes(searchQ) ||
+                        String(v.epic || '').toLowerCase().includes(searchQ) ||
+                        String(v.house || '').toLowerCase().includes(searchQ) ||
+                        String(v.mobile || '').includes(searchQ)) return true;
+                    if (isEnglish) {
+                        const nTranslit = transliterateHindiClean(v.name);
+                        const rTranslit = transliterateHindiClean(v.rel_name);
+                        if ((nTranslit && nTranslit.includes(searchQ)) || (rTranslit && rTranslit.includes(searchQ))) return true;
+                        if (qDirectHindi && (v.name.includes(qDirectHindi) || v.rel_name.includes(qDirectHindi))) return true;
+                        if (qHindiSuggs.some(s => v.name.includes(s.word) || v.rel_name.includes(s.word))) return true;
+                    }
+                    return false;
+                });
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-semibold">कोई मतदाता नहीं मिला।</td></tr>`;
+                return;
+            }
+
+            list.slice(0, 500).forEach((v, idx) => {
                 const tr = document.createElement('tr');
                 tr.className = `hover:bg-slate-50 transition ${v.voted ? 'bg-emerald-50/50' : ''}`;
                 tr.innerHTML = `
@@ -2186,14 +2452,33 @@
                             <i data-lucide="search" class="w-2.5 h-2.5 text-slate-600"></i>
                         </button>
                     </td>
-                    <td class="p-2.5 font-bold text-slate-900">${v.name}</td>
-                    <td class="p-2.5 text-slate-600">${v.rel_name || '-'}</td>
-                    <td class="p-2.5 text-center font-mono font-bold text-indigo-700">${v.epic || '-'}</td>
-                    <td class="p-2.5 text-center font-mono">${v.mobile || '-'}</td>
+                    <td class="p-2.5">
+                        <div onclick="openVoterModal(${v.id})" class="font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition flex items-center gap-1">
+                            <span>${v.name}</span>
+                        </div>
+                    </td>
+                    <td class="p-2.5 text-slate-600">${v.rel_name || '-'} <span class="text-[10px] text-slate-400">(${v.rel || 'पिता'})</span></td>
+                    <td class="p-2.5 text-center font-mono font-bold text-indigo-700">
+                        <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-950 font-extrabold text-[10px] border border-amber-300 mr-1">वार्ड ${v.ward || '-'}</span>
+                        <span>${v.epic || '-'}</span>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            ${v.mobile ? `
+                                <a href="tel:${v.mobile.split(',')[0].trim()}" class="p-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="कॉल">
+                                    <i data-lucide="phone" class="w-3 h-3"></i>
+                                </a>
+                            ` : ''}
+                            <button type="button" onclick="shareVoterOnWhatsApp(${v.id});" class="p-1 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition" title="WhatsApp पर पर्ची भेजें">
+                                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-700"></i>
+                            </button>
+                            <span class="font-mono text-xs text-slate-700">${v.mobile ? v.mobile.split(',')[0].trim() : '-'}</span>
+                        </div>
+                    </td>
                     <td class="p-2.5 text-center">${v.category === 'Support' ? '🟢 पक्का' : v.category === 'Target' ? '🟡 टारगेट' : '⚪ अन-मार्क'}</td>
                     <td class="p-2.5 text-center">
-                        <button onclick="togglePollingVote(${v.id})" class="px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${v.voted ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}">
-                            ${v.voted ? '✓ वोट डल गया' : 'मार्क करें'}
+                        <button onclick="togglePollingVote(${v.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${v.voted ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold'}">
+                            ${v.voted ? '✓ वोट डल गया' : 'मार्क करें ➔'}
                         </button>
                     </td>
                 `;
@@ -2216,49 +2501,91 @@
         }
 
         function togglePollingVote(voterId) {
-            const v = voters.find(x => x.id === voterId);
+            const v = voters.find(x => Number(x.id) === Number(voterId));
             if (v) {
                 v.voted = !v.voted;
+                v.voted_at = v.voted ? new Date().toISOString() : null;
                 saveVoterState();
-                renderPollingView();
+                updateKPIs();
+                if (currentTab === 'polling') renderPollingView();
+                else if (currentTab === 'voters') renderVotersTable();
+                else if (currentTab === 'slips') generateSlipsFromFilters();
             }
         }
 
-        // Slips Generator
+        // ================= SLIPS GENERATOR (A4 8-SLIPS CUTTING LAYOUT) =================
         function generateSlipsFromFilters() {
             const container = document.getElementById('slipsPrintContainer');
+            if (!container) return;
             container.innerHTML = '';
-            const part = document.getElementById('slipPartSelect').value;
-            const slipsVoters = voters.filter(v => !part || v.part === part).slice(0, 300);
 
-            slipsVoters.forEach(v => {
+            const ward = document.getElementById('slipWardSelect')?.value || '';
+            const part = document.getElementById('slipPartSelect')?.value || '';
+            const status = document.getElementById('slipStatusSelect')?.value || 'all';
+            const searchQ = (document.getElementById('slipSearchInput')?.value || '').trim().toLowerCase();
+
+            let slipsVoters = voters.filter(v => v.location_status !== 'Deceased' && v.location_status !== 'ECIDeleted');
+            if (ward) slipsVoters = slipsVoters.filter(v => String(v.ward) === String(ward));
+            if (part) slipsVoters = slipsVoters.filter(v => String(v.part) === String(part));
+            if (status === 'pending') slipsVoters = slipsVoters.filter(v => !v.voted);
+            else if (status === 'support') slipsVoters = slipsVoters.filter(v => v.category === 'Support');
+
+            if (searchQ) {
+                slipsVoters = slipsVoters.filter(v => {
+                    return v.name.toLowerCase().includes(searchQ) ||
+                           v.rel_name.toLowerCase().includes(searchQ) ||
+                           String(v.sr || v.id).includes(searchQ) ||
+                           String(v.house || '').toLowerCase().includes(searchQ);
+                });
+            }
+
+            slipsVoters.slice(0, 400).forEach(v => {
+                const boothName = getPollingBoothName(v.part);
                 const slip = document.createElement('div');
-                slip.className = 'bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm flex flex-col justify-between text-xs break-inside-avoid';
+                slip.className = 'a4-voter-slip bg-white p-3 rounded-xl border border-slate-300 border-dashed shadow-xs flex flex-col justify-between text-xs break-inside-avoid relative hover:border-indigo-400 transition';
                 slip.innerHTML = `
                     <div>
-                        <div class="text-center border-b border-dashed border-slate-300 pb-1.5 mb-1.5">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">पंचायती राज चुनाव - 2026</span>
-                            <div class="font-extrabold text-sm text-indigo-950">ग्राम पंचायत पिपलांत्री (AC 175)</div>
-                            <div class="text-[11px] font-bold text-amber-600">सरपंच पद प्रत्याशी: नविन पालीवाल</div>
+                        <!-- Cutting line hint & Election Header -->
+                        <div class="text-center border-b border-dashed border-slate-300 pb-1.5 mb-1.5 relative">
+                            <span class="absolute left-0 top-0 text-[10px] text-slate-400 no-print">✂️</span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">पंचायती राज चुनाव - 2026</span>
+                            <div class="font-black text-xs text-indigo-950">ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द)</div>
+                            <div class="text-[11px] font-extrabold text-amber-700 bg-amber-50/80 px-2 py-0.5 rounded-full inline-block mt-0.5 border border-amber-300/60">
+                                🚩 सरपंच प्रत्याशी: नवीन पालीवाल
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5 my-2">
-                            <div><span class="text-slate-400">मतदाता:</span> <b class="text-slate-900">${v.name}</b></div>
-                            <div><span class="text-slate-400">${v.rel || 'पिता'}:</span> <b>${v.rel_name || '-'}</b></div>
-                            <div><span class="text-slate-400">भाग संख्या:</span> <b class="font-mono text-indigo-700">${v.part}</b></div>
-                            <div><span class="text-slate-400">क्रम संख्या:</span> <b class="font-mono text-indigo-700">${v.sr || v.id}</b></div>
-                            <div><span class="text-slate-400">मकान नं.:</span> <b>${v.house || '-'}</b></div>
-                            <div><span class="text-slate-400">आयु/लिंग:</span> <b>${v.age} / ${v.gender}</b></div>
+
+                        <!-- Voter Details Grid -->
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-1 my-1.5 text-[11px]">
+                            <div><span class="text-slate-500">मतदाता:</span> <b class="text-slate-950 font-bold">${v.name}</b></div>
+                            <div><span class="text-slate-500">${v.rel || 'पिता'}:</span> <b class="text-slate-900">${v.rel_name || '-'}</b></div>
+                            <div><span class="text-slate-500">वार्ड नंबर:</span> <b class="text-indigo-900 font-bold font-mono">वार्ड ${v.ward || '-'}</b></div>
+                            <div><span class="text-slate-500">भाग संख्या:</span> <b class="font-mono text-indigo-700 font-bold">${v.part}</b></div>
+                            <div><span class="text-slate-500">क्रम संख्या:</span> <b class="font-mono text-emerald-800 font-black text-xs">${v.sr || v.id}</b></div>
+                            <div><span class="text-slate-500">मकान नं.:</span> <b class="font-bold text-slate-900">${v.house || '-'}</b></div>
+                            <div><span class="text-slate-500">आयु/लिंग:</span> <b>${v.age} / ${v.gender}</b></div>
+                            <div class="truncate"><span class="text-slate-500">EPIC:</span> <b class="font-mono text-[10px]">${v.epic || '-'}</b></div>
                         </div>
-                        <div class="text-[10px] font-mono text-slate-500 border-t border-slate-100 pt-1">
-                            EPIC: <b class="text-slate-900">${v.epic || '-'}</b>
+
+                        <!-- Polling Booth -->
+                        <div class="text-[10px] text-slate-600 bg-slate-50 p-1 rounded border border-slate-200 mt-1">
+                            🏫 <b>मतदान केंद्र:</b> ${boothName}
                         </div>
                     </div>
-                    <div class="mt-2 text-center text-[10px] text-slate-400 border-t border-dashed border-slate-200 pt-1">
-                        कृपया समय पर मतदान कर लोकतंत्र को मजबूत बनाएं 🙏
+
+                    <!-- Footer with Navin Paliwal appeal & WhatsApp share -->
+                    <div class="mt-2 pt-1 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px]">
+                        <span class="text-slate-500 font-medium">लोकतंत्र को मजबूत बनाएं 🙏</span>
+                        <button type="button" onclick="shareVoterOnWhatsApp(${v.id});" class="no-print px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] flex items-center gap-0.5 shadow-xs transition active:scale-95 cursor-pointer" title="WhatsApp पर भेजें">
+                            <i data-lucide="message-circle" class="w-3 h-3"></i>
+                            <span>WhatsApp</span>
+                        </button>
                     </div>
                 `;
                 container.appendChild(slip);
             });
+
+            lucide.createIcons();
         }
 
         // Voter Detail Modal
@@ -3100,6 +3427,249 @@
 
         function closeHouseMembersModal() {
             document.getElementById('houseMembersModal')?.classList.add('hidden');
+        }
+
+        // =========================================================================
+        // 1-CLICK WHATSAPP VOTER SLIP, FAMILY SHARING, PENDING MOBILIZATION & BACKUP
+        // =========================================================================
+        function getPollingBoothName(part) {
+            const p = String(part || '').trim();
+            if (p === '59') return 'राजकीय उच्च माध्यमिक विद्यालय, मोरवड़';
+            if (p === '60') return 'राजकीय उच्च प्राथमिक विद्यालय, उमठी';
+            if (p === '61') return 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (दायां भाग)';
+            if (p === '62') return 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (बायां भाग)';
+            return 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री';
+        }
+
+        function getVoterWhatsAppMessage(v) {
+            if (!v) return '';
+            const booth = getPollingBoothName(v.part);
+            return `🚩 *ग्राम पंचायत पिपलांत्री चुनाव - 2026*
+सरपंच पद प्रत्याशी: *नवीन पालीवाल*
+━━━━━━━━━━━━━━━━━━
+👤 *मतदाता पर्ची (Voter Slip)*
+━━━━━━━━━━━━━━━━━━
+• *मतदाता का नाम:* ${v.name}
+• *पिता/पति:* ${v.rel_name || '-'} (${v.rel || 'पिता'})
+• *वार्ड नंबर:* वार्ड ${v.ward || '-'}
+• *भाग संख्या:* भाग ${v.part} (${v.sec_name || '-'})
+• *क्रम संख्या (Sr No):* ${v.sr || v.id}
+• *मकान संख्या:* ${v.house || '-'}
+• *पहचान पत्र (EPIC):* ${v.epic || '-'}
+• *मतदान केंद्र:* ${booth}
+━━━━━━━━━━━━━━━━━━
+🗳️ *अपील:*
+पिपलांत्री ग्राम पंचायत के सर्वांगीण विकास, पारदर्शिता एवं जनसेवा हेतु अपना अमूल्य मत व समर्थन देकर अपने सेवक *नवीन पालीवाल* को भारी मतों से विजयी बनाएं।
+समय पर पहुंचकर मतदान अवश्य करें। 🙏`;
+        }
+
+        function shareVoterOnWhatsApp(voterId, targetMobile = '') {
+            const v = voters.find(x => Number(x.id) === Number(voterId));
+            if (!v) return;
+            const msg = getVoterWhatsAppMessage(v);
+            const cleanPhone = String(targetMobile || v.mobile || '').replace(/[^0-9]/g, '').slice(-10);
+            let url = '';
+            if (cleanPhone && cleanPhone.length === 10) {
+                url = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`;
+            } else {
+                url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            }
+            window.open(url, '_blank');
+        }
+
+        function shareFamilyOnWhatsApp(encodedKey) {
+            const fKey = decodeURIComponent(encodedKey || '');
+            if (!fKey) return;
+            const members = voters.filter(v => {
+                if (v.family_group && v.family_group.trim() === fKey) return true;
+                let secNo = v.sec_no;
+                if (!secNo && v.sec_name) {
+                    const match = v.sec_name.match(/^(\d+)/);
+                    secNo = match ? match[1] : '1';
+                }
+                const defaultKey = `भाग ${v.part} | अनुभाग ${secNo} | मकान ${v.house || 'अज्ञात'}`;
+                return defaultKey === fKey;
+            });
+
+            if (!members.length) return;
+            const sample = members[0];
+            const booth = getPollingBoothName(sample.part);
+            const sharedPhone = members.find(m => m.mobile && m.mobile.length >= 10)?.mobile || '';
+            const cleanPhone = String(sharedPhone).replace(/[^0-9]/g, '').slice(-10);
+
+            let membersListText = members.map((m, idx) => {
+                return `${idx + 1}. *${m.name}* (${m.rel}: ${m.rel_name || '-'})\n   क्र: *${m.sr || m.id}* | EPIC: ${m.epic || '-'} | म: ${m.house || '-'}`;
+            }).join('\n');
+
+            const msg = `🚩 *ग्राम पंचायत पिपलांत्री चुनाव - 2026*
+सरपंच पद प्रत्याशी: *नवीन पालीवाल*
+━━━━━━━━━━━━━━━━━━
+👨‍👩‍👧‍👦 *संयुक्त परिवार मतदाता पर्ची (${members.length} सदस्य)*
+🏛️ *वार्ड नंबर:* वार्ड ${sample.ward || '-'} | *भाग:* ${sample.part}
+🏠 *परिवार समूह:* ${fKey}
+🏫 *मतदान केंद्र:* ${booth}
+━━━━━━━━━━━━━━━━━━
+*मतदाताओं का विवरण:*
+${membersListText}
+━━━━━━━━━━━━━━━━━━
+🗳️ *अपील:*
+पिपलांत्री के नव-निर्माण व समग्र विकास हेतु पूरे परिवार सहित मतदान कर अपने सेवक *नवीन पालीवाल* को आशीर्वाद प्रदान करें। 🙏`;
+
+            let url = '';
+            if (cleanPhone && cleanPhone.length === 10) {
+                url = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`;
+            } else {
+                url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            }
+            window.open(url, '_blank');
+        }
+
+        // --- Afternoon Pending Voters Mobilization Print ---
+        function printPendingVotersList() {
+            const ward = document.getElementById('pollWardFilter')?.value || '';
+            const part = document.getElementById('pollPartFilter')?.value || '';
+            let pending = voters.filter(v => !v.voted && v.location_status !== 'Deceased' && v.location_status !== 'ECIDeleted');
+            if (ward) pending = pending.filter(v => String(v.ward) === String(ward));
+            if (part) pending = pending.filter(v => String(v.part) === String(part));
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('कृपया प्रिंट पॉपअप को अनुमति दें!');
+                return;
+            }
+
+            const wardTitle = ward ? `वार्ड ${ward}` : 'सभी 11 वार्ड';
+            const partTitle = part ? `भाग ${part}` : 'सभी 4 भाग';
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="hi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>बाकी मतदाता सूची - पिपलांत्री (प्रत्याशी: नवीन पालीवाल)</title>
+                    <style>
+                        body { font-family: sans-serif; font-size: 11px; margin: 15px; }
+                        h1 { font-size: 16px; margin: 0 0 4px; text-align: center; color: #1e1b4b; }
+                        p.subtitle { text-align: center; margin: 0 0 10px; font-weight: bold; color: #b45309; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
+                        th { background: #f1f5f9; font-weight: bold; }
+                        .text-center { text-align: center; }
+                        @media print { body { margin: 0.5cm; } button { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <div>
+                            <h1>🚩 ग्राम पंचायत पिपलांत्री - दोपहर बाद बाकी मतदाता सूची</h1>
+                            <p class="subtitle">सरपंच प्रत्याशी: नवीन पालीवाल | ${wardTitle} • ${partTitle} • कुल बाकी: ${pending.length}</p>
+                        </div>
+                        <button onclick="window.print()" style="padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ प्रिंट करें</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:35px;">क्र.</th>
+                                <th class="text-center" style="width:45px;">वार्ड</th>
+                                <th class="text-center" style="width:45px;">भाग</th>
+                                <th style="width:55px;">मकान</th>
+                                <th>मतदाता का नाम</th>
+                                <th>पिता / पति</th>
+                                <th class="text-center">EPIC नंबर</th>
+                                <th class="text-center">मोबाइल नंबर</th>
+                                <th class="text-center">रुझान</th>
+                                <th class="text-center" style="width:60px;">चेक</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pending.map((v, i) => `
+                                <tr>
+                                    <td class="text-center">${i + 1}</td>
+                                    <td class="text-center">वार्ड ${v.ward || '-'}</td>
+                                    <td class="text-center">${v.part}</td>
+                                    <td>${v.house || '-'}</td>
+                                    <td><b>${v.name}</b></td>
+                                    <td>${v.rel_name || '-'}</td>
+                                    <td class="text-center">${v.epic || '-'}</td>
+                                    <td class="text-center">${v.mobile || '-'}</td>
+                                    <td class="text-center">${v.category === 'Support' ? '🟢 पक्का' : v.category === 'Target' ? '🟡 टारगेट' : '⚪ अन-मार्क'}</td>
+                                    <td class="text-center">☐</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // --- 1-Click Data Backup & Restore ---
+        function openBackupRestoreModal() {
+            document.getElementById('backupRestoreModal')?.classList.remove('hidden');
+        }
+
+        function closeBackupRestoreModal() {
+            document.getElementById('backupRestoreModal')?.classList.add('hidden');
+        }
+
+        function exportFullDataBackup() {
+            const backupData = {
+                version: "piplantri-election-v6",
+                exported_at: new Date().toISOString(),
+                panchayat: "पिपलांत्री (AC 175 राजसमन्द)",
+                candidate: "नवीन पालीवाल",
+                voters_count: voters.length,
+                voters: voters,
+                contacts: (typeof contactsState !== 'undefined') ? contactsState : (JSON.parse(localStorage.getItem('piplantri_contacts_master_v1') || '[]'))
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Piplantri_WarRoom_Backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            alert('✅ पूर्ण डेटा बैकअप सफलतापूर्वक डाउनलोड हो गया!');
+        }
+
+        function importFullDataBackup() {
+            const fileInput = document.getElementById('backupFileInput');
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                alert('कृपया पहले बैकअप .JSON फ़ाइल चुनें!');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported || (!imported.voters && !Array.isArray(imported))) {
+                        alert('अमान्य बैकअप फ़ाइल! सही JSON फ़ाइल चुनें।');
+                        return;
+                    }
+
+                    const importedVoters = Array.isArray(imported) ? imported : (imported.voters || []);
+                    if (importedVoters.length) {
+                        voters = importedVoters;
+                        saveVoterState();
+                    }
+
+                    if (imported.contacts && Array.isArray(imported.contacts)) {
+                        localStorage.setItem('piplantri_contacts_master_v1', JSON.stringify(imported.contacts));
+                    }
+
+                    alert(`✅ बैकअप सफलतापूर्वक रीस्टोर हो गया! कुल ${importedVoters.length} मतदाता लोड हुए।`);
+                    closeBackupRestoreModal();
+                    location.reload();
+                } catch (err) {
+                    alert('बैकअप पढ़ने में त्रुटि: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
         }
 
     </script>

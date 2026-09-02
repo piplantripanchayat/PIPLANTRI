@@ -1526,9 +1526,9 @@
                     <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल">
                         <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
                     </a>
-                    <a href="https://wa.me/91${c.mobile}" target="_blank" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="व्हाट्सएप">
-                        <i data-lucide="message-circle" class="w-3.5 h-3.5 text-green-400"></i>
-                    </a>
+                    <button onclick="sendContactWhatsAppSlip(${c.cid})" class="p-2 rounded-lg ${hasLinked ? 'bg-emerald-700 hover:bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'} transition" title="${hasLinked ? 'WhatsApp पर मतदाता पर्ची भेजें' : 'व्हाट्सएप'}">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5 ${hasLinked ? 'text-white' : 'text-green-400'}"></i>
+                    </button>
                 </div>
             `;
 
@@ -3034,6 +3034,81 @@
             document.body.removeChild(link);
         }
 
+
+        function sendContactWhatsAppSlip(cid) {
+            const c = contactsState.find(x => x.cid === cid);
+            if (!c) return;
+            const linkedVoters = getLinkedVotersForMobile(c.mobile);
+            const cleanPhone = String(c.mobile).replace(/[^0-9]/g, '').slice(-10);
+
+            if (!linkedVoters || linkedVoters.length === 0) {
+                // Generic appeal if no linked voter
+                const msg = `🚩 *ग्राम पंचायत पिपलांत्री चुनाव - 2026*
+सरपंच पद प्रत्याशी: *नवीन पालीवाल*
+━━━━━━━━━━━━━━━━━━
+सादर प्रणाम ${c.name || ''}!
+पिपलांत्री ग्राम पंचायत के सर्वांगीण विकास, पारदर्शिता एवं जनसेवा हेतु अपना अमूल्य मत व समर्थन देकर अपने सेवक *नवीन पालीवाल* को भारी मतों से विजयी बनाएं। 🙏`;
+                const url = cleanPhone.length === 10 ? 
+                    `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}` :
+                    `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+                return;
+            }
+
+            let msg = '';
+            if (linkedVoters.length === 1) {
+                const v = linkedVoters[0];
+                let booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री';
+                if (String(v.part) === '59') booth = 'राजकीय उच्च माध्यमिक विद्यालय, मोरवड़';
+                else if (String(v.part) === '60') booth = 'राजकीय उच्च प्राथमिक विद्यालय, उमठी';
+                else if (String(v.part) === '61') booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (दायां भाग)';
+                else if (String(v.part) === '62') booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (बायां भाग)';
+
+                msg = `🚩 *ग्राम पंचायत पिपलांत्री चुनाव - 2026*
+सरपंच पद प्रत्याशी: *नवीन पालीवाल*
+━━━━━━━━━━━━━━━━━━
+👤 *मतदाता पर्ची (Voter Slip)*
+━━━━━━━━━━━━━━━━━━
+• *मतदाता का नाम:* ${v.name}
+• *पिता/पति:* ${v.rel_name || '-'} (${v.rel || 'पिता'})
+• *वार्ड नंबर:* वार्ड ${v.ward || '-'}
+• *भाग संख्या:* भाग ${v.part} (${v.sec_name || '-'})
+• *क्रम संख्या (Sr No):* ${v.sr || v.id}
+• *मकान संख्या:* ${v.house || '-'}
+• *पहचान पत्र (EPIC):* ${v.epic || '-'}
+• *मतदान केंद्र:* ${booth}
+━━━━━━━━━━━━━━━━━━
+🗳️ *अपील:*
+पिपलांत्री के विकास व खुशहाली हेतु अपना अमूल्य मत व समर्थन देकर अपने सेवक *नवीन पालीवाल* को विजयी बनाएं। समय पर मतदान अवश्य करें। 🙏`;
+            } else {
+                const sample = linkedVoters[0];
+                let booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री';
+                if (String(sample.part) === '59') booth = 'राजकीय उच्च माध्यमिक विद्यालय, मोरवड़';
+                else if (String(sample.part) === '60') booth = 'राजकीय उच्च प्राथमिक विद्यालय, उमठी';
+                else if (String(sample.part) === '61') booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (दायां भाग)';
+                else if (String(sample.part) === '62') booth = 'राजकीय उच्च माध्यमिक विद्यालय, पिपलांत्री (बायां भाग)';
+
+                const listText = linkedVoters.map((m, idx) => `${idx + 1}. *${m.name}* (${m.rel}: ${m.rel_name || '-'})\n   क्र: *${m.sr || m.id}* | EPIC: ${m.epic || '-'} | म: ${m.house || '-'}`).join('\n');
+
+                msg = `🚩 *ग्राम पंचायत पिपलांत्री चुनाव - 2026*
+सरपंच पद प्रत्याशी: *नवीन पालीवाल*
+━━━━━━━━━━━━━━━━━━
+👨‍👩‍👧‍👦 *परिवार मतदाता पर्ची (${linkedVoters.length} सदस्य)*
+🏛️ *वार्ड:* वार्ड ${sample.ward || '-'} | *भाग:* ${sample.part}
+🏫 *मतदान केंद्र:* ${booth}
+━━━━━━━━━━━━━━━━━━
+*मतदाताओं का विवरण:*
+${listText}
+━━━━━━━━━━━━━━━━━━
+🗳️ *अपील:*
+पिपलांत्री के विकास व खुशहाली हेतु पूरे परिवार सहित मतदान कर अपने सेवक *नवीन पालीवाल* को भारी मतों से विजयी बनाएं। 🙏`;
+            }
+
+            const url = cleanPhone.length === 10 ? 
+                `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}` :
+                `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
 
     window.addEventListener('DOMContentLoaded', initContactsApp);
     </script>
