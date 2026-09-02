@@ -821,6 +821,52 @@
         let pollingFilterState = 'all';
         let activeFamilyFilter = '';
 
+        // Transliteration Helpers
+        const HINDI_VOWELS = { 'a':'अ', 'aa':'आ', 'i':'इ', 'ee':'ई', 'u':'उ', 'oo':'ऊ', 'ri':'ऋ', 'e':'ए', 'ai':'ऐ', 'o':'ओ', 'au':'औ' };
+        const HINDI_MATRAS = { 'a':'', 'aa':'ा', 'i':'ि', 'ee':'ी', 'u':'ु', 'oo':'ू', 'ri':'ृ', 'e':'े', 'ai':'ै', 'o':'ो', 'au':'ौ' };
+        const HINDI_CONSONANTS = [
+            ['chh','छ'],['ksh','क्ष'],['gya','ज्ञ'],['gy','ज्ञ'],['tra','त्र'],['tr','त्र'],
+            ['kh','ख'],['gh','घ'],['ch','च'],['jh','झ'],['th','थ'],['dh','ध'],
+            ['ph','फ'],['bh','भ'],['sh','श'],['shh','ष'],
+            ['k','क'],['g','ग'],['c','क'],['j','ज'],['z','ज़'],
+            ['t','त'],['d','द'],['n','न'],['p','प'],['f','फ़'],
+            ['b','ब'],['m','म'],['y','य'],['r','र'],['l','ल'],
+            ['v','व'],['w','व'],['s','स'],['h','ह'],['q','क']
+        ];
+
+        function romanToHindiTransliterate(roman) {
+            if (!roman) return "";
+            let str = roman.toLowerCase().trim();
+            let res = "";
+            let i = 0;
+            const len = str.length;
+            while (i < len) {
+                let matchedCons = null, consLen = 0;
+                for (const [eng, dev] of HINDI_CONSONANTS) {
+                    if (str.startsWith(eng, i)) { matchedCons = dev; consLen = eng.length; break; }
+                }
+                if (matchedCons) {
+                    i += consLen;
+                    let matra = null, vowelLen = 0;
+                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
+                    for (const v of vowelCombos) {
+                        if (str.startsWith(v, i)) { matra = HINDI_MATRAS[v]; vowelLen = v.length; break; }
+                    }
+                    if (matra !== null) { res += matchedCons + matra; i += vowelLen; }
+                    else { res += (i >= len || str[i] === ' ' || !/[a-z]/.test(str[i])) ? matchedCons : matchedCons + '्'; }
+                } else {
+                    let standalone = null, vLen = 0;
+                    const vowelCombos = ['ee', 'oo', 'aa', 'ai', 'au', 'ri', 'a', 'i', 'u', 'e', 'o'];
+                    for (const v of vowelCombos) {
+                        if (str.startsWith(v, i)) { standalone = HINDI_VOWELS[v]; vLen = v.length; break; }
+                    }
+                    if (standalone) { res += standalone; i += vLen; }
+                    else { res += str[i]; i++; }
+                }
+            }
+            return res;
+        }
+
         // Soundex / Double Metaphone Hindi-English Phonetic Key Engine
         function getPhoneticKey(str) {
             if (!str) return '';
@@ -891,7 +937,8 @@
 
         function buildPhoneticIndex() {
             phoneticWordMap.clear();
-            voters.forEach(v => {
+            const source = [...(voters && voters.length ? voters : (VOTERS_MASTER || [])), ...(CONTACTS_DIRECTORY || [])];
+            source.forEach(v => {
                 const nameRoman = transliterateHindiClean(v.name);
                 const relRoman = transliterateHindiClean(v.rel_name);
                 const fullRoman = (nameRoman + ' ' + relRoman).trim();
@@ -1011,10 +1058,16 @@
             const raw = (englishQuery || '').toLowerCase().trim();
             if (!raw) return [];
             
+            const isEnglish = /[a-zA-Z]/.test(raw);
+            if (!isEnglish) return [];
+
+            const directHindi = romanToHindiTransliterate(raw);
             const qPhonetic = getPhoneticKey(raw);
             const qSkeleton = getSkeletonKey(raw);
             
             const matches = [];
+            const seenWords = new Set();
+
             phoneticWordMap.forEach((meta, word) => {
                 let score = 0;
                 if (meta.pKey === qPhonetic) score = 100;
@@ -1026,9 +1079,15 @@
                 else if (qPhonetic.startsWith(meta.pKey) && meta.pKey.length >= 3) score = 65;
                 
                 if (score > 0) {
-                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 50), isDirect: false });
+                    seenWords.add(word);
                 }
             });
+
+            if (directHindi && directHindi.length >= 2 && !seenWords.has(directHindi)) {
+                matches.push({ word: directHindi, count: 0, score: 95, isDirect: true });
+                seenWords.add(directHindi);
+            }
             
             matches.sort((a, b) => b.score - a.score);
             return matches.slice(0, 8);
@@ -1908,6 +1967,9 @@
             container.innerHTML = '';
             const partFilter = document.getElementById('familyPartSelect').value;
             const searchQ = (document.getElementById('familySearchInput')?.value || '').toLowerCase().trim();
+            const isEnglish = /[a-zA-Z]/.test(searchQ);
+            const qDirectHindi = isEnglish ? romanToHindiTransliterate(searchQ) : '';
+            const qHindiSuggs = isEnglish ? getMultiHindiSuggestions(searchQ) : [];
 
             const familyMap = new Map();
             voters.forEach(v => {
@@ -1932,12 +1994,20 @@
             const filteredFamilies = Array.from(familyMap.entries()).filter(([key, members]) => {
                 if (!searchQ) return true;
                 const matchKey = key.toLowerCase().includes(searchQ);
-                const matchMember = members.some(m => 
-                    m.name.toLowerCase().includes(searchQ) || 
-                    m.rel_name.toLowerCase().includes(searchQ) || 
-                    String(m.house).toLowerCase().includes(searchQ) ||
-                    String(m.mobile || '').includes(searchQ)
-                );
+                const matchMember = members.some(m => {
+                    if (m.name.toLowerCase().includes(searchQ) || 
+                        m.rel_name.toLowerCase().includes(searchQ) || 
+                        String(m.house).toLowerCase().includes(searchQ) ||
+                        String(m.mobile || '').includes(searchQ)) return true;
+                    if (isEnglish) {
+                        const nTranslit = transliterateHindiClean(m.name);
+                        const rTranslit = transliterateHindiClean(m.rel_name);
+                        if ((nTranslit && nTranslit.includes(searchQ)) || (rTranslit && rTranslit.includes(searchQ))) return true;
+                        if (qDirectHindi && (m.name.includes(qDirectHindi) || m.rel_name.includes(qDirectHindi))) return true;
+                        if (qHindiSuggs.some(s => m.name.includes(s.word) || m.rel_name.includes(s.word))) return true;
+                    }
+                    return false;
+                });
                 return matchKey || matchMember;
             }).sort((a, b) => b[1].length - a[1].length);
 
@@ -2505,6 +2575,10 @@
             const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
             const q = (document.getElementById('reportSearchInput')?.value || '').trim().toLowerCase();
 
+            const isEnglish = /[a-zA-Z]/.test(q);
+            const qDirectHindi = isEnglish ? romanToHindiTransliterate(q) : '';
+            const qHindiSuggs = isEnglish ? getMultiHindiSuggestions(q) : [];
+
             return data.filter(v => {
                 const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
                 
@@ -2515,11 +2589,19 @@
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
 
                 if (q) {
+                    const nameTranslit = transliterateHindiClean(v.name);
+                    const relTranslit = transliterateHindiClean(v.rel_name);
+                    const matchDirectHindi = qDirectHindi && ((v.name && v.name.includes(qDirectHindi)) || (v.rel_name && v.rel_name.includes(qDirectHindi)));
+                    const matchHindiSuggs = qHindiSuggs.some(s => (v.name && v.name.includes(s.word)) || (v.rel_name && v.rel_name.includes(s.word)));
+
                     const match = (v.name && v.name.toLowerCase().includes(q)) ||
                                   (v.rel_name && v.rel_name.toLowerCase().includes(q)) ||
                                   (v.house && String(v.house).toLowerCase().includes(q)) ||
                                   (v.epic && String(v.epic).toLowerCase().includes(q)) ||
-                                  (v.mobile && String(v.mobile).includes(q));
+                                  (v.mobile && String(v.mobile).includes(q)) ||
+                                  (nameTranslit && nameTranslit.includes(q)) ||
+                                  (relTranslit && relTranslit.includes(q)) ||
+                                  matchDirectHindi || matchHindiSuggs;
                     if (!match) return false;
                 }
 

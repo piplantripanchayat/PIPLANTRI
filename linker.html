@@ -283,6 +283,8 @@
                         autocomplete="off"
                     >
                 </div>
+                <!-- Dynamic Hindi Suggestions Bar for Modal Contact Search -->
+                <div id="modalContactHindiSuggestions" class="hidden mt-2 p-2.5 rounded-xl bg-slate-950 border border-orange-500/40 shadow-lg"></div>
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2" id="modalContactListBody"></div>
@@ -642,7 +644,8 @@
 
         function buildPhoneticIndex() {
             phoneticWordMap.clear();
-            votersData.forEach(v => {
+            const source = [...(votersData && votersData.length ? votersData : (INITIAL_VOTERS || [])), ...(CONTACTS_DIRECTORY || [])];
+            source.forEach(v => {
                 const nameRoman = transliterateHindiClean(v.name);
                 const relRoman = transliterateHindiClean(v.rel_name);
                 const fullRoman = (nameRoman + ' ' + relRoman).trim();
@@ -695,10 +698,16 @@
             const raw = (englishQuery || '').toLowerCase().trim();
             if (!raw) return [];
             
+            const isEnglish = /[a-zA-Z]/.test(raw);
+            if (!isEnglish) return [];
+
+            const directHindi = romanToHindiTransliterate(raw);
             const qPhonetic = getPhoneticKey(raw);
             const qSkeleton = getSkeletonKey(raw);
             
             const matches = [];
+            const seenWords = new Set();
+
             phoneticWordMap.forEach((meta, word) => {
                 let score = 0;
                 if (meta.pKey === qPhonetic) score = 100;
@@ -710,9 +719,15 @@
                 else if (qPhonetic.startsWith(meta.pKey) && meta.pKey.length >= 3) score = 65;
                 
                 if (score > 0) {
-                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 20) });
+                    matches.push({ word, count: meta.count, score: score + Math.min(meta.count, 50), isDirect: false });
+                    seenWords.add(word);
                 }
             });
+
+            if (directHindi && directHindi.length >= 2 && !seenWords.has(directHindi)) {
+                matches.push({ word: directHindi, count: 0, score: 95, isDirect: true });
+                seenWords.add(directHindi);
+            }
             
             matches.sort((a, b) => b.score - a.score);
             return matches.slice(0, 8);
@@ -1305,6 +1320,7 @@
 
             const modalInput = document.getElementById('modalContactSearchInput');
             modalInput.value = transliterateHindiClean(activeVoterForModal.name).split(' ')[0] || '';
+            document.getElementById('modalContactHindiSuggestions')?.classList.add('hidden');
             document.getElementById('contactPickerModal').classList.remove('hidden');
 
             renderModalContacts(modalInput.value);
@@ -1314,11 +1330,52 @@
 
         function closeContactModal() {
             document.getElementById('contactPickerModal').classList.add('hidden');
+            document.getElementById('modalContactHindiSuggestions')?.classList.add('hidden');
             activeVoterForModal = null;
         }
 
         function handleModalSearchInput(query) {
-            renderModalContacts(query);
+            const q = (query || '').trim();
+            const suggContainer = document.getElementById('modalContactHindiSuggestions');
+            const isEnglish = /[a-zA-Z]/.test(q);
+
+            if (isEnglish && q.length >= 1) {
+                const hindiSuggestions = getMultiHindiSuggestions(q);
+                if (hindiSuggestions.length > 0 && suggContainer) {
+                    suggContainer.innerHTML = `
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 flex items-center justify-between">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="languages" class="w-3.5 h-3.5 text-orange-400"></i>
+                                <span class="text-orange-300 font-extrabold">हिंदी नाम सुझाव (क्लिक करें):</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-mono">English: "${q}"</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${hindiSuggestions.map(s => `
+                                <button type="button" onclick="selectModalContactHindiSuggestion('${s.word}')" class="px-2.5 py-1 rounded-lg bg-orange-500/20 hover:bg-orange-500/40 border border-orange-500/40 text-orange-200 font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow cursor-pointer">
+                                    <span>${s.word}</span>
+                                    ${s.count > 0 ? `<span class="text-[9px] px-1.5 py-0.2 rounded-full bg-orange-500/30 text-orange-100 font-mono font-normal">${s.count}</span>` : ''}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                    suggContainer.classList.remove('hidden');
+                    lucide.createIcons();
+                } else {
+                    suggContainer?.classList.add('hidden');
+                }
+            } else {
+                suggContainer?.classList.add('hidden');
+            }
+
+            renderModalContacts(q);
+        }
+
+        function selectModalContactHindiSuggestion(word) {
+            const input = document.getElementById('modalContactSearchInput');
+            if (input) input.value = word;
+            document.getElementById('modalContactHindiSuggestions')?.classList.add('hidden');
+            renderModalContacts(word);
         }
 
         function renderModalContacts(query) {
@@ -1326,7 +1383,9 @@
             if (!container) return;
 
             const q = (query || '').toLowerCase().trim();
-            const qHindi = romanToHindiTransliterate(q);
+            const isEnglish = /[a-zA-Z]/.test(q);
+            const qHindi = isEnglish ? romanToHindiTransliterate(q) : '';
+            const hindiSuggestions = isEnglish ? getMultiHindiSuggestions(q) : [];
 
             const filtered = CONTACTS_DIRECTORY.filter(c => {
                 if (!q) return true;
@@ -1336,8 +1395,11 @@
                 const m = String(c.mobile || '').toLowerCase();
                 const rem = (c.remarks || '').toLowerCase();
 
+                const matchDirectHindi = qHindi && (n.includes(qHindi) || r.includes(qHindi));
+                const matchHindiSuggs = hindiSuggestions.some(s => n.includes(s.word) || r.includes(s.word));
+
                 return n.includes(q) || r.includes(q) || v.includes(q) || m.includes(q) || rem.includes(q) ||
-                       n.includes(qHindi) || r.includes(qHindi);
+                       matchDirectHindi || matchHindiSuggs;
             }).slice(0, 40);
 
             if (filtered.length === 0) {
@@ -1462,6 +1524,10 @@
             const partFilter = document.getElementById('reportPartSelect')?.value || 'ALL';
             const q = (document.getElementById('reportSearchInput')?.value || '').trim().toLowerCase();
 
+            const isEnglish = /[a-zA-Z]/.test(q);
+            const qDirectHindi = isEnglish ? romanToHindiTransliterate(q) : '';
+            const qHindiSuggs = isEnglish ? getMultiHindiSuggestions(q) : [];
+
             return data.filter(v => {
                 const hasMobile = Boolean(v.mobile && v.mobile.trim().length >= 10);
                 
@@ -1472,11 +1538,19 @@
                 if (partFilter !== 'ALL' && v.part !== partFilter) return false;
 
                 if (q) {
+                    const nameTranslit = transliterateHindiClean(v.name);
+                    const relTranslit = transliterateHindiClean(v.rel_name);
+                    const matchDirectHindi = qDirectHindi && ((v.name && v.name.includes(qDirectHindi)) || (v.rel_name && v.rel_name.includes(qDirectHindi)));
+                    const matchHindiSuggs = qHindiSuggs.some(s => (v.name && v.name.includes(s.word)) || (v.rel_name && v.rel_name.includes(s.word)));
+
                     const match = (v.name && v.name.toLowerCase().includes(q)) ||
                                   (v.rel_name && v.rel_name.toLowerCase().includes(q)) ||
                                   (v.house && String(v.house).toLowerCase().includes(q)) ||
                                   (v.epic && String(v.epic).toLowerCase().includes(q)) ||
-                                  (v.mobile && String(v.mobile).includes(q));
+                                  (v.mobile && String(v.mobile).includes(q)) ||
+                                  (nameTranslit && nameTranslit.includes(q)) ||
+                                  (relTranslit && relTranslit.includes(q)) ||
+                                  matchDirectHindi || matchHindiSuggs;
                     if (!match) return false;
                 }
 
