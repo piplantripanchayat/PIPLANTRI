@@ -297,13 +297,13 @@
                 </div>
 
                 <div class="flex items-center gap-2.5 flex-wrap">
-                    <!-- 10s AUTO-HIDE LINKED TOGGLE SWITCH -->
-                    <label class="inline-flex items-center gap-2 cursor-pointer bg-slate-950 border border-slate-800 hover:border-emerald-500/50 rounded-xl px-2.5 py-1 transition select-none group shadow-inner" title="चालू करने पर लिंक होते ही कांटेक्ट 10 सेकंड में अपने-आप स्क्रीन से गायब हो जाएगा (ऑफ करते ही सब वापस दिखेगा)">
+                    <!-- 10s AUTO-HIDE LINKED TOGGLE SWITCH (SMART NO-JUMP SCROLL ANCHORING) -->
+                    <label class="inline-flex items-center gap-2 cursor-pointer bg-slate-950 border border-slate-800 hover:border-emerald-500/50 rounded-xl px-2.5 py-1 transition select-none group shadow-inner" title="स्मार्ट नो-जंप ऑटो-हाइड: लिंक होने के 10s बाद कांटेक्ट बिना किसी स्क्रीन स्क्रॉल या जर्क के हटेगा। यदि आप किसी अन्य कांटेक्ट को लिंक कर रहे हैं तो यह काम पूरा होने तक रुका रहेगा।">
                         <input type="checkbox" id="autoHideLinkedToggle" onchange="toggleAutoHideLinked(this.checked)" class="sr-only peer">
                         <div class="w-7 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 relative"></div>
                         <span class="text-xs font-bold text-slate-300 group-hover:text-white flex items-center gap-1">
                             <i data-lucide="timer" class="w-3.5 h-3.5 text-amber-400"></i>
-                            <span>10s ऑटो-हाइड लिंक्ड</span>
+                            <span>10s नो-जंप ऑटो-हाइड</span>
                             <span id="autoHideStatusBadge" class="hidden text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold animate-pulse">ON</span>
                         </span>
                     </label>
@@ -1372,6 +1372,138 @@
         }
     }
 
+    function buildContactCardHTML(c) {
+        const linkedVoters = getLinkedVotersForMobile(c.mobile);
+        const hasLinked = linkedVoters.length > 0;
+        const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
+
+        let linkedVotersHtml = '';
+        if (hasLinked) {
+            linkedVotersHtml = `
+                <div class="mt-2 pt-2 border-t border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                        <i data-lucide="users" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
+                    </span>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${linkedVoters.map(v => `
+                            <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
+                                <span class="font-extrabold text-amber-300">🏛️ वार्ड ${v.ward || '-'}</span>
+                                <strong class="text-white font-bold">${v.name}</strong>
+                                <button onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="text-[10px] text-emerald-300 hover:text-white underline font-mono cursor-pointer flex items-center gap-0.5 bg-emerald-900/50 hover:bg-emerald-800 px-1.5 py-0.5 rounded border border-emerald-700/60 transition">
+                                    <span>भाग ${v.part}/म.${v.house}</span>
+                                    <i data-lucide="search" class="w-2.5 h-2.5 text-cyan-300"></i>
+                                </button>
+                                <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let suggestionsHtml = '';
+        if (suggestions.length > 0) {
+            suggestionsHtml = `
+                <div class="mt-2.5 pt-2.5 border-t border-slate-800">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-extrabold text-amber-300 flex items-center gap-1.5 bg-amber-950/70 border border-amber-500/40 px-2.5 py-0.5 rounded-md shadow-xs">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>AI संभावित मतदाता सुझाव (${suggestions.length}):</span>
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        ${suggestions.map(s => {
+                            const isAlreadyLinked = hasLinked && linkedVoters.some(lv => lv.id === s.voterId);
+                            return `
+                                <div class="bg-gradient-to-r from-amber-50 via-white to-orange-50/80 border-2 border-amber-300 hover:border-amber-400 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md transition text-slate-900">
+                                    <div class="flex-1 min-w-0">
+                                        <!-- Top Line: Match Badge + Ward + Part/House + SEARCH BUTTON -->
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="px-2 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xs">${s.score}% Match</span>
+                                            <span class="px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-950 text-[10px] font-black border border-amber-400 shadow-xs">🏛️ वार्ड ${s.ward || (votersMap.get(s.voterId)?.ward || '-')}</span>
+                                            <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[10px] font-mono border border-slate-300 font-bold">भाग ${s.part} • म.${s.house}</span>
+                                            <button onclick="openHouseMembersModal('${s.part}', '${encodeURIComponent(s.house)}', '${s.ward || (votersMap.get(s.voterId)?.ward || '')}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-700 hover:bg-indigo-800 text-white text-[10px] font-extrabold shadow transition active:scale-95 cursor-pointer">
+                                                <i data-lucide="search" class="w-3 h-3 text-amber-300"></i>
+                                                <span>मकान सदस्य 🔍</span>
+                                            </button>
+                                        </div>
+                                        <!-- Second Line: Full Voter Name & Relative -->
+                                        <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                            <strong class="text-slate-950 text-sm font-black">${s.voterName}</strong>
+                                            <span class="text-xs text-slate-600 font-semibold">(${s.voterRel}: <strong class="text-slate-900">${s.voterRelName}</strong>)</span>
+                                        </div>
+                                        <!-- Third Line: Reasons -->
+                                        ${s.reasons ? `<div class="text-[11px] text-amber-950 font-medium mt-1 bg-amber-100/80 rounded-lg px-2.5 py-1 border border-amber-300/80 break-words shadow-2xs">💡 ${s.reasons}</div>` : ''}
+                                    </div>
+                                    <!-- Action Button: Link -->
+                                    <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                                        ${isAlreadyLinked ? `
+                                            <span class="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border-2 border-emerald-500 flex items-center gap-1.5 shadow-sm">
+                                                <i data-lucide="check-check" class="w-4 h-4 text-emerald-700"></i>
+                                                <span>लिंक है</span>
+                                            </span>
+                                        ` : `
+                                            <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                                                <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                                                <span>लिंक करें</span>
+                                            </button>
+                                        `}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        const isGrace = recentlyLinkedMap.has(c.cid);
+        const remainingSec = isGrace ? Math.max(1, Math.ceil(10 - (Date.now() - recentlyLinkedMap.get(c.cid).linkedAt) / 1000)) : 10;
+
+        return `
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <strong class="text-white text-sm font-bold">${c.name || 'अज्ञात नाम'}</strong>
+                    ${c.rel_name ? `<span class="text-xs text-slate-400">(${c.rel || 'पिता'}: <strong class="text-slate-300">${c.rel_name}</strong>)</span>` : ''}
+                    ${c.village ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700 font-medium">📍 ${c.village}</span>` : ''}
+                    ${isGrace ? `
+                        <span id="countdownBadge_${c.cid}" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold font-mono flex items-center gap-1 countdown-pulse">
+                            <i data-lucide="timer" class="w-3 h-3 text-amber-300"></i>
+                            <span>⏱️ ${remainingSec}s में हटेगा</span>
+                            <button type="button" onclick="cancelAutoHideCountdown(${c.cid}); event.stopPropagation();" class="ml-1 text-[10px] text-amber-200 hover:text-white underline font-bold cursor-pointer" title="हटाना रोकें (स्क्रीन पर रखें)">रोकें</button>
+                            <button type="button" onclick="safelyRemoveContactCard(${c.cid}); event.stopPropagation();" class="ml-1 text-[10px] text-amber-200 hover:text-white underline font-bold cursor-pointer" title="अभी हटाएं">तुरंत</button>
+                        </span>
+                    ` : ''}
+                </div>
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                    <span class="font-mono font-bold text-orange-400 text-xs">${c.mobile}</span>
+                    ${c.remarks ? `<span class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${c.remarks}</span>` : ''}
+                </div>
+
+                ${linkedVotersHtml}
+                ${suggestionsHtml}
+            </div>
+
+            <div class="flex items-center space-x-1.5 flex-shrink-0 self-start md:self-center">
+                <button onclick="openEditContactModal(${c.cid})" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="कांटेक्ट संपादित करें (Edit)">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-400"></i>
+                </button>
+                <button onclick="openVoterPickerForContact(${c.cid})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                    <span>+ वोटर जोड़ें</span>
+                </button>
+                <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल">
+                    <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
+                </a>
+                <button onclick="sendContactWhatsAppSlip(${c.cid})" class="p-2 rounded-lg ${hasLinked ? 'bg-emerald-700 hover:bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'} transition" title="${hasLinked ? 'WhatsApp पर मतदाता पर्ची भेजें' : 'व्हाट्सएप'}">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5 ${hasLinked ? 'text-white' : 'text-green-400'}"></i>
+                </button>
+            </div>
+        `;
+    }
+
     function renderNextContactBatch() {
         const container = document.getElementById('contactsContainer');
         if (!container) return;
@@ -1403,135 +1535,7 @@
             const card = document.createElement('div');
             card.id = `contactCard_${c.cid}`;
             card.className = "bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition shadow-sm relative";
-
-            const linkedVoters = getLinkedVotersForMobile(c.mobile);
-            const hasLinked = linkedVoters.length > 0;
-            const suggestions = REVERSE_SUGGESTIONS[c.cid] || [];
-
-            let linkedVotersHtml = '';
-            if (hasLinked) {
-                linkedVotersHtml = `
-                    <div class="mt-2 pt-2 border-t border-slate-800">
-                        <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
-                            <i data-lucide="users" class="w-3 h-3"></i> लिंक्ड मतदाता (${linkedVoters.length}):
-                        </span>
-                        <div class="flex flex-wrap gap-1.5">
-                            ${linkedVoters.map(v => `
-                                <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 text-xs">
-                                    <span class="font-extrabold text-amber-300">🏛️ वार्ड ${v.ward || '-'}</span>
-                                    <strong class="text-white font-bold">${v.name}</strong>
-                                    <button onclick="openHouseMembersModal('${v.part}', '${encodeURIComponent(v.house)}', '${v.ward || ''}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="text-[10px] text-emerald-300 hover:text-white underline font-mono cursor-pointer flex items-center gap-0.5 bg-emerald-900/50 hover:bg-emerald-800 px-1.5 py-0.5 rounded border border-emerald-700/60 transition">
-                                        <span>भाग ${v.part}/म.${v.house}</span>
-                                        <i data-lucide="search" class="w-2.5 h-2.5 text-cyan-300"></i>
-                                    </button>
-                                    <button onclick="unlinkVoterFromMobile(${v.id}, '${c.mobile}')" title="अनलिंक करें" class="text-emerald-500 hover:text-red-400 ml-1">
-                                        <i data-lucide="x" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            let suggestionsHtml = '';
-            if (suggestions.length > 0) {
-                suggestionsHtml = `
-                    <div class="mt-2.5 pt-2.5 border-t border-slate-800">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-[11px] font-extrabold text-amber-300 flex items-center gap-1.5 bg-amber-950/70 border border-amber-500/40 px-2.5 py-0.5 rounded-md shadow-xs">
-                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-                                <span>AI संभावित मतदाता सुझाव (${suggestions.length}):</span>
-                            </span>
-                        </div>
-                        <div class="space-y-2">
-                            ${suggestions.map(s => {
-                                const isAlreadyLinked = hasLinked && linkedVoters.some(lv => lv.id === s.voterId);
-                                return `
-                                    <div class="bg-gradient-to-r from-amber-50 via-white to-orange-50/80 border-2 border-amber-300 hover:border-amber-400 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md transition text-slate-900">
-                                        <div class="flex-1 min-w-0">
-                                            <!-- Top Line: Match Badge + Ward + Part/House + SEARCH BUTTON -->
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <span class="px-2 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xs">${s.score}% Match</span>
-                                                <span class="px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-950 text-[10px] font-black border border-amber-400 shadow-xs">🏛️ वार्ड ${s.ward || (votersMap.get(s.voterId)?.ward || '-')}</span>
-                                                <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[10px] font-mono border border-slate-300 font-bold">भाग ${s.part} • म.${s.house}</span>
-                                                <button onclick="openHouseMembersModal('${s.part}', '${encodeURIComponent(s.house)}', '${s.ward || (votersMap.get(s.voterId)?.ward || '')}', '${c.mobile}', '${encodeURIComponent(c.name || '')}')" title="इस मकान के सभी सदस्य देखें" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-700 hover:bg-indigo-800 text-white text-[10px] font-extrabold shadow transition active:scale-95 cursor-pointer">
-                                                    <i data-lucide="search" class="w-3 h-3 text-amber-300"></i>
-                                                    <span>मकान सदस्य 🔍</span>
-                                                </button>
-                                            </div>
-                                            <!-- Second Line: Full Voter Name & Relative -->
-                                            <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                                                <strong class="text-slate-950 text-sm font-black">${s.voterName}</strong>
-                                                <span class="text-xs text-slate-600 font-semibold">(${s.voterRel}: <strong class="text-slate-900">${s.voterRelName}</strong>)</span>
-                                            </div>
-                                            <!-- Third Line: Reasons -->
-                                            ${s.reasons ? `<div class="text-[11px] text-amber-950 font-medium mt-1 bg-amber-100/80 rounded-lg px-2.5 py-1 border border-amber-300/80 break-words shadow-2xs">💡 ${s.reasons}</div>` : ''}
-                                        </div>
-                                        <!-- Action Button: Link -->
-                                        <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-                                            ${isAlreadyLinked ? `
-                                                <span class="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border-2 border-emerald-500 flex items-center gap-1.5 shadow-sm">
-                                                    <i data-lucide="check-check" class="w-4 h-4 text-emerald-700"></i>
-                                                    <span>लिंक है</span>
-                                                </span>
-                                            ` : `
-                                                <button onclick="linkVoterToContact(${s.voterId}, '${c.mobile}')" class="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                                                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
-                                                    <span>लिंक करें</span>
-                                                </button>
-                                            `}
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            const isGrace = recentlyLinkedMap.has(c.cid);
-            const remainingSec = isGrace ? Math.max(1, Math.ceil(10 - (Date.now() - recentlyLinkedMap.get(c.cid).linkedAt) / 1000)) : 10;
-
-            card.innerHTML = `
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <strong class="text-white text-sm font-bold">${c.name || 'अज्ञात नाम'}</strong>
-                        ${c.rel_name ? `<span class="text-xs text-slate-400">(${c.rel || 'पिता'}: <strong class="text-slate-300">${c.rel_name}</strong>)</span>` : ''}
-                        ${c.village ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700 font-medium">📍 ${c.village}</span>` : ''}
-                        ${isGrace ? `
-                            <span id="countdownBadge_${c.cid}" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold font-mono flex items-center gap-1 countdown-pulse">
-                                <i data-lucide="timer" class="w-3 h-3 text-amber-300"></i>
-                                <span>⏱️ ${remainingSec}s में हटेगा</span>
-                            </span>
-                        ` : ''}
-                    </div>
-                    <div class="flex items-center gap-2 mt-1 flex-wrap">
-                        <span class="font-mono font-bold text-orange-400 text-xs">${c.mobile}</span>
-                        ${c.remarks ? `<span class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${c.remarks}</span>` : ''}
-                    </div>
-
-                    ${linkedVotersHtml}
-                    ${suggestionsHtml}
-                </div>
-
-                <div class="flex items-center space-x-1.5 flex-shrink-0 self-start md:self-center">
-                    <button onclick="openEditContactModal(${c.cid})" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="कांटेक्ट संपादित करें (Edit)">
-                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-400"></i>
-                    </button>
-                    <button onclick="openVoterPickerForContact(${c.cid})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1">
-                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                        <span>+ वोटर जोड़ें</span>
-                    </button>
-                    <a href="tel:${c.mobile}" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" title="कॉल">
-                        <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    </a>
-                    <button onclick="sendContactWhatsAppSlip(${c.cid})" class="p-2 rounded-lg ${hasLinked ? 'bg-emerald-700 hover:bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'} transition" title="${hasLinked ? 'WhatsApp पर मतदाता पर्ची भेजें' : 'व्हाट्सएप'}">
-                        <i data-lucide="message-circle" class="w-3.5 h-3.5 ${hasLinked ? 'text-white' : 'text-green-400'}"></i>
-                    </button>
-                </div>
-            `;
-
+            card.innerHTML = buildContactCardHTML(c);
             fragment.appendChild(card);
         });
 
@@ -1626,8 +1630,18 @@
 
         const linkedContact = contactsState.find(c => String(c.mobile || '').trim().replace(/[^0-9]/g, '').slice(-10) === clean10);
 
-        if (isAutoHideLinkedEnabled && linkedContact) {
-            start10SecondAutoHideCountdown(linkedContact.cid);
+        if (linkedContact) {
+            const card = document.getElementById(`contactCard_${linkedContact.cid}`);
+            if (isAutoHideLinkedEnabled) {
+                start10SecondAutoHideCountdown(linkedContact.cid);
+            } else {
+                if (card) {
+                    card.innerHTML = buildContactCardHTML(linkedContact);
+                    lucide.createIcons();
+                } else {
+                    applyContactFilters();
+                }
+            }
         } else {
             applyContactFilters();
         }
@@ -1652,6 +1666,90 @@
         applyContactFilters();
     }
 
+    function isAnyModalOpen() {
+        const modals = ['voterPickerModal', 'houseMembersModal', 'editContactModal', 'undoHistoryModal', 'reportsModal', 'backupRestoreModal'];
+        return modals.some(mId => {
+            const el = document.getElementById(mId);
+            return el && !el.classList.contains('hidden');
+        });
+    }
+
+    function cancelAutoHideCountdown(cid) {
+        const entry = recentlyLinkedMap.get(cid);
+        if (entry) {
+            if (entry.timerId) clearTimeout(entry.timerId);
+            if (entry.intervalId) clearInterval(entry.intervalId);
+            recentlyLinkedMap.delete(cid);
+        }
+        const badge = document.getElementById(`countdownBadge_${cid}`);
+        if (badge) {
+            badge.className = "px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono flex items-center gap-1";
+            badge.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-300"></i><span>स्थिर (हटेगा नहीं)</span>`;
+            lucide.createIcons();
+        }
+    }
+
+    function safelyRemoveContactCard(cid) {
+        const entry = recentlyLinkedMap.get(cid);
+        if (entry) {
+            if (entry.timerId) clearTimeout(entry.timerId);
+            if (entry.intervalId) clearInterval(entry.intervalId);
+            recentlyLinkedMap.delete(cid);
+        }
+
+        const container = document.getElementById('contactsContainer');
+        const card = document.getElementById(`contactCard_${cid}`);
+
+        // Update in-memory filtered list and counter displays without wiping DOM
+        filteredContactsList = filteredContactsList.filter(x => x.cid !== cid);
+        const visEl = document.getElementById('visibleContactCount');
+        if (visEl) visEl.innerText = filteredContactsList.length.toLocaleString('en-IN');
+        const renEl = document.getElementById('renderedContactCount');
+        if (renEl) renEl.innerText = Math.min(currentlyRenderedContactCount, filteredContactsList.length).toLocaleString('en-IN');
+
+        if (!card || !container) return;
+
+        // Check if card is currently ABOVE the visible viewport of the scroll container
+        const containerRect = container.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const cardHeightWithGap = card.offsetHeight + 10; // including space-y-2.5 gap (10px)
+        const isAboveViewport = (cardRect.bottom <= (containerRect.top + 10));
+
+        if (isAboveViewport) {
+            // Card is above what the user is seeing!
+            // Removing it will pull all content below upwards by cardHeightWithGap.
+            // Immediately compensate container.scrollTop by subtracting cardHeightWithGap!
+            card.remove();
+            container.scrollTop = Math.max(0, container.scrollTop - cardHeightWithGap);
+            // Result: Zero layout shift! Content in user's viewport stays rock-solid!
+        } else {
+            // Card is inside or below the viewport. Animate collapse smoothly!
+            card.style.transition = 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin 0.35s ease, padding 0.35s ease, border-width 0.35s ease';
+            card.style.maxHeight = card.offsetHeight + 'px';
+            card.style.overflow = 'hidden';
+
+            requestAnimationFrame(() => {
+                card.style.maxHeight = '0px';
+                card.style.opacity = '0';
+                card.style.paddingTop = '0px';
+                card.style.paddingBottom = '0px';
+                card.style.marginTop = '0px';
+                card.style.marginBottom = '0px';
+                card.style.borderWidth = '0px';
+            });
+
+            setTimeout(() => {
+                if (card.parentNode) {
+                    const postCardRect = card.getBoundingClientRect();
+                    if (postCardRect.bottom <= containerRect.top) {
+                        container.scrollTop = Math.max(0, container.scrollTop - cardHeightWithGap);
+                    }
+                    card.remove();
+                }
+            }, 360);
+        }
+    }
+
     function start10SecondAutoHideCountdown(cid) {
         const existing = recentlyLinkedMap.get(cid);
         if (existing) {
@@ -1667,37 +1765,57 @@
         };
         recentlyLinkedMap.set(cid, entry);
 
-        applyContactFilters();
+        // Update ONLY this card in-place with the countdown badge and linked voter (ZERO full page re-render!)
+        const card = document.getElementById(`contactCard_${cid}`);
+        const c = contactsState.find(x => x.cid === cid);
+        if (card && c) {
+            card.innerHTML = buildContactCardHTML(c);
+            lucide.createIcons();
+        }
 
         const intervalId = setInterval(() => {
+            // If any modal is currently open, FREEZE the countdown!
+            if (isAnyModalOpen()) {
+                const badge = document.getElementById(`countdownBadge_${cid}`);
+                if (badge) {
+                    badge.innerHTML = `<i data-lucide="pause-circle" class="w-3 h-3 text-cyan-300"></i><span class="text-cyan-200">⏸️ होल्ड (पॉपअप खुला है)</span>`;
+                    lucide.createIcons();
+                }
+                return; // do not decrement remainingSec while user is linking in a modal
+            }
+
             remainingSec--;
             const badge = document.getElementById(`countdownBadge_${cid}`);
             if (badge) {
                 if (remainingSec > 0) {
-                    badge.innerHTML = `<i data-lucide="timer" class="w-3 h-3 text-amber-300"></i><span>⏱️ ${remainingSec}s में हटेगा</span>`;
+                    badge.innerHTML = `
+                        <i data-lucide="timer" class="w-3 h-3 text-amber-300"></i>
+                        <span>⏱️ ${remainingSec}s में हटेगा</span>
+                        <button type="button" onclick="cancelAutoHideCountdown(${cid}); event.stopPropagation();" class="ml-1 text-[10px] text-amber-200 hover:text-white underline font-bold cursor-pointer" title="हटाना रोकें (स्क्रीन पर रखें)">रोकें</button>
+                        <button type="button" onclick="safelyRemoveContactCard(${cid}); event.stopPropagation();" class="ml-1 text-[10px] text-amber-200 hover:text-white underline font-bold cursor-pointer" title="अभी हटाएं">तुरंत</button>
+                    `;
                     lucide.createIcons();
                 } else {
                     badge.innerHTML = `<span>✨ संपन्न</span>`;
                 }
             }
+
+            if (remainingSec <= 0) {
+                clearInterval(intervalId);
+                // If a modal happens to be open when reaching 0, wait until it closes
+                if (isAnyModalOpen()) {
+                    const checkModalClose = setInterval(() => {
+                        if (!isAnyModalOpen()) {
+                            clearInterval(checkModalClose);
+                            safelyRemoveContactCard(cid);
+                        }
+                    }, 500);
+                } else {
+                    safelyRemoveContactCard(cid);
+                }
+            }
         }, 1000);
 
-        const timerId = setTimeout(() => {
-            clearInterval(intervalId);
-            const card = document.getElementById(`contactCard_${cid}`);
-            if (card) {
-                card.classList.add('fade-out-card');
-                setTimeout(() => {
-                    recentlyLinkedMap.delete(cid);
-                    applyContactFilters();
-                }, 700);
-            } else {
-                recentlyLinkedMap.delete(cid);
-                applyContactFilters();
-            }
-        }, 10000);
-
-        entry.timerId = timerId;
         entry.intervalId = intervalId;
     }
 
@@ -1714,7 +1832,19 @@
                 window.CloudSync.recordUpdate(voterId, { mobile: v.mobile });
             }
             saveVotersState();
-            applyContactFilters();
+            const unlinkedContact = contactsState.find(c => String(c.mobile || '').trim().replace(/[^0-9]/g, '').slice(-10) === clean10);
+            if (unlinkedContact) {
+                cancelAutoHideCountdown(unlinkedContact.cid);
+                const card = document.getElementById(`contactCard_${unlinkedContact.cid}`);
+                if (card) {
+                    card.innerHTML = buildContactCardHTML(unlinkedContact);
+                    lucide.createIcons();
+                } else {
+                    applyContactFilters();
+                }
+            } else {
+                applyContactFilters();
+            }
             updateKPIs();
 
             // Record Undo History
