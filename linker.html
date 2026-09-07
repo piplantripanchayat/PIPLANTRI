@@ -296,6 +296,44 @@
         </div>
     </div>
 
+    <!-- MANUAL PHONE INPUT MODAL -->
+    <div id="manualPhoneModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-5 text-slate-100 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="phone-call" class="w-4 h-4 text-orange-400"></i>
+                    <span>मोबाइल नंबर दर्ज करें / जोड़ें</span>
+                </h3>
+                <button onclick="closeManualPhoneModal()" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                <div class="font-bold text-white text-sm" id="manualPhoneVoterName">-</div>
+                <div class="text-slate-400 text-[11px] mt-0.5" id="manualPhoneVoterMeta">-</div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-slate-300 font-bold text-xs">10-अंक का मोबाइल नंबर:</label>
+                    <button type="button" onclick="pasteToMobileInput('manualPhoneInput')" class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-950/60 hover:bg-orange-900 text-orange-300 rounded-md text-[11px] font-bold border border-orange-600/50 transition active:scale-95 shadow-2xs cursor-pointer" title="कॉपी किया हुआ मोबाइल नंबर यहाँ पेस्ट करें">
+                        <i data-lucide="clipboard-paste" class="w-3 h-3 text-orange-400"></i>
+                        <span>पेस्ट करें</span>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="tel" id="manualPhoneInput" placeholder="उदा: 9829012345" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 pr-8 text-orange-300 font-mono font-bold text-sm focus:outline-none focus:border-orange-500">
+                    <button type="button" onclick="pasteToMobileInput('manualPhoneInput')" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-orange-400 rounded transition cursor-pointer" title="पेस्ट करें">
+                        <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 text-xs">
+                <button onclick="closeManualPhoneModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold">रद्द करें</button>
+                <button onclick="saveManualPhoneModal()" class="px-4 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white rounded-xl font-bold shadow">सुरक्षित करें</button>
+            </div>
+        </div>
+    </div>
+
     <!-- HOUSEHOLD MEMBERS INSPECTION MODAL -->
     <div id="houseMembersModal" class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-slate-100">
@@ -321,10 +359,13 @@
 
             <!-- Target Contact / Search Info Bar -->
             <div class="px-4 py-2.5 bg-slate-950/90 border-b border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs" id="houseModalTargetContactBar">
-                <div class="flex items-center gap-2 text-slate-300">
+                <div class="flex items-center gap-2 text-slate-300 flex-wrap">
                     <span class="text-slate-400 font-medium">संपर्क:</span>
                     <strong class="text-amber-400" id="houseModalContactName">-</strong>
                     <span class="font-mono text-orange-400 font-bold" id="houseModalContactMobile">-</span>
+                    <button type="button" onclick="copyContactNumber(document.getElementById('houseModalContactMobile')?.innerText, this)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-orange-400 transition cursor-pointer" title="कांटेक्ट नंबर कॉपी करें">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                    </button>
                 </div>
                 <button id="houseModalLinkAllBtn" onclick="linkAllHouseMembersToContact()" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white rounded-lg font-bold shadow flex items-center gap-1.5 transition active:scale-95 text-xs">
                     <i data-lucide="users" class="w-3.5 h-3.5"></i>
@@ -1040,6 +1081,9 @@
                                 <div class="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1 text-emerald-300 font-mono font-bold text-xs">
                                     <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400"></i>
                                     <span>${num}</span>
+                                    <button type="button" onclick="copyContactNumber('${num}', this); event.stopPropagation();" class="text-emerald-400 hover:text-white p-0.5 transition cursor-pointer" title="नंबर कॉपी करें">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                    </button>
                                     <a href="tel:${num}" class="text-emerald-400 hover:text-white" title="कॉल">
                                         <i data-lucide="phone-call" class="w-3 h-3"></i>
                                     </a>
@@ -1075,7 +1119,12 @@
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-center gap-2 flex-wrap">
                                                     <span class="px-2 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xs">${score}% Match</span>
-                                                    <span class="font-mono font-black text-slate-950 text-sm bg-amber-100 px-2 py-0.5 rounded border border-amber-300">${c.mobile}</span>
+                                                    <span class="inline-flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                                                        <span class="font-mono font-black text-slate-950 text-sm">${c.mobile}</span>
+                                                        <button type="button" onclick="copyContactNumber('${c.mobile}', this); event.stopPropagation();" class="p-0.5 text-slate-600 hover:text-amber-900 transition cursor-pointer" title="नंबर कॉपी करें">
+                                                            <i data-lucide="copy" class="w-3 h-3"></i>
+                                                        </button>
+                                                    </span>
                                                     ${c.village ? `<span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 text-[10px] border border-slate-300 font-bold">📍 ${c.village}</span>` : ''}
                                                 </div>
                                                 <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
@@ -1243,24 +1292,55 @@
             updateKPIs();
         }
 
-        function promptManualPhoneInput(voterId) {
+        let activeManualPhoneVoterId = null;
+
+        function openManualPhoneModal(voterId) {
             const voter = votersData.find(v => v.id === voterId);
             if (!voter) return;
 
-            const entered = prompt(`${voter.name} (${voter.rel}: ${voter.rel_name}) के लिए 10-अंक का मोबाइल नंबर दर्ज करें:`, voter.mobile || '');
-            if (entered !== null) {
-                const clean = entered.trim().replace(/[^0-9]/g, '');
-                if (clean.length >= 10) assignPhoneToVoter(voterId, clean);
-                else if (clean.length === 0) {
-                    voter.mobile = '';
-                    if (window.CloudSync) {
-                        window.CloudSync.recordUpdate(voterId, { mobile: '' });
-                    }
-                    saveToLocalStorage();
-                    applyFilters();
-                    updateKPIs();
-                } else alert("कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें!");
+            activeManualPhoneVoterId = voterId;
+            document.getElementById('manualPhoneVoterName').innerText = `${voter.name} (${voter.rel || 'संबंधी'}: ${voter.rel_name || '-'})`;
+            document.getElementById('manualPhoneVoterMeta').innerText = `वार्ड: ${voter.ward || '-'} • भाग: ${voter.part} • मकान: ${voter.house || '-'} • EPIC: ${voter.epic || '-'}`;
+            
+            const input = document.getElementById('manualPhoneInput');
+            input.value = voter.mobile || '';
+            document.getElementById('manualPhoneModal')?.classList.remove('hidden');
+            input.focus();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeManualPhoneModal() {
+            document.getElementById('manualPhoneModal')?.classList.add('hidden');
+            activeManualPhoneVoterId = null;
+        }
+
+        function saveManualPhoneModal() {
+            if (!activeManualPhoneVoterId) return;
+            const voter = votersData.find(v => v.id === activeManualPhoneVoterId);
+            if (!voter) return;
+
+            const val = document.getElementById('manualPhoneInput')?.value.trim() || '';
+            const clean = val.replace(/[^0-9]/g, '');
+
+            if (clean.length >= 10) {
+                assignPhoneToVoter(activeManualPhoneVoterId, clean);
+                closeManualPhoneModal();
+            } else if (val.length === 0) {
+                voter.mobile = '';
+                if (window.CloudSync) {
+                    window.CloudSync.recordUpdate(activeManualPhoneVoterId, { mobile: '' });
+                }
+                saveToLocalStorage();
+                applyFilters();
+                updateKPIs();
+                closeManualPhoneModal();
+            } else {
+                alert("कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें!");
             }
+        }
+
+        function promptManualPhoneInput(voterId) {
+            openManualPhoneModal(voterId);
         }
 
         function autoLinkAllHighConfidence() {
@@ -1421,7 +1501,12 @@
                             <span class="text-[10px] text-slate-400 font-mono">(${c.rel_name || '-'})</span>
                         </div>
                         <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                            <span class="text-orange-400 font-mono font-bold">${c.mobile}</span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="text-orange-400 font-mono font-bold">${c.mobile}</span>
+                                <button type="button" onclick="copyContactNumber('${c.mobile}', this); event.stopPropagation();" class="p-0.5 text-slate-400 hover:text-orange-300 transition cursor-pointer" title="नंबर कॉपी करें">
+                                    <i data-lucide="copy" class="w-2.5 h-2.5"></i>
+                                </button>
+                            </span>
                             ${c.village ? `<span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] border border-slate-700">${c.village}</span>` : ''}
                         </div>
                     </div>
@@ -2035,6 +2120,9 @@
                                         <span class="inline-flex items-center gap-1 text-[11px] font-mono font-bold ${isThisMobileLinked ? 'text-emerald-400' : 'text-orange-400'}">
                                             <i data-lucide="phone" class="w-3 h-3"></i>
                                             <span>${v.mobile}</span>
+                                            <button type="button" onclick="copyContactNumber('${v.mobile}', this); event.stopPropagation();" class="hover:text-white p-0.5 transition cursor-pointer" title="नंबर कॉपी करें">
+                                                <i data-lucide="copy" class="w-2.5 h-2.5"></i>
+                                            </button>
                                         </span>
                                     ` : `
                                         <span class="text-[10px] text-slate-500">बिना मोबाइल</span>
@@ -2115,6 +2203,121 @@
 
         function closeHouseMembersModal() {
             document.getElementById('houseMembersModal')?.classList.add('hidden');
+        }
+
+        // ==========================================
+        // 📋 UNIVERSAL MOBILE COPY & PASTE ENGINE
+        // ==========================================
+        window.APP_LAST_COPIED_MOBILE = localStorage.getItem('lastCopiedMobile') || '';
+
+        function showActionToast(msg, icon = 'check-circle') {
+            let toast = document.getElementById('appActionToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'appActionToast';
+                toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md flex items-center gap-2.5 text-xs font-bold transition-all duration-300 transform translate-y-16 opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+            if (window.lucide) lucide.createIcons();
+
+            toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window._actionToastTimer) clearTimeout(window._actionToastTimer);
+            window._actionToastTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+            }, 2200);
+        }
+
+        async function copyContactNumber(rawNumber, triggerBtn) {
+            if (!rawNumber) return;
+            const cleanNumber = String(rawNumber).trim().replace(/[^0-9]/g, '').slice(-10);
+            if (!cleanNumber) return;
+
+            window.APP_LAST_COPIED_MOBILE = cleanNumber;
+            try {
+                localStorage.setItem('lastCopiedMobile', cleanNumber);
+            } catch (e) {}
+
+            let copied = false;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(cleanNumber);
+                    copied = true;
+                } catch (err) {}
+            }
+            if (!copied) {
+                try {
+                    const temp = document.createElement('textarea');
+                    temp.value = cleanNumber;
+                    temp.style.position = 'fixed';
+                    temp.style.opacity = '0';
+                    document.body.appendChild(temp);
+                    temp.focus();
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    copied = true;
+                } catch (e) {}
+            }
+
+            if (triggerBtn) {
+                const origHtml = triggerBtn.innerHTML;
+                triggerBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>';
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => {
+                    triggerBtn.innerHTML = origHtml;
+                    if (window.lucide) lucide.createIcons();
+                }, 1500);
+            }
+
+            try {
+                if (navigator.vibrate) navigator.vibrate(35);
+            } catch (e) {}
+
+            showActionToast(`📋 नंबर कॉपी किया गया: ${cleanNumber}`, 'copy');
+        }
+
+        async function pasteToMobileInput(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            let textToPaste = '';
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                try {
+                    textToPaste = await navigator.clipboard.readText();
+                } catch (err) {}
+            }
+            if (!textToPaste) {
+                textToPaste = window.APP_LAST_COPIED_MOBILE || localStorage.getItem('lastCopiedMobile') || '';
+            }
+
+            if (!textToPaste) {
+                alert("क्लिपबोर्ड में कोई नंबर नहीं मिला! पहले किसी कांटेक्ट के पास 📋 कॉपी बटन दबाएं।");
+                return;
+            }
+
+            const digits = textToPaste.replace(/[^0-9]/g, '');
+            const targetNum = digits.length >= 10 ? digits.slice(-10) : digits;
+
+            if (!targetNum || targetNum.length !== 10) {
+                alert("क्लिपबोर्ड में कोई 10 अंकों का मान्य मोबाइल नंबर नहीं मिला!");
+                return;
+            }
+
+            input.value = targetNum;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.focus();
+
+            input.classList.add('ring-2', 'ring-orange-500', 'border-orange-500');
+            setTimeout(() => {
+                input.classList.remove('ring-2', 'ring-orange-500', 'border-orange-500');
+            }, 1200);
+
+            showActionToast(`✓ नंबर पेस्ट किया गया: ${targetNum}`, 'clipboard-check');
         }
 
         window.addEventListener('DOMContentLoaded', initApp);

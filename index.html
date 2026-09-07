@@ -744,8 +744,19 @@
                 <input type="hidden" id="modalVoterId">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">मोबाइल नंबर (मल्टीपल हो तो कॉमा लगाएं)</label>
-                        <input type="text" id="modalMobile" placeholder="उदा: 9829012345, 7023029903" class="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block font-bold text-slate-700">मोबाइल नंबर (Mobile)</label>
+                            <button type="button" onclick="pasteToMobileInput('modalMobile')" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-[11px] font-bold border border-indigo-200 transition active:scale-95 shadow-2xs cursor-pointer" title="कॉपी किया हुआ मोबाइल नंबर यहाँ पेस्ट करें">
+                                <i data-lucide="clipboard-paste" class="w-3 h-3 text-indigo-600"></i>
+                                <span>पेस्ट करें</span>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="modalMobile" placeholder="उदा: 9829012345, 7023029903" class="w-full p-2 pr-8 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" onclick="pasteToMobileInput('modalMobile')" class="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600 rounded transition cursor-pointer" title="पेस्ट करें">
+                                <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">वोटर श्रेणी (Loyalty)</label>
@@ -1934,6 +1945,9 @@
                             ${phoneNumbers.map(num => `
                                 <div class="flex items-center gap-1">
                                     <span class="font-mono font-bold text-slate-900 text-xs">${num}</span>
+                                    <button type="button" onclick="copyContactNumber('${num}', this); event.stopPropagation();" class="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-indigo-600 transition" title="नंबर कॉपी करें">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                    </button>
                                     <a href="tel:${num}" class="p-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="कॉल">
                                         <i data-lucide="phone" class="w-3 h-3"></i>
                                     </a>
@@ -2091,6 +2105,9 @@
                                                 <i data-lucide="phone" class="w-3.5 h-3.5 text-blue-600"></i>
                                                 <span class="font-mono">${num}</span>
                                             </a>
+                                            <button type="button" onclick="copyContactNumber('${num}', this); event.stopPropagation();" class="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-indigo-600 border border-slate-200 transition shadow-xs cursor-pointer" title="नंबर कॉपी करें">
+                                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                            </button>
                                             <a href="https://wa.me/91${num}?text=${encodeURIComponent(' सादर प्रणाम! ग्राम पंचायत पिपलांत्री के विकास हेतु सरपंच पद प्रत्याशी नविन पालीवाल को अपना अमूल्य मत व समर्थन देकर भारी मतों से विजयी बनाएं।')}" target="_blank" class="p-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition shadow-xs" title="व्हाट्सएप">
                                                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                                             </a>
@@ -2233,8 +2250,16 @@
                                     <span>)</span>
                                 </span>
                             </div>
-                            <div class="text-[10px] text-slate-500 truncate">
-                                ${m.rel}: ${m.rel_name} ${m.mobile ? '• 📱 ' + m.mobile : ''}
+                            <div class="text-[10px] text-slate-500 truncate flex items-center gap-1 flex-wrap">
+                                <span>${m.rel}: ${m.rel_name}</span>
+                                ${m.mobile ? `
+                                    <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-1.5 py-0.2 rounded border border-amber-200 font-mono text-[10px] font-bold">
+                                        <span>📱 ${m.mobile}</span>
+                                        <button type="button" onclick="copyContactNumber('${m.mobile}', this); event.stopPropagation();" class="text-slate-500 hover:text-indigo-700 ml-0.5 p-0.5 transition cursor-pointer" title="नंबर कॉपी करें">
+                                            <i data-lucide="copy" class="w-2.5 h-2.5"></i>
+                                        </button>
+                                    </span>
+                                ` : ''}
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -2344,7 +2369,16 @@
                     </td>
                     <td class="p-2.5 font-bold text-slate-900">${v.name} <span class="font-normal text-slate-500 text-[11px]">(${v.rel}: ${v.rel_name})</span></td>
                     <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold text-xs">${v.outstation_city || 'अज्ञात शहर'}</span></td>
-                    <td class="p-2.5 text-center font-mono font-bold">${v.mobile || '-'}</td>
+                    <td class="p-2.5 text-center font-mono font-bold">
+                        ${v.mobile ? `
+                            <span class="inline-flex items-center gap-1">
+                                <span>${v.mobile}</span>
+                                <button type="button" onclick="copyContactNumber('${v.mobile}', this); event.stopPropagation();" class="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-indigo-600 transition" title="नंबर कॉपी करें">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
+                                </button>
+                            </span>
+                        ` : '-'}
+                    </td>
                     <td class="p-2.5 text-center">${v.category === 'Support' ? '🟢 पक्का' : v.category === 'Target' ? '🟡 टारगेट' : '⚪ अन-मार्क'}</td>
                     <td class="p-2.5 text-slate-600 text-xs">${v.notes || '-'}</td>
                     <td class="p-2.5 text-center">
@@ -2473,6 +2507,11 @@
                                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-700"></i>
                             </button>
                             <span class="font-mono text-xs text-slate-700">${v.mobile ? v.mobile.split(',')[0].trim() : '-'}</span>
+                            ${v.mobile ? `
+                                <button type="button" onclick="copyContactNumber('${v.mobile.split(',')[0].trim()}', this); event.stopPropagation();" class="p-0.5 rounded hover:bg-slate-200 text-slate-500 hover:text-indigo-600 transition cursor-pointer" title="नंबर कॉपी करें">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </td>
                     <td class="p-2.5 text-center">${v.category === 'Support' ? '🟢 पक्का' : v.category === 'Target' ? '🟡 टारगेट' : '⚪ अन-मार्क'}</td>
@@ -3395,6 +3434,9 @@
                                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-400 font-mono text-[11px] font-bold">
                                                     <i data-lucide="phone" class="w-3 h-3"></i>
                                                     <span>${num}</span>
+                                                    <button type="button" onclick="copyContactNumber('${num}', this); event.stopPropagation();" class="hover:text-white p-0.5 transition cursor-pointer" title="नंबर कॉपी करें">
+                                                        <i data-lucide="copy" class="w-2.5 h-2.5"></i>
+                                                    </button>
                                                     <a href="tel:${num}" class="hover:text-white" title="कॉल"><i data-lucide="phone-call" class="w-2.5 h-2.5"></i></a>
                                                     <a href="https://wa.me/91${num}" target="_blank" class="hover:text-emerald-300 text-emerald-400" title="व्हाट्सएप"><i data-lucide="message-circle" class="w-2.5 h-2.5"></i></a>
                                                 </span>
@@ -3670,6 +3712,141 @@ ${membersListText}
                 }
             };
             reader.readAsText(file);
+        }
+
+        // ==========================================
+        // 📋 UNIVERSAL MOBILE COPY & PASTE ENGINE
+        // ==========================================
+        window.APP_LAST_COPIED_MOBILE = localStorage.getItem('lastCopiedMobile') || '';
+
+        function showActionToast(msg, icon = 'check-circle') {
+            let toast = document.getElementById('appActionToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'appActionToast';
+                toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md flex items-center gap-2.5 text-xs font-bold transition-all duration-300 transform translate-y-16 opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+            if (window.lucide) lucide.createIcons();
+
+            toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window._actionToastTimer) clearTimeout(window._actionToastTimer);
+            window._actionToastTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+            }, 2200);
+        }
+
+        async function copyContactNumber(rawNumber, triggerBtn) {
+            if (!rawNumber) return;
+            const cleanNumber = String(rawNumber).trim().replace(/[^0-9]/g, '').slice(-10);
+            if (!cleanNumber) return;
+
+            window.APP_LAST_COPIED_MOBILE = cleanNumber;
+            try {
+                localStorage.setItem('lastCopiedMobile', cleanNumber);
+            } catch (e) {}
+
+            let copied = false;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(cleanNumber);
+                    copied = true;
+                } catch (err) {}
+            }
+            if (!copied) {
+                try {
+                    const temp = document.createElement('textarea');
+                    temp.value = cleanNumber;
+                    temp.style.position = 'fixed';
+                    temp.style.opacity = '0';
+                    document.body.appendChild(temp);
+                    temp.focus();
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    copied = true;
+                } catch (e) {}
+            }
+
+            if (triggerBtn) {
+                const origHtml = triggerBtn.innerHTML;
+                triggerBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>';
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => {
+                    triggerBtn.innerHTML = origHtml;
+                    if (window.lucide) lucide.createIcons();
+                }, 1500);
+            }
+
+            try {
+                if (navigator.vibrate) navigator.vibrate(35);
+            } catch (e) {}
+
+            showActionToast(`📋 नंबर कॉपी किया गया: ${cleanNumber}`, 'copy');
+        }
+
+        async function pasteToMobileInput(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            let textToPaste = '';
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                try {
+                    textToPaste = await navigator.clipboard.readText();
+                } catch (err) {}
+            }
+            if (!textToPaste) {
+                textToPaste = window.APP_LAST_COPIED_MOBILE || localStorage.getItem('lastCopiedMobile') || '';
+            }
+
+            if (!textToPaste) {
+                alert("क्लिपबोर्ड में कोई नंबर नहीं मिला! पहले किसी कांटेक्ट के पास 📋 कॉपी बटन दबाएं।");
+                return;
+            }
+
+            // Extract all 10-digit clean numbers
+            const foundNums = textToPaste.match(/[6-9]\d{9}/g) || [];
+            let targetNum = '';
+            if (foundNums.length > 0) {
+                targetNum = foundNums.join(', ');
+            } else {
+                const cleanDigits = textToPaste.replace(/[^0-9]/g, '');
+                if (cleanDigits.length >= 10) {
+                    targetNum = cleanDigits.slice(-10);
+                } else {
+                    targetNum = textToPaste.trim();
+                }
+            }
+
+            if (!targetNum) {
+                alert("क्लिपबोर्ड में कोई मान्य मोबाइल नंबर नहीं मिला!");
+                return;
+            }
+
+            const currentVal = input.value.trim();
+            if (currentVal && inputId === 'modalMobile') {
+                const currentArr = currentVal.split(',').map(m => m.trim()).filter(Boolean);
+                const newArr = targetNum.split(',').map(m => m.trim()).filter(Boolean);
+                const merged = Array.from(new Set([...currentArr, ...newArr]));
+                input.value = merged.join(', ');
+            } else {
+                input.value = targetNum;
+            }
+
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.focus();
+
+            input.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+            setTimeout(() => {
+                input.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+            }, 1200);
+
+            showActionToast(`✓ नंबर पेस्ट किया गया: ${targetNum}`, 'clipboard-check');
         }
 
     </script>
