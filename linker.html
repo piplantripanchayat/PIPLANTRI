@@ -321,7 +321,7 @@
                     </button>
                 </div>
                 <div class="relative">
-                    <input type="tel" id="manualPhoneInput" onkeydown="if(event.key==='Enter') saveManualPhoneModal();" placeholder="उदा: 9829012345" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 pr-8 text-orange-300 font-mono font-bold text-sm focus:outline-none focus:border-orange-500">
+                    <input type="tel" inputmode="numeric" pattern="[0-9]*" id="manualPhoneInput" onkeydown="if(event.key==='Enter') saveManualPhoneModal();" placeholder="उदा: 9829012345" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 pr-8 text-orange-300 font-mono font-bold text-sm focus:outline-none focus:border-orange-500">
                     <button type="button" onclick="pasteToMobileInput('manualPhoneInput')" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-orange-400 rounded transition cursor-pointer" title="पेस्ट करें">
                         <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
                     </button>
