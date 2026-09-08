@@ -415,10 +415,16 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-slate-300 font-bold">मोबाइल नंबर (10-Digit Mobile) <span class="text-red-400">*</span>:</label>
-                        <button type="button" onclick="pasteToMobileInput('formContactMobile')" class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-950/60 hover:bg-orange-900 text-orange-300 rounded-md text-[11px] font-bold border border-orange-600/50 transition active:scale-95 shadow-2xs cursor-pointer" title="कॉपी किया हुआ मोबाइल नंबर यहाँ पेस्ट करें">
-                            <i data-lucide="clipboard-paste" class="w-3 h-3 text-orange-400"></i>
-                            <span>पेस्ट करें</span>
-                        </button>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="pickContactFromDevice('formContactMobile', 'formContactName')" class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 rounded-md text-[11px] font-bold border border-emerald-600/50 transition active:scale-95 shadow-2xs cursor-pointer" title="फ़ोन की कांटेक्ट लिस्ट से चुनें">
+                                <i data-lucide="smartphone" class="w-3 h-3 text-emerald-400"></i>
+                                <span>फ़ोन से चुनें</span>
+                            </button>
+                            <button type="button" onclick="pasteToMobileInput('formContactMobile')" class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-950/60 hover:bg-orange-900 text-orange-300 rounded-md text-[11px] font-bold border border-orange-600/50 transition active:scale-95 shadow-2xs cursor-pointer" title="कॉपी किया हुआ मोबाइल नंबर यहाँ पेस्ट करें">
+                                <i data-lucide="clipboard-paste" class="w-3 h-3 text-orange-400"></i>
+                                <span>पेस्ट करें</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="relative">
                         <input type="tel" inputmode="numeric" pattern="[0-9]*" id="formContactMobile" placeholder="उदा: 9829012345" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 pr-8 text-orange-300 font-mono font-bold text-sm focus:outline-none focus:border-orange-500">
@@ -3392,6 +3398,71 @@ ${listText}
             }, 1200);
 
             showActionToast(`✓ नंबर पेस्ट किया गया: ${targetNum}`, 'clipboard-check');
+        }
+
+        async function pickContactFromDevice(targetInputId, targetNameId) {
+            const input = document.getElementById(targetInputId);
+            if (!input) return;
+
+            if (!('contacts' in navigator && 'ContactsManager' in window)) {
+                showActionToast('ℹ️ फ़ोन कांटेक्ट सुविधा केवल Android फोन (Chrome) पर उपलब्ध है। आप [📋 पेस्ट करें] का उपयोग करें।', 'smartphone');
+                return;
+            }
+
+            try {
+                const props = ['tel', 'name'];
+                const opts = { multiple: false };
+                const contacts = await navigator.contacts.select(props, opts);
+                if (contacts && contacts.length > 0) {
+                    const picked = contacts[0];
+                    let phone = '';
+                    if (picked.tel && picked.tel.length > 0) {
+                        phone = picked.tel[0];
+                    }
+                    const name = (picked.name && picked.name.length > 0) ? (picked.name[0] || picked.name) : '';
+                    
+                    const cleanDigits = phone.replace(/[^0-9]/g, '');
+                    const cleanNumber = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : cleanDigits;
+
+                    if (cleanNumber.length === 10) {
+                        input.value = cleanNumber;
+
+                        // If targetNameId is provided (e.g. formContactName) and it's empty, auto-populate name!
+                        if (targetNameId) {
+                            const nameInput = document.getElementById(targetNameId);
+                            if (nameInput && !nameInput.value.trim() && name) {
+                                nameInput.value = name;
+                                nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                        }
+
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        input.focus();
+
+                        input.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+                        setTimeout(() => {
+                            input.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+                        }, 1200);
+
+                        try {
+                            if (navigator.vibrate) navigator.vibrate(35);
+                        } catch (e) {}
+
+                        showActionToast(`📱 फ़ोन से चुना: ${name ? name + ' - ' : ''}${cleanNumber}`, 'check-circle');
+                    } else if (cleanNumber) {
+                        input.value = cleanNumber;
+                        input.focus();
+                        showActionToast(`📱 नंबर चुना: ${cleanNumber}`, 'check');
+                    } else {
+                        showActionToast('⚠️ चुने गए कांटेक्ट में कोई फ़ोन नंबर नहीं मिला!', 'alert-triangle');
+                    }
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError' && err.name !== 'SecurityError') {
+                    console.warn('Contact picker notice:', err);
+                }
+            }
         }
 
     window.addEventListener('DOMContentLoaded', initContactsApp);
