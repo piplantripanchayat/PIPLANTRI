@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v6-war-room';
+const CACHE_NAME = 'piplantri-election-v7-pin-1198';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

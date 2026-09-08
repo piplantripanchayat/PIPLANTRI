@@ -33,7 +33,7 @@
 <body class="h-full flex flex-col font-sans antialiased selection:bg-orange-500 selection:text-white bg-slate-950 text-slate-100">
 
     
-    <!-- GLOBAL SECURITY PIN LOCK MODAL (PIN: 1111) -->
+    <!-- GLOBAL SECURITY PIN LOCK MODAL -->
     <div id="pinLockModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center flex flex-col items-center">
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30 mb-4">
@@ -394,9 +394,15 @@
     <!-- Core Linker Logic Script -->
     <script>
         
-    // SECURITY PIN SYSTEM (PIN: 1111)
-    const CORRECT_PIN = "1111";
-    const AUTH_KEY = "piplantri_auth_pin_verified";
+    // SECURITY PIN SYSTEM
+    const CORRECT_PIN = "1198";
+    const AUTH_KEY = "piplantri_auth_pin_1198_v2";
+
+    // Proactively revoke old legacy authorizations from localStorage and sessionStorage
+    try {
+        localStorage.removeItem("piplantri_auth_pin_verified");
+        sessionStorage.removeItem("piplantri_auth_pin_verified");
+    } catch (e) {}
 
     function checkAuth() {
         const isAuth = sessionStorage.getItem(AUTH_KEY) === "true" || localStorage.getItem(AUTH_KEY) === "true";
@@ -424,7 +430,7 @@
             if (errorDisplay) errorDisplay.classList.add("hidden");
         } else {
             if (errorDisplay) {
-                errorDisplay.textContent = "गलत PIN! कृपया सही 4-अंक का पिन (1111) दर्ज करें।";
+                errorDisplay.textContent = "गलत PIN! कृपया सही 4-अंक का सुरक्षा पिन दर्ज करें।";
                 errorDisplay.classList.remove("hidden");
             }
             const box = document.getElementById("pinInputBox");
