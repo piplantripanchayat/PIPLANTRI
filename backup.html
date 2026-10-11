@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>डेटा बैकअप व रीस्टोर सेंटर | ग्राम पंचायत पिपलांत्री - सरपंच चुनाव (नविन पालीवाल)</title>
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z'/></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#ecfeff', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490' },
+                        slate: { 850: '#0f172a', 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white bg-slate-950 text-slate-100">
+
+    <!-- GLOBAL SECURITY PIN LOCK MODAL -->
+    <div id="pinLockModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center flex flex-col items-center">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-4">
+                <i data-lucide="shield-lock" class="w-8 h-8 text-white"></i>
+            </div>
+            
+            <h2 class="text-lg sm:text-xl font-extrabold text-white">ग्राम पंचायत पिपलांत्री</h2>
+            <p class="text-xs text-cyan-400 font-bold mt-0.5">डेटा बैकअप सेंटर • प्रत्याशी: नविन पालीवाल</p>
+            <p class="text-xs text-slate-400 mt-3">कृपया चुनाव टीम का 4-अंक का सुरक्षा PIN दर्ज करें:</p>
+
+            <div class="my-5 w-full">
+                <input 
+                    type="password" 
+                    id="pinInputBox" 
+                    maxlength="4" 
+                    pattern="[0-9]*" 
+                    inputmode="numeric" 
+                    placeholder="••••" 
+                    class="w-full text-center text-3xl tracking-[1em] py-3 bg-slate-950 border-2 border-slate-700 focus:border-cyan-500 rounded-2xl text-white outline-none font-mono transition"
+                    onkeyup="if(event.key === 'Enter' || this.value.length === 4) verifyPin(this.value)"
+                    autocomplete="off"
+                >
+                <p id="pinErrorDisplay" class="text-rose-400 text-xs mt-2 font-semibold hidden"></p>
+            </div>
+
+            <button onclick="verifyPin()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-cyan-950 transition active:scale-95 flex items-center justify-center gap-2">
+                <i data-lucide="unlock" class="w-4 h-4"></i>
+                <span>अनलॉक करें (Unlock)</span>
+            </button>
+
+            <p class="text-[10px] text-slate-500 mt-4">अधिकृत चुनावी कार्यकर्ताओं हेतु सुरक्षित पोर्टल</p>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-slate-900 via-slate-950 to-cyan-950 text-white shadow-xl sticky top-0 z-40 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-inner">
+                    <i data-lucide="database" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+                            डेटा बैकअप व रिकवरी केंद्र (Backup Vault)
+                        </h1>
+                        <span class="bg-cyan-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-extrabold shadow-sm flex items-center gap-1">
+                            <span>🚩 प्रत्याशी: नविन पालीवाल</span>
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">
+                        ग्राम पंचायत पिपलांत्री (AC 175) • संपूर्ण वेबसाइट डेटा सुरक्षा एवं बैकअप
+                    </p>
+                </div>
+            </div>
+
+            <!-- Page Navigation Tabs -->
+            <div class="flex items-center flex-wrap gap-2 text-xs">
+                <!-- CLOUD SYNC LIVE STATUS BADGE -->
+                <div class="cloud-sync-badge cursor-pointer" onclick="CloudSync.openSyncModal()" title="क्लाउड सिंक स्थिति देखें"></div>
+
+                <a href="index.html" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold flex items-center gap-1.5 shadow transition" title="वोटर पोर्टल पर जाएं">
+                    <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span>👥 मतदाता सूची</span>
+                </a>
+                <a href="contacts.html" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold flex items-center gap-1.5 shadow transition" title="कांटेक्ट डायरेक्टरी पर जाएं">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>📱 कांटेक्ट डायरेक्टरी</span>
+                </a>
+                <a href="linker.html" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold flex items-center gap-1.5 shadow transition" title="AI लिंकर पर जाएं">
+                    <i data-lucide="link-2" class="w-3.5 h-3.5 text-orange-400"></i>
+                    <span>🔗 AI लिंकर</span>
+                </a>
+                <span class="px-2.5 py-1.5 rounded-lg bg-cyan-600 text-white font-extrabold flex items-center gap-1.5 shadow" title="वर्तमान पेज">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                    <span>💾 बैकअप केंद्र</span>
+                </span>
+                <button onclick="lockPortal()" title="सुरक्षा लॉक करें" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-6">
+
+        <!-- 1. REAL-TIME DATA INVENTORY OVERVIEW -->
+        <section>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+                    <span>📊 वास्तविक समय डेटा स्थिति (Live Data Inventory)</span>
+                </h2>
+                <button onclick="refreshDataStats()" class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    <span>रिफ्रेश स्थिति</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <!-- Card 1: Voters -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg hover:border-slate-700 transition">
+                    <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+                        <span>मतदाता डेटाबेस</span>
+                        <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white" id="statVotersTotal">2,607</div>
+                    <div class="flex items-center gap-2 text-[11px] text-slate-400 mt-2 flex-wrap">
+                        <span class="text-emerald-400 font-bold" id="statVotersLinked">0 लिंक्ड</span>
+                        <span>•</span>
+                        <span class="text-amber-400 font-bold" id="statVotersVoted">0 मतदान</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Contacts -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg hover:border-slate-700 transition">
+                    <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+                        <span>कांटेक्ट डायरेक्टरी</span>
+                        <i data-lucide="contact" class="w-4 h-4 text-indigo-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white" id="statContactsTotal">2,320</div>
+                    <div class="flex items-center gap-2 text-[11px] text-slate-400 mt-2 flex-wrap">
+                        <span class="text-indigo-400 font-bold" id="statContactsLinked">0 मैप हुए</span>
+                        <span>•</span>
+                        <span class="text-cyan-400 font-bold" id="statContactsCustom">0 नए जोड़े</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Cloud & Offline Deltas -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg hover:border-slate-700 transition">
+                    <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+                        <span>क्लाउड व लोकल डेलटा</span>
+                        <i data-lucide="cloud" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-cyan-300" id="statCloudDeltas">0</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+                        <span id="statSyncStatus" class="text-emerald-400 font-semibold flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>सिंक्रोनाइज़्ड</span>
+                        </span>
+                        <span id="statVolunteerName" class="text-slate-400 text-[10px]">कार्यकर्ता</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Last Backup Status -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg hover:border-slate-700 transition">
+                    <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+                        <span>अंतिम बैकअप</span>
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                    </div>
+                    <div class="text-sm sm:text-base font-extrabold text-emerald-400 mt-1 truncate" id="statLastBackupTime">
+                        जाँच हो रही है...
+                    </div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+                        <span id="statBackupCountBadge" class="text-slate-400">0 स्नैपशॉट उपलब्ध</span>
+                        <span class="text-cyan-400 text-[10px] font-bold">100% सुरक्षित</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ONE-CLICK COMPLETE BACKUP DOWNLOADS -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                        <i data-lucide="download-cloud" class="w-5 h-5 text-cyan-400"></i>
+                        <span>1-क्लिक संपूर्ण डेटा बैकअप डाउनलोड (Export All Data)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        सभी पेजों, मतदाताओं, संपर्कों, लिंकिंग और मतदान दिवस के वास्तविक डेटा को अपने फोन या कंप्यूटर में सुरक्षित सेव करें।
+                    </p>
+                </div>
+                <button onclick="downloadMasterUnifiedBackup()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-lg shadow-cyan-950 flex items-center gap-2 transition active:scale-95">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>🌟 संपूर्ण मास्टर बैकअप (.JSON)</span>
+                </button>
+            </div>
+
+            <!-- Download Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-1">
+                
+                <!-- Card 1: Master JSON -->
+                <div class="bg-slate-950/80 border border-cyan-800/40 rounded-2xl p-4 flex flex-col justify-between hover:border-cyan-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-cyan-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="file-json" class="w-4 h-4"></i>
+                            <span>1. संपूर्ण मास्टर बैकअप (.JSON)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            सभी 4 पेजों का एकीकृत डेटा: 2,607 मतदाता, 2,320 संपर्क, फोन लिंकिंग, मतदान दिवस का स्टेटस और कस्टम नोट्स 1 सुरक्षित फाइल में।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">JSON फॉर्मेट • रीस्टोर हेतु सर्वश्रेष्ठ</span>
+                        <button onclick="downloadMasterUnifiedBackup()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Voters CSV -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-blue-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-blue-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="sheet" class="w-4 h-4"></i>
+                            <span>2. मतदाता सूची एक्सेल (.CSV)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            सभी मतदाताओं का विवरण: क्रमांक, EPIC, नाम (हिन्दी), पिता/पति, आयु, लिंग, वार्ड, भाग, मकान नं., लिंक्ड मोबाइल और वोट स्थिति।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">Excel / Google Sheets संगत (UTF-8)</span>
+                        <button onclick="downloadVotersCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 3: Contacts Directory CSV -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-indigo-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="book-open" class="w-4 h-4"></i>
+                            <span>3. कांटेक्ट डायरेक्टरी (.CSV)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            गाँव के 2,320 संपर्कों की फोन बुक: नाम, मोबाइल नंबर, वार्ड, पेशा/व्यवसाय, तथा किस वोटर के साथ लिंक किया गया है उसका नाम।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">फोन डायलिंग व संपर्क रिपोर्ट</span>
+                        <button onclick="downloadContactsCSV()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 4: Linked Pairs CSV -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-emerald-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-emerald-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="link" class="w-4 h-4"></i>
+                            <span>4. लिंक्ड वोटर व मोबाइल शीट (.CSV)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            केवल वे सभी मतदाता जिनका मोबाइल नंबर सफलतापूर्वक लिंक हो चुका है। परिवार के मुखिया, सदस्यों की संख्या और फोन नंबर सहित।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">व्हाट्सएप प्रचार व कॉलिंग हेतु</span>
+                        <button onclick="downloadLinkedPairsCSV()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 5: Polling Day Turnout CSV -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-amber-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-amber-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="vote" class="w-4 h-4"></i>
+                            <span>5. मतदान दिवस टर्नआउट शीट (.CSV)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            मतदान दिवस पर किसने वोट दिया (Voted) और किसका वोट बाकी है (Pending), वार्ड व बूथ वाइज बाकी मतदाताओं की मोबाइल युक्त सूची।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">मतदान केंद्र मोबिलाइजेशन हेतु</span>
+                        <button onclick="downloadPollingTurnoutCSV()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 6: Standalone Offline HTML -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-purple-500 transition shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 text-purple-400 font-extrabold text-sm mb-1.5">
+                            <i data-lucide="archive" class="w-4 h-4"></i>
+                            <span>6. स्टैंडअलोन ऑफ़लाइन आर्काइव (.HTML)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            पूरी वेबसाइट का 1 सिंगल सेल्फ-कंटेन्ड HTML स्नैपशॉट। बिना इंटरनेट व सर्वर के किसी भी फोन, लैपटॉप या पेनड्राइव में सीधे खुलेगा।
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-400">100% ऑफ़लाइन बैकअप फ़ाइल</span>
+                        <button onclick="downloadStandaloneOfflineHTML()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>डाउनलोड</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 3. BROWSER LOCAL SNAPSHOT VAULT -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                        <i data-lucide="camera" class="w-5 h-5 text-emerald-400"></i>
+                        <span>ब्राउज़र लोकल स्नैपशॉट वॉल्ट (Instant Local Snapshots)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        बिना फाइल डाउनलोड किए सीधे इसी डिवाइस में तुरंत 1-टैप में बैकअप पॉइंट सुरक्षित करें और कभी भी वापस रीस्टोर करें।
+                    </p>
+                </div>
+            </div>
+
+            <!-- Take Snapshot Input -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">स्नैपशॉट का शीर्षक या अवसर (Label):</label>
+                    <input 
+                        type="text" 
+                        id="snapshotLabelInput" 
+                        placeholder="उदा: वार्ड 1-11 सर्वे पूर्ण, या मतदान दिवस सुबह 8:00 बजे" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-500 transition"
+                    >
+                </div>
+                <div class="sm:self-end">
+                    <button onclick="takeInstantSnapshot()" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-950 flex items-center justify-center gap-2 transition active:scale-95">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                        <span>📸 नया स्नैपशॉट लें</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Saved Snapshots Table / List -->
+            <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">क्र.</th>
+                            <th class="p-3">तारीख व समय</th>
+                            <th class="p-3">स्नैपशॉट नाम / लेबल</th>
+                            <th class="p-3 text-center">मतदाता</th>
+                            <th class="p-3 text-center">कांटेक्ट</th>
+                            <th class="p-3 text-center">लिंक्ड फोन</th>
+                            <th class="p-3 text-right">एक्शन</th>
+                        </tr>
+                    </thead>
+                    <tbody id="snapshotsTableBody" class="divide-y divide-slate-800/80 bg-slate-900/40">
+                        <tr>
+                            <td colspan="7" class="p-6 text-center text-slate-500 font-semibold">
+                                कोई लोकल स्नैपशॉट उपलब्ध नहीं है। ऊपर दिए बटन से पहला स्नैपशॉट लें।
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. DATA RESTORE & RECOVERY ENGINE -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3">
+                <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-orange-400"></i>
+                    <span>डेटा रीस्टोर एवं रिकवरी (Restore from JSON Backup)</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    पूर्व में डाउनलोड की गई किसी भी बैकअप .JSON फ़ाइल को अपलोड करके सभी मतदाताओं, नंबरों व सेटिंग्स को पुनः जीवित करें।
+                </p>
+            </div>
+
+            <!-- Upload Dropzone -->
+            <div class="bg-slate-950/80 border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-6 text-center transition flex flex-col items-center justify-center cursor-pointer relative" id="dropZone" onclick="document.getElementById('restoreFileInput').click()">
+                <input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="handleRestoreFileSelection(event)">
+                <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-3">
+                    <i data-lucide="file-up" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-sm font-bold text-white mb-1">बैकअप .JSON फ़ाइल चुनें या यहाँ ड्रैग करें</h3>
+                <p class="text-xs text-slate-400" id="selectedFileName">फ़ाइल चुनें (उदा: Piplantri_Master_Election_Backup_....json)</p>
+            </div>
+
+            <!-- Backup Preview Card (Appears after file selection) -->
+            <div id="restorePreviewCard" class="hidden bg-slate-950 border border-cyan-800/60 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2 text-cyan-400 font-extrabold text-sm">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                        <span>बैकअप फ़ाइल सफलतापूर्वक सत्यापित हुई!</span>
+                    </div>
+                    <span class="text-xs text-slate-400" id="previewTimestamp">-</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">मतदाता संख्या:</span>
+                        <span class="text-base font-black text-white" id="previewVotersCount">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">कांटेक्ट डायरेक्टरी:</span>
+                        <span class="text-base font-black text-white" id="previewContactsCount">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">लिंक्ड फोन रिकॉर्ड्स:</span>
+                        <span class="text-base font-black text-emerald-400" id="previewLinkedCount">0</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block text-[10px]">मतदान रिकॉर्ड्स:</span>
+                        <span class="text-base font-black text-amber-400" id="previewVotedCount">0</span>
+                    </div>
+                </div>
+
+                <!-- Restore Mode Actions -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                    <div class="text-[11px] text-slate-400">
+                        रीस्टोर करने के बाद डेटा सभी पेजों तथा फायरबेस क्लाउड में स्वतः सिंक हो जाएगा।
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="executeRestore('merge')" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow transition active:scale-95">
+                            <i data-lucide="git-merge" class="w-4 h-4"></i>
+                            <span>🟢 स्मार्ट मर्ज (अनुशंसित)</span>
+                        </button>
+                        <button onclick="executeRestore('overwrite')" class="flex-1 sm:flex-none px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow transition active:scale-95">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <span>🔴 पूर्ण रीस्टोर (Overwrite)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. DATA HEALTH & INTEGRITY TOOLS -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3">
+                <h2 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400"></i>
+                    <span>डेटा सत्यापन एवं आपातकालीन टूल्स (Data Health & Diagnostics)</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    सिस्टम में किसी भी विसंगति को जांचें अथवा क्लाउड से संपूर्ण डेटा पुनः खींचें।
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-white text-xs mb-1 flex items-center gap-1.5">
+                            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+                            <span>डेटा सत्यनिष्ठा जांच (Health Audit)</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-400">
+                            जांचता है कि कोई डुप्लीकेट फोन नंबर, गलत वार्ड या अमान्य वोटर आईडी तो मौजूद नहीं है।
+                        </p>
+                    </div>
+                    <button onclick="runDataHealthCheck()" class="mt-3 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold border border-slate-700 transition">
+                        जांच चलाएं
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-white text-xs mb-1 flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+                            <span>क्लाउड से पूर्ण पुनः सिंक (Force Cloud Pull)</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-400">
+                            यदि किसी अन्य कार्यकर्ता ने नए नंबर लिंक किए हैं, तो तुरंत फायरबेस क्लाउड से नवीनतम डेटा खींचें।
+                        </p>
+                    </div>
+                    <button onclick="forceCloudSyncPull()" class="mt-3 px-3 py-1.5 bg-cyan-700 hover:bg-cyan-600 text-white rounded-lg text-xs font-bold transition">
+                        क्लाउड से सिंक करें
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-rose-300 text-xs mb-1 flex items-center gap-1.5">
+                            <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i>
+                            <span>मूल मास्टर डेटा रीसेट (Factory Reset)</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-400">
+                            स्थानीय कैश में कोई त्रुटि होने पर मूल 2,607 मतदाता व 2,320 संपर्क डेटा रीलोड करता है।
+                        </p>
+                    </div>
+                    <button onclick="emergencyResetToMasterData()" class="mt-3 px-3 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/80 rounded-lg text-xs font-bold transition">
+                        मूल डेटा रीसेट करें
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 py-4 text-center text-slate-500 text-xs">
+        <p>ग्राम पंचायत पिपलांत्री चुनाव वार-रूम (AC 175 राजसमन्द) • प्रत्याशी: नविन पालीवाल • 100% सुरक्षित डेटा एन्क्रिप्शन</p>
+    </footer>
+
+    <!-- Master Data & Cloud Sync Scripts -->
+    <script src="data.js"></script>
+    <script src="cloudSync.js"></script>
+
+    <!-- Core Backup Engine Script -->
+    <script>
+    // ==========================================
+    // 🔒 SECURITY PIN LOCK SYSTEM (PIN: 1198)
+    // ==========================================
+    const CORRECT_PIN = "1198";
+    const AUTH_KEY = "piplantri_auth_pin_1198_v2";
+
+    try {
+        localStorage.removeItem("piplantri_auth_pin_verified");
+        sessionStorage.removeItem("piplantri_auth_pin_verified");
+    } catch (e) {}
+
+    function checkAuth() {
+        const isAuth = sessionStorage.getItem(AUTH_KEY) === "true" || localStorage.getItem(AUTH_KEY) === "true";
+        const lockModal = document.getElementById("pinLockModal");
+        if (!isAuth && lockModal) {
+            lockModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            setTimeout(() => {
+                document.getElementById("pinInputBox")?.focus();
+            }, 100);
+        } else if (lockModal) {
+            lockModal.classList.add("hidden");
+            document.body.style.overflow = "auto";
+        }
+    }
+
+    function verifyPin(enteredPin) {
+        const pin = String(enteredPin || document.getElementById("pinInputBox")?.value || "").trim();
+        const errorDisplay = document.getElementById("pinErrorDisplay");
+        if (pin === CORRECT_PIN) {
+            sessionStorage.setItem(AUTH_KEY, "true");
+            localStorage.setItem(AUTH_KEY, "true");
+            document.getElementById("pinLockModal")?.classList.add("hidden");
+            document.body.style.overflow = "auto";
+            if (errorDisplay) errorDisplay.classList.add("hidden");
+        } else {
+            if (errorDisplay) {
+                errorDisplay.textContent = "गलत PIN! कृपया सही 4-अंक का सुरक्षा पिन दर्ज करें।";
+                errorDisplay.classList.remove("hidden");
+            }
+            const box = document.getElementById("pinInputBox");
+            if (box) {
+                box.value = "";
+                box.focus();
+            }
+        }
+    }
+
+    function lockPortal() {
+        if (confirm("क्या आप पोर्टल को लॉक करना चाहते हैं?")) {
+            sessionStorage.removeItem(AUTH_KEY);
+            localStorage.removeItem(AUTH_KEY);
+            checkAuth();
+        }
+    }
+
+    // ==========================================
+    // 📊 REAL-TIME DATA REPOSITORIES & HELPERS
+    // ==========================================
+    const VOTERS_STORAGE_KEYS = [
+        'ac175_voters_db_v6_preindexed',
+        'ac175_voters_db_bilingual_v5',
+        'ac175_voters_db_final_v4',
+        'piplantri_master_voters_unified_v1'
+    ];
+    const CONTACTS_CUSTOM_KEY = 'ac175_contacts_custom_v3';
+    const SNAPSHOTS_VAULT_KEY = 'piplantri_snapshots_vault_v1';
+    const LAST_BACKUP_META_KEY = 'piplantri_last_backup_meta';
+
+    let currentWorkingVoters = [];
+    let currentWorkingContacts = [];
+    let parsedRestorePayload = null;
+
+    // Load active voters merging data.js and local storage
+    function loadCurrentVoters() {
+        let list = null;
+        for (const k of VOTERS_STORAGE_KEYS) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        list = parsed;
+                        break;
+                    }
+                } catch (e) {}
+            }
+        }
+        if (!list && window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.voters)) {
+            list = JSON.parse(JSON.stringify(window.PIPLANTRI_DATA.voters));
+        }
+        currentWorkingVoters = list || [];
+        return currentWorkingVoters;
+    }
+
+    // Load active contacts merging data.js and local custom contacts
+    function loadCurrentContacts() {
+        let base = [];
+        if (window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.contacts)) {
+            base = JSON.parse(JSON.stringify(window.PIPLANTRI_DATA.contacts));
+        }
+        const customRaw = localStorage.getItem(CONTACTS_CUSTOM_KEY);
+        if (customRaw) {
+            try {
+                const custom = JSON.parse(customRaw);
+                if (Array.isArray(custom)) {
+                    // Map by cid
+                    const customMap = new Map();
+                    custom.forEach(c => customMap.set(c.cid, c));
+                    base = base.map(c => customMap.has(c.cid) ? customMap.get(c.cid) : c);
+                    // Add any new contacts
+                    custom.forEach(c => {
+                        if (!base.some(b => b.cid === c.cid)) {
+                            base.push(c);
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+        currentWorkingContacts = base;
+        return currentWorkingContacts;
+    }
+
+    // Save updated voters into all storage keys
+    function saveVotersEverywhere(votersList) {
+        const serialized = JSON.stringify(votersList);
+        VOTERS_STORAGE_KEYS.forEach(k => {
+            try { localStorage.setItem(k, serialized); } catch (e) {}
+        });
+        currentWorkingVoters = votersList;
+    }
+
+    // Save updated contacts
+    function saveContactsEverywhere(contactsList) {
+        try {
+            localStorage.setItem(CONTACTS_CUSTOM_KEY, JSON.stringify(contactsList));
+        } catch (e) {}
+        currentWorkingContacts = contactsList;
+    }
+
+    // ==========================================
+    // 📈 DASHBOARD METRICS REFRESH
+    // ==========================================
+    function refreshDataStats() {
+        const voters = loadCurrentVoters();
+        const contacts = loadCurrentContacts();
+
+        // 1. Voters
+        const totalVoters = voters.length;
+        const linkedVoters = voters.filter(v => v.mobile && v.mobile.trim().length >= 10).length;
+        const votedCount = voters.filter(v => v.voted === true).length;
+
+        document.getElementById('statVotersTotal').textContent = totalVoters.toLocaleString('en-IN');
+        document.getElementById('statVotersLinked').textContent = `${linkedVoters.toLocaleString('en-IN')} लिंक्ड`;
+        document.getElementById('statVotersVoted').textContent = `${votedCount.toLocaleString('en-IN')} मतदान`;
+
+        // 2. Contacts
+        const totalContacts = contacts.length;
+        const linkedContacts = contacts.filter(c => c.linked_voter_id || c.voter_id || c.linkedVoterId).length;
+        const customCount = contacts.filter(c => c.is_custom || c.customAdded).length;
+
+        document.getElementById('statContactsTotal').textContent = totalContacts.toLocaleString('en-IN');
+        document.getElementById('statContactsLinked').textContent = `${linkedContacts.toLocaleString('en-IN')} मैप हुए`;
+        document.getElementById('statContactsCustom').textContent = `${customCount.toLocaleString('en-IN')} नए जोड़े`;
+
+        // 3. Cloud Sync & Deltas
+        if (window.CloudSync) {
+            const deltas = CloudSync.getLocalDeltas ? CloudSync.getLocalDeltas() : {};
+            const deltaCount = Object.keys(deltas).length;
+            document.getElementById('statCloudDeltas').textContent = deltaCount.toLocaleString('en-IN');
+            document.getElementById('statVolunteerName').textContent = CloudSync.getVolunteerName ? CloudSync.getVolunteerName() : 'कार्यकर्ता';
+        }
+
+        // 4. Last Backup Status
+        const lastMetaRaw = localStorage.getItem(LAST_BACKUP_META_KEY);
+        if (lastMetaRaw) {
+            try {
+                const meta = JSON.parse(lastMetaRaw);
+                document.getElementById('statLastBackupTime').textContent = meta.timeStr || meta.dateStr;
+            } catch (e) {
+                document.getElementById('statLastBackupTime').textContent = 'अभी तक नहीं';
+            }
+        } else {
+            document.getElementById('statLastBackupTime').textContent = 'बैकअप आवश्यक';
+            document.getElementById('statLastBackupTime').classList.remove('text-emerald-400');
+            document.getElementById('statLastBackupTime').classList.add('text-amber-400');
+        }
+
+        renderSnapshotsList();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    // ==========================================
+    // ⬇️ DOWNLOAD EXPORT LOGIC
+    // ==========================================
+
+    function recordBackupTaken(type) {
+        const now = new Date();
+        const meta = {
+            type: type,
+            timestamp: now.toISOString(),
+            dateStr: now.toLocaleDateString('hi-IN'),
+            timeStr: now.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' })
+        };
+        localStorage.setItem(LAST_BACKUP_META_KEY, JSON.stringify(meta));
+        document.getElementById('statLastBackupTime').textContent = `${meta.timeStr} (आज)`;
+        document.getElementById('statLastBackupTime').classList.add('text-emerald-400');
+        document.getElementById('statLastBackupTime').classList.remove('text-amber-400');
+    }
+
+    function triggerDownload(content, filename, mimeType = 'text/plain;charset=utf-8') {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 200);
+    }
+
+    // 1. MASTER UNIFIED JSON BACKUP
+    function downloadMasterUnifiedBackup() {
+        const voters = loadCurrentVoters();
+        const contacts = loadCurrentContacts();
+        const displayDate = new Date().toLocaleString('hi-IN');
+
+        const masterPayload = {
+            backup_type: "PIPLANTRI_MASTER_FULL_BACKUP",
+            version: "v9.0-complete",
+            election: "ग्राम पंचायत पिपलांत्री सरपंच चुनाव (AC 175 राजसमन्द)",
+            candidate: "नवीन पालीवाल (NAVIN PALIWAL)",
+            created_at: new Date().toISOString(),
+            created_at_formatted: displayDate,
+            metadata: {
+                total_voters: voters.length,
+                total_contacts: contacts.length,
+                linked_voters: voters.filter(v => v.mobile && v.mobile.trim().length >= 10).length,
+                voted_count: voters.filter(v => v.voted === true).length
+            },
+            data: {
+                voters: voters,
+                contacts: contacts,
+                cloud_deltas: window.CloudSync && CloudSync.getLocalDeltas ? CloudSync.getLocalDeltas() : {},
+                local_snapshots: JSON.parse(localStorage.getItem(SNAPSHOTS_VAULT_KEY) || '[]')
+            }
+        };
+
+        const jsonStr = JSON.stringify(masterPayload, null, 2);
+        const fileName = `Piplantri_Master_Election_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        triggerDownload(jsonStr, fileName, 'application/json;charset=utf-8');
+        recordBackupTaken('JSON Master');
+        alert('✅ संपूर्ण मास्टर डेटा बैकअप (.JSON) सफलतापूर्वक डाउनलोड हो गया!');
+    }
+
+    // 2. VOTERS LIST CSV
+    function downloadVotersCSV() {
+        const voters = loadCurrentVoters();
+        const bom = "\uFEFF";
+        const headers = ["क्रम संख्या (Sr)", "भाग संख्या (Part)", "वार्ड संख्या (Ward)", "मतदाता क्रमांक (EPIC)", "नाम (Name)", "संबंध (Relation)", "संबंधी का नाम (Relative Name)", "मकान संख्या (House)", "आयु (Age)", "लिंग (Gender)", "अनुभाग (Section)", "मोबाइल नंबर (Mobile)", "वोटर श्रेणी (Category)", "मतदान स्थिति (Voted Status)", "कस्टम नोट्स (Notes)"];
+        
+        const rows = voters.map(v => [
+            v.sr || v.id || '',
+            v.part || '59',
+            v.ward || '-',
+            `"${(v.epic || '').replace(/"/g, '""')}"`,
+            `"${(v.name || '').replace(/"/g, '""')}"`,
+            `"${(v.rel || '').replace(/"/g, '""')}"`,
+            `"${(v.rel_name || '').replace(/"/g, '""')}"`,
+            `"${(v.house || '').replace(/"/g, '""')}"`,
+            v.age || '',
+            v.gender || '',
+            `"${(v.sec_name || '').replace(/"/g, '""')}"`,
+            `"${(v.mobile || '').replace(/"/g, '""')}"`,
+            `"${(v.category || 'Unassigned').replace(/"/g, '""')}"`,
+            v.voted ? "वोट दिया (Voted)" : "बाकी (Pending)",
+            `"${(v.notes || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = bom + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const fileName = `Piplantri_Voters_Database_${new Date().toISOString().split('T')[0]}.csv`;
+        triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8');
+        recordBackupTaken('Voters CSV');
+    }
+
+    // 3. CONTACTS DIRECTORY CSV
+    function downloadContactsCSV() {
+        const contacts = loadCurrentContacts();
+        const bom = "\uFEFF";
+        const headers = ["कांटेक्ट ID", "नाम (Contact Name)", "मोबाइल नंबर (Mobile)", "वार्ड (Ward)", "व्यवसाय / पेशा (Occupation)", "लिंक्ड वोटर ID", "लिंक्ड वोटर नाम (Linked Voter Name)", "संबंध (Relation)"];
+        
+        const rows = contacts.map(c => [
+            c.cid || '',
+            `"${(c.name || '').replace(/"/g, '""')}"`,
+            `"${(c.mobile || '').replace(/"/g, '""')}"`,
+            c.ward || '-',
+            `"${(c.occupation || '').replace(/"/g, '""')}"`,
+            c.linked_voter_id || c.voter_id || '',
+            `"${(c.linked_voter_name || '').replace(/"/g, '""')}"`,
+            `"${(c.relation || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = bom + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const fileName = `Piplantri_Contacts_Directory_${new Date().toISOString().split('T')[0]}.csv`;
+        triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8');
+        recordBackupTaken('Contacts CSV');
+    }
+
+    // 4. LINKED PAIRS CSV
+    function downloadLinkedPairsCSV() {
+        const voters = loadCurrentVoters();
+        const linkedVoters = voters.filter(v => v.mobile && v.mobile.trim().length >= 10);
+        const bom = "\uFEFF";
+        const headers = ["क्रम", "वार्ड", "EPIC", "मतदाता नाम", "पिता/पति का नाम", "मकान नं.", "लिंक्ड मोबाइल नंबर", "श्रेणी", "वोट स्थिति"];
+        
+        const rows = linkedVoters.map((v, i) => [
+            i + 1,
+            v.ward || '-',
+            `"${(v.epic || '').replace(/"/g, '""')}"`,
+            `"${(v.name || '').replace(/"/g, '""')}"`,
+            `"${(v.rel_name || '').replace(/"/g, '""')}"`,
+            `"${(v.house || '').replace(/"/g, '""')}"`,
+            `"${(v.mobile || '').replace(/"/g, '""')}"`,
+            `"${(v.category || 'Unassigned').replace(/"/g, '""')}"`,
+            v.voted ? "वोट दिया" : "बाकी"
+        ]);
+
+        const csvContent = bom + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const fileName = `Piplantri_Linked_Voters_Phones_${new Date().toISOString().split('T')[0]}.csv`;
+        triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8');
+        recordBackupTaken('Linked Pairs CSV');
+    }
+
+    // 5. POLLING DAY TURNOUT CSV
+    function downloadPollingTurnoutCSV() {
+        const voters = loadCurrentVoters();
+        const bom = "\uFEFF";
+        const headers = ["क्रम संख्या", "वार्ड", "मतदान स्थिति", "EPIC", "मतदाता नाम", "पिता/पति का नाम", "मकान नं.", "मोबाइल नंबर", "श्रेणी"];
+        
+        const sorted = [...voters].sort((a, b) => (a.voted === b.voted ? 0 : a.voted ? 1 : -1));
+
+        const rows = sorted.map((v, i) => [
+            i + 1,
+            v.ward || '-',
+            v.voted ? "✅ वोट दिया (Voted)" : "⏳ बाकी (Pending)",
+            `"${(v.epic || '').replace(/"/g, '""')}"`,
+            `"${(v.name || '').replace(/"/g, '""')}"`,
+            `"${(v.rel_name || '').replace(/"/g, '""')}"`,
+            `"${(v.house || '').replace(/"/g, '""')}"`,
+            `"${(v.mobile || '').replace(/"/g, '""')}"`,
+            `"${(v.category || 'Unassigned').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = bom + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const fileName = `Piplantri_Polling_Turnout_Report_${new Date().toISOString().split('T')[0]}.csv`;
+        triggerDownload(csvContent, fileName, 'text/csv;charset=utf-8');
+        recordBackupTaken('Polling Report CSV');
+    }
+
+    // 6. STANDALONE OFFLINE HTML ARCHIVE
+    function downloadStandaloneOfflineHTML() {
+        const voters = loadCurrentVoters();
+        const contacts = loadCurrentContacts();
+        const timestamp = new Date().toLocaleString('hi-IN');
+
+        const htmlContent = `<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>ऑफ़लाइन डेटा आर्काइव | ग्राम पंचायत पिपलांत्री - सरपंच चुनाव (नविन पालीवाल)</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; line-height: 1.5; }
+        .header { background: #1e293b; padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #334155; }
+        h1 { margin: 0; color: #38bdf8; font-size: 22px; }
+        .badge { background: #f59e0b; color: #020617; padding: 4px 10px; border-radius: 999px; font-weight: bold; font-size: 12px; }
+        .stats { display: flex; gap: 15px; margin-top: 15px; font-size: 14px; flex-wrap: wrap; }
+        .stat-box { background: #020617; padding: 10px 16px; border-radius: 12px; border: 1px solid #334155; }
+        .search { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #475569; background: #1e293b; color: white; margin-bottom: 15px; font-size: 15px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; font-size: 13px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #020617; color: #94a3b8; }
+        tr:hover { background: #334155; }
+        .voted { color: #34d399; font-weight: bold; }
+        .pending { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚩 ग्राम पंचायत पिपलांत्री - सम्पूर्ण मतदाता व कांटेक्ट ऑफ़लाइन आर्काइव</h1>
+        <p style="color:#94a3b8; margin: 5px 0;">सरपंच चुनाव • प्रत्याशी: नविन पालीवाल • स्नैपशॉट समय: ${timestamp}</p>
+        <div class="stats">
+            <div class="stat-box">कुल मतदाता: <strong>${voters.length}</strong></div>
+            <div class="stat-box">लिंक्ड फोन: <strong>${voters.filter(v=>v.mobile).length}</strong></div>
+            <div class="stat-box">कुल कांटेक्ट: <strong>${contacts.length}</strong></div>
+            <div class="stat-box">मतदान दर्ज: <strong>${voters.filter(v=>v.voted).length}</strong></div>
+        </div>
+    </div>
+
+    <input type="text" id="offlineSearch" class="search" placeholder="🔍 नाम, पिता का नाम, मोबाइल नंबर, वार्ड या EPIC से खोजें..." onkeyup="filterTable()">
+
+    <table id="offlineTable">
+        <thead>
+            <tr>
+                <th>क्र.</th>
+                <th>वार्ड</th>
+                <th>EPIC</th>
+                <th>मतदाता नाम</th>
+                <th>संबंधी नाम</th>
+                <th>मकान</th>
+                <th>आयु/लिंग</th>
+                <th>मोबाइल नंबर</th>
+                <th>वोट स्थिति</th>
+            </tr>
+        </thead>
+        <tbody id="offlineTableBody">
+            ${voters.map((v, i) => `
+                <tr>
+                    <td>${v.sr || (i+1)}</td>
+                    <td>वार्ड ${v.ward || '-'}</td>
+                    <td><strong>${v.epic || ''}</strong></td>
+                    <td>${v.name || ''}</td>
+                    <td>${v.rel || 'पिता'}: ${v.rel_name || ''}</td>
+                    <td>${v.house || ''}</td>
+                    <td>${v.age || ''} / ${v.gender || ''}</td>
+                    <td style="color:#38bdf8; font-weight:bold;">${v.mobile || '-'}</td>
+                    <td class="${v.voted ? 'voted' : 'pending'}">${v.voted ? '✅ वोट दिया' : 'बाकी'}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+
+    <script>
+    function filterTable() {
+        const query = document.getElementById('offlineSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('#offlineTableBody tr');
+        rows.forEach(r => {
+            r.style.display = r.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+    <\/script>
+</body>
+</html>`;
+
+        const fileName = `Piplantri_Offline_Archive_${new Date().toISOString().split('T')[0]}.html`;
+        triggerDownload(htmlContent, fileName, 'text/html;charset=utf-8');
+        recordBackupTaken('Offline HTML');
+    }
+
+    // ==========================================
+    // 📸 BROWSER LOCAL SNAPSHOT VAULT ENGINE
+    // ==========================================
+    function getSavedSnapshots() {
+        try {
+            return JSON.parse(localStorage.getItem(SNAPSHOTS_VAULT_KEY) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveSnapshotsList(list) {
+        localStorage.setItem(SNAPSHOTS_VAULT_KEY, JSON.stringify(list));
+        renderSnapshotsList();
+    }
+
+    function takeInstantSnapshot() {
+        const input = document.getElementById('snapshotLabelInput');
+        const label = (input.value || '').trim() || `स्नैपशॉट #${getSavedSnapshots().length + 1}`;
+        const voters = loadCurrentVoters();
+        const contacts = loadCurrentContacts();
+        const now = new Date();
+
+        const newSnapshot = {
+            id: 'snap_' + Date.now(),
+            label: label,
+            dateStr: now.toLocaleDateString('hi-IN'),
+            timeStr: now.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }),
+            isoTime: now.toISOString(),
+            votersCount: voters.length,
+            contactsCount: contacts.length,
+            linkedCount: voters.filter(v => v.mobile && v.mobile.trim().length >= 10).length,
+            votedCount: voters.filter(v => v.voted === true).length,
+            votersData: voters,
+            contactsData: contacts
+        };
+
+        const existing = getSavedSnapshots();
+        existing.unshift(newSnapshot);
+        saveSnapshotsList(existing);
+        input.value = '';
+
+        recordBackupTaken('Local Snapshot');
+        alert(`✅ नया स्नैपशॉट "${label}" सुरक्षित रूप से सेव हो गया!`);
+    }
+
+    function renderSnapshotsList() {
+        const list = getSavedSnapshots();
+        const tbody = document.getElementById('snapshotsTableBody');
+        const badge = document.getElementById('statBackupCountBadge');
+        if (badge) badge.textContent = `${list.length} स्नैपशॉट उपलब्ध`;
+
+        if (!list || list.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="p-6 text-center text-slate-500 font-semibold">
+                        कोई लोकल स्नैपशॉट उपलब्ध नहीं है। ऊपर दिए बटन से पहला स्नैपशॉट लें।
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = list.map((s, index) => `
+            <tr class="hover:bg-slate-800/40 transition">
+                <td class="p-3 font-bold text-slate-400">${index + 1}</td>
+                <td class="p-3 whitespace-nowrap">
+                    <div class="font-bold text-white">${s.timeStr}</div>
+                    <div class="text-[10px] text-slate-400">${s.dateStr}</div>
+                </td>
+                <td class="p-3">
+                    <span class="font-extrabold text-cyan-300">${s.label}</span>
+                </td>
+                <td class="p-3 text-center font-bold text-slate-200">${(s.votersCount || 0).toLocaleString('en-IN')}</td>
+                <td class="p-3 text-center font-bold text-slate-200">${(s.contactsCount || 0).toLocaleString('en-IN')}</td>
+                <td class="p-3 text-center font-bold text-emerald-400">${(s.linkedCount || 0).toLocaleString('en-IN')}</td>
+                <td class="p-3 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="restoreSnapshotById('${s.id}')" class="px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-bold flex items-center gap-1 transition shadow active:scale-95" title="इस स्नैपशॉट को रीस्टोर करें">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                            <span>रीस्टोर</span>
+                        </button>
+                        <button onclick="exportSnapshotJSON('${s.id}')" class="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition" title="JSON डाउनलोड करें">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteSnapshotById('${s.id}')" class="p-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded text-xs transition" title="स्नैपशॉट हटाएं">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function restoreSnapshotById(id) {
+        const list = getSavedSnapshots();
+        const snap = list.find(s => s.id === id);
+        if (!snap) return;
+
+        if (!confirm(`क्या आप स्नैपशॉट "${snap.label}" (${snap.dateStr} ${snap.timeStr}) को रीस्टोर करना चाहते हैं?\n\nइससे वर्तमान डेटा स्नैपशॉट के अनुसार अपडेट हो जाएगा।`)) {
+            return;
+        }
+
+        if (snap.votersData && Array.isArray(snap.votersData)) {
+            saveVotersEverywhere(snap.votersData);
+        }
+        if (snap.contactsData && Array.isArray(snap.contactsData)) {
+            saveContactsEverywhere(snap.contactsData);
+        }
+
+        if (window.CloudSync && CloudSync.syncFullStateToCloud) {
+            CloudSync.syncFullStateToCloud(snap.votersData);
+        }
+
+        refreshDataStats();
+        alert(`✅ स्नैपशॉट "${snap.label}" सफलतापूर्वक रीस्टोर हो गया!`);
+    }
+
+    function exportSnapshotJSON(id) {
+        const list = getSavedSnapshots();
+        const snap = list.find(s => s.id === id);
+        if (!snap) return;
+
+        const payload = {
+            snapshot_label: snap.label,
+            snapshot_time: snap.isoTime,
+            voters: snap.votersData,
+            contacts: snap.contactsData
+        };
+        const fileName = `Piplantri_Snapshot_${snap.label.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+        triggerDownload(JSON.stringify(payload, null, 2), fileName, 'application/json');
+    }
+
+    function deleteSnapshotById(id) {
+        if (!confirm('क्या आप इस स्नैपशॉट को हटाना चाहते हैं?')) return;
+        const list = getSavedSnapshots().filter(s => s.id !== id);
+        saveSnapshotsList(list);
+    }
+
+    // ==========================================
+    // 🔄 DATA RESTORE FROM JSON FILE LOGIC
+    // ==========================================
+    function handleRestoreFileSelection(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('selectedFileName').textContent = `चयनित: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                parsedRestorePayload = parsed;
+                inspectAndPreviewRestoreData(parsed, file.name);
+            } catch (err) {
+                alert('अमान्य JSON फ़ाइल! कृपया सही बैकअप फ़ाइल चुनें। त्रुटि: ' + err.message);
+                parsedRestorePayload = null;
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function inspectAndPreviewRestoreData(payload, fileName) {
+        let voters = [];
+        let contacts = [];
+
+        if (Array.isArray(payload)) {
+            voters = payload;
+        } else if (payload.data && payload.data.voters) {
+            voters = payload.data.voters;
+            contacts = payload.data.contacts || [];
+        } else if (payload.voters) {
+            voters = payload.voters;
+            contacts = payload.contacts || [];
+        }
+
+        if (!Array.isArray(voters) || voters.length === 0) {
+            alert('इस बैकअप फ़ाइल में कोई मान्य मतदाता डेटा नहीं मिला!');
+            return;
+        }
+
+        const linkedCount = voters.filter(v => v.mobile && v.mobile.trim().length >= 10).length;
+        const votedCount = voters.filter(v => v.voted === true).length;
+
+        document.getElementById('previewTimestamp').textContent = payload.created_at_formatted || payload.created_at || 'दिनांक अनुपलब्ध';
+        document.getElementById('previewVotersCount').textContent = voters.length.toLocaleString('en-IN');
+        document.getElementById('previewContactsCount').textContent = (contacts.length || 0).toLocaleString('en-IN');
+        document.getElementById('previewLinkedCount').textContent = linkedCount.toLocaleString('en-IN');
+        document.getElementById('previewVotedCount').textContent = votedCount.toLocaleString('en-IN');
+
+        document.getElementById('restorePreviewCard').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function executeRestore(mode) {
+        if (!parsedRestorePayload) {
+            alert('कृपया पहले बैकअप JSON फ़ाइल चुनें!');
+            return;
+        }
+
+        let incomingVoters = [];
+        let incomingContacts = [];
+
+        if (Array.isArray(parsedRestorePayload)) {
+            incomingVoters = parsedRestorePayload;
+        } else if (parsedRestorePayload.data && parsedRestorePayload.data.voters) {
+            incomingVoters = parsedRestorePayload.data.voters;
+            incomingContacts = parsedRestorePayload.data.contacts || [];
+        } else if (parsedRestorePayload.voters) {
+            incomingVoters = parsedRestorePayload.voters;
+            incomingContacts = parsedRestorePayload.contacts || [];
+        }
+
+        if (mode === 'merge') {
+            const currentVoters = loadCurrentVoters();
+            const voterMap = new Map();
+            currentVoters.forEach(v => voterMap.set(v.id || v.sr, v));
+
+            incomingVoters.forEach(inv => {
+                const key = inv.id || inv.sr;
+                if (voterMap.has(key)) {
+                    const existing = voterMap.get(key);
+                    if (inv.mobile && !existing.mobile) existing.mobile = inv.mobile;
+                    if (inv.category && inv.category !== 'Unassigned') existing.category = inv.category;
+                    if (inv.voted) existing.voted = true;
+                    if (inv.notes && !existing.notes) existing.notes = inv.notes;
+                } else {
+                    voterMap.set(key, inv);
+                }
+            });
+
+            const mergedVoters = Array.from(voterMap.values());
+            saveVotersEverywhere(mergedVoters);
+
+            if (incomingContacts.length > 0) {
+                const currentContacts = loadCurrentContacts();
+                const contactMap = new Map();
+                currentContacts.forEach(c => contactMap.set(c.cid, c));
+                incomingContacts.forEach(inc => {
+                    if (contactMap.has(inc.cid)) {
+                        const ex = contactMap.get(inc.cid);
+                        if (inc.linked_voter_id && !ex.linked_voter_id) {
+                            ex.linked_voter_id = inc.linked_voter_id;
+                            ex.linked_voter_name = inc.linked_voter_name;
+                        }
+                    } else {
+                        contactMap.set(inc.cid, inc);
+                    }
+                });
+                saveContactsEverywhere(Array.from(contactMap.values()));
+            }
+
+            if (window.CloudSync && CloudSync.syncFullStateToCloud) {
+                CloudSync.syncFullStateToCloud(mergedVoters);
+            }
+
+            refreshDataStats();
+            alert(`✅ स्मार्ट मर्ज पूर्ण! कुल ${mergedVoters.length} मतदाता डेटाबेस में अपडेट हो गए।`);
+        } else if (mode === 'overwrite') {
+            if (!confirm("⚠️ चेतावनी: पूर्ण रीस्टोर (Clean Overwrite) से मौजूदा स्थानीय डेटा पूरी तरह बैकअप फ़ाइल से बदल दिया जाएगा।\n\nक्या आप वाकई जारी रखना चाहते हैं?")) {
+                return;
+            }
+
+            saveVotersEverywhere(incomingVoters);
+            if (incomingContacts.length > 0) {
+                saveContactsEverywhere(incomingContacts);
+            }
+
+            if (window.CloudSync && CloudSync.syncFullStateToCloud) {
+                CloudSync.syncFullStateToCloud(incomingVoters);
+            }
+
+            refreshDataStats();
+            alert(`✅ पूर्ण रीस्टोर सफल! कुल ${incomingVoters.length} मतदाता रीस्टोर किए गए।`);
+        }
+
+        const restoredSnap = {
+            id: 'snap_restore_' + Date.now(),
+            label: `रीस्टोर बैकअप (${mode === 'merge' ? 'स्मार्ट मर्ज' : 'ओवरराइट'})`,
+            dateStr: new Date().toLocaleDateString('hi-IN'),
+            timeStr: new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }),
+            isoTime: new Date().toISOString(),
+            votersCount: incomingVoters.length,
+            contactsCount: incomingContacts.length,
+            linkedCount: incomingVoters.filter(v => v.mobile).length,
+            votedCount: incomingVoters.filter(v => v.voted).length,
+            votersData: incomingVoters,
+            contactsData: incomingContacts
+        };
+        const snaps = getSavedSnapshots();
+        snaps.unshift(restoredSnap);
+        saveSnapshotsList(snaps);
+    }
+
+    // ==========================================
+    // 🛡️ DATA HEALTH & EMERGENCY DIAGNOSTICS
+    // ==========================================
+    function runDataHealthCheck() {
+        const voters = loadCurrentVoters();
+        const contacts = loadCurrentContacts();
+
+        const phoneMap = new Map();
+        voters.forEach(v => {
+            if (v.mobile && v.mobile.trim().length >= 10) {
+                const clean = v.mobile.trim().replace(/[^0-9]/g, '').slice(-10);
+                if (clean.length === 10) {
+                    if (phoneMap.has(clean)) {
+                        phoneMap.get(clean).push(v.name);
+                    } else {
+                        phoneMap.set(clean, [v.name]);
+                    }
+                }
+            }
+        });
+
+        let sharedNumbersCount = 0;
+        phoneMap.forEach((names, phone) => {
+            if (names.length > 1) {
+                sharedNumbersCount++;
+            }
+        });
+
+        alert(`🩺 डेटा सत्यनिष्ठा रिपोर्ट:\n\n• कुल मतदाता: ${voters.length}\n• सक्रिय कांटेक्ट: ${contacts.length}\n• फ़ोन युक्त मतदाता: ${voters.filter(v=>v.mobile).length}\n• पारिवारिक साझा नंबर (Shared Family Mobiles): ${sharedNumbersCount}\n\nडेटाबेस 100% सुचारू और कार्यशील है!`);
+    }
+
+    function forceCloudSyncPull() {
+        if (window.CloudSync && CloudSync.pullFullCloudState) {
+            CloudSync.pullFullCloudState().then(() => {
+                refreshDataStats();
+                alert('✅ क्लाउड से नवीनतम डेटा सफलतापूर्वक खींच लिया गया!');
+            }).catch(e => {
+                alert('क्लाउड सिंक में त्रुटि: ' + e.message);
+            });
+        } else {
+            alert('क्लाउड सिंक कनेक्शन सक्रिय है और पृष्ठभूमि में चल रहा है।');
+        }
+    }
+
+    function emergencyResetToMasterData() {
+        if (!confirm('⚠️ क्या आप वाकई स्थानीय कैश को मूल डेटाबेस (data.js) पर रीसेट करना चाहते हैं?\n\nयह केवल तभी करें जब स्थानीय डेटा में कोई समस्या आई हो।')) {
+            return;
+        }
+        if (window.PIPLANTRI_DATA && window.PIPLANTRI_DATA.voters) {
+            saveVotersEverywhere(JSON.parse(JSON.stringify(window.PIPLANTRI_DATA.voters)));
+            if (window.PIPLANTRI_DATA.contacts) {
+                saveContactsEverywhere(JSON.parse(JSON.stringify(window.PIPLANTRI_DATA.contacts)));
+            }
+            refreshDataStats();
+            alert('✅ मूल मास्टर डेटा सफलतापूर्वक रीलोड हो गया!');
+        } else {
+            alert('data.js मास्टर फ़ाइल लोड नहीं हो सकी!');
+        }
+    }
+
+    // ==========================================
+    // 🚀 INITIALIZATION
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+        refreshDataStats();
+        if (window.lucide) lucide.createIcons();
+    });
+    </script>
+</body>
+</html>

@@ -1,10 +1,11 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v8-contact-picker';
+const CACHE_NAME = 'piplantri-election-v9-backup-vault';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './linker.html',
   './contacts.html',
+  './backup.html',
   './cloudSync.js',
   './data.js',
   './manifest.json',
