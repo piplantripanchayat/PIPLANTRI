@@ -28,8 +28,9 @@
     </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SheetJS for Excel Import/Export -->
+    <!-- SheetJS & ExcelJS for Excel Import/Export with Data Validation & AutoFilter -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
@@ -841,46 +842,140 @@
     }
 
     // 2. WARD-WISE 11-SHEET EXCEL EXPORT (1 Sheet per Ward with Sub-House & Mukhiya Columns)
-    function downloadWardWiseExcel() {
-        if (typeof XLSX === 'undefined') {
-            alert('एक्सेल लाइब्रेरी लोड नहीं हो सकी। कृपया इंटरनेट कनेक्शन जांचें।');
+    async function downloadWardWiseExcel() {
+        const voters = loadCurrentVoters();
+        const fileName = `Pipalantri_Ward_Wise_Summary_11Wards_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+        if (typeof ExcelJS !== 'undefined') {
+            const wb = new ExcelJS.Workbook();
+            wb.creator = 'Piplantri Election Portal';
+
+            for (let w = 1; w <= 11; w++) {
+                const wardStr = String(w);
+                const wardPad = String(w).padStart(2, '0');
+                const ws = wb.addWorksheet(`Ward_${wardPad}`, {
+                    views: [{ state: 'frozen', ySplit: 1 }]
+                });
+
+                ws.columns = [
+                    { header: 'क्रम सं. (Ward Sr)', key: 'ward_sr', width: 14 },
+                    { header: 'मतदाता पहचान संख्या (EPIC)', key: 'epic', width: 22 },
+                    { header: 'मतदाता का नाम (Name)', key: 'name', width: 22 },
+                    { header: 'संबंध (Relation)', key: 'rel', width: 12 },
+                    { header: 'पिता/पति का नाम (Relative Name)', key: 'rel_name', width: 24 },
+                    { header: 'मूल वोटर लिस्ट मकान सं. (Roll House)', key: 'house', width: 22 },
+                    { header: 'वास्तविक/अलग मकान सं. (Actual/Sub House)', key: 'actual_house', width: 26 },
+                    { header: 'परिवार मुखिया (Head of Family)', key: 'is_mukhiya', width: 22 },
+                    { header: 'मोबाइल नंबर (Mobile)', key: 'mobile', width: 20 },
+                    { header: 'आयु (Age)', key: 'age', width: 10 },
+                    { header: 'लिंग (Gender)', key: 'gender', width: 12 },
+                    { header: 'स्थिति (Status)', key: 'status', width: 16 },
+                    { header: 'वोटर श्रेणी/रुझान (Category)', key: 'category', width: 24 },
+                    { header: 'टिप्पणी/रिमार्क (Remarks/Notes)', key: 'notes', width: 26 }
+                ];
+
+                const wardVoters = voters.filter(v => String(v.ward) === wardStr);
+                wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+
+                wardVoters.forEach((v, idx) => {
+                    ws.addRow({
+                        ward_sr: Number(v.ward_sr) || (idx + 1),
+                        epic: v.epic || '',
+                        name: v.name || '',
+                        rel: v.rel || '',
+                        rel_name: v.rel_name || '',
+                        house: v.house || '',
+                        actual_house: v.actual_house || v.sub_house || '',
+                        is_mukhiya: v.is_mukhiya ? 'मुखिया' : '',
+                        mobile: v.mobile || '',
+                        age: Number(v.age) || '',
+                        gender: v.gender || '',
+                        status: v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
+                        category: v.category || 'Unassigned',
+                        notes: v.notes || ''
+                    });
+                });
+
+                const lastRow = wardVoters.length + 1;
+                ws.autoFilter = `A1:N${lastRow}`;
+
+                for (let r = 2; r <= lastRow + 20; r++) {
+                    ws.getCell(`H${r}`).dataValidation = {
+                        type: 'list',
+                        allowBlank: true,
+                        formulae: ['"मुखिया,"'],
+                        showDropDown: true,
+                        showErrorMessage: false
+                    };
+                    ws.getCell(`L${r}`).dataValidation = {
+                        type: 'list',
+                        allowBlank: true,
+                        formulae: ['"सक्रिय,विलोपित"'],
+                        showDropDown: true,
+                        showErrorMessage: false
+                    };
+                    ws.getCell(`M${r}`).dataValidation = {
+                        type: 'list',
+                        allowBlank: true,
+                        formulae: ['"100% पक्का (Support),टारगेट (Target),न्यूट्रल (Neutral),विपक्ष (Opposition),Unassigned"'],
+                        showDropDown: true,
+                        showErrorMessage: false
+                    };
+                }
+            }
+
+            const buf = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            recordBackupTaken('Ward Wise 11-Sheet Excel (Interactive)');
             return;
         }
 
-        const voters = loadCurrentVoters();
-        const wb = XLSX.utils.book_new();
+        if (typeof XLSX !== 'undefined') {
+            const wb = XLSX.utils.book_new();
 
-        for (let w = 1; w <= 11; w++) {
-            const wardStr = String(w);
-            const wardPad = String(w).padStart(2, '0');
+            for (let w = 1; w <= 11; w++) {
+                const wardStr = String(w);
+                const wardPad = String(w).padStart(2, '0');
 
-            const wardVoters = voters.filter(v => String(v.ward) === wardStr);
-            wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+                const wardVoters = voters.filter(v => String(v.ward) === wardStr);
+                wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
-            const rows = wardVoters.map((v, idx) => ({
-                'क्रम सं. (Ward Sr)': Number(v.ward_sr) || (idx + 1),
-                'मतदाता पहचान संख्या (EPIC)': v.epic || '',
-                'मतदाता का नाम (Name)': v.name || '',
-                'संबंध (Relation)': v.rel || '',
-                'पिता/पति का नाम (Relative Name)': v.rel_name || '',
-                'मूल वोटर लिस्ट मकान सं. (Roll House)': v.house || '',
-                'वास्तविक/अलग मकान सं. (Actual/Sub House)': v.actual_house || v.sub_house || '',
-                'परिवार मुखिया (Head of Family)': v.is_mukhiya ? 'हाँ (मुखिया)' : '',
-                'मोबाइल नंबर (Mobile)': v.mobile || '',
-                'आयु (Age)': Number(v.age) || '',
-                'लिंग (Gender)': v.gender || '',
-                'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित (Deleted)' : 'सक्रिय (Active)',
-                'वोटर श्रेणी/रुझान (Category)': v.category || 'Unassigned',
-                'टिप्पणी/रिमार्क (Remarks/Notes)': v.notes || ''
-            }));
+                const rows = wardVoters.map((v, idx) => ({
+                    'क्रम सं. (Ward Sr)': Number(v.ward_sr) || (idx + 1),
+                    'मतदाता पहचान संख्या (EPIC)': v.epic || '',
+                    'मतदाता का नाम (Name)': v.name || '',
+                    'संबंध (Relation)': v.rel || '',
+                    'पिता/पति का नाम (Relative Name)': v.rel_name || '',
+                    'मूल वोटर लिस्ट मकान सं. (Roll House)': v.house || '',
+                    'वास्तविक/अलग मकान सं. (Actual/Sub House)': v.actual_house || v.sub_house || '',
+                    'परिवार मुखिया (Head of Family)': v.is_mukhiya ? 'मुखिया' : '',
+                    'मोबाइल नंबर (Mobile)': v.mobile || '',
+                    'आयु (Age)': Number(v.age) || '',
+                    'लिंग (Gender)': v.gender || '',
+                    'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
+                    'वोटर श्रेणी/रुझान (Category)': v.category || 'Unassigned',
+                    'टिप्पणी/रिमार्क (Remarks/Notes)': v.notes || ''
+                }));
 
-            const ws = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
+                const ws = XLSX.utils.json_to_sheet(rows);
+                ws['!autofilter'] = { ref: `A1:N${rows.length + 1}` };
+                XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
+            }
+
+            XLSX.writeFile(wb, fileName);
+            recordBackupTaken('Ward Wise 11-Sheet Excel');
+            return;
         }
 
-        const fileName = `Pipalantri_Ward_Wise_Summary_11Wards_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        recordBackupTaken('Ward Wise 11-Sheet Excel');
+        alert('एक्सेल लाइब्रेरी लोड नहीं हो सकी। कृपया इंटरनेट कनेक्शन जांचें।');
     }
 
     // 📤 EXCEL IMPORT & MULTI-SHEET AUTO-SYNC FOR BACKUP CENTER

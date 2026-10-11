@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v13-11ward-subhouse-sync';
+const CACHE_NAME = 'piplantri-election-v14-excel-dropdown-autofilter';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS_TO_CACHE = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
   'https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap'
 ];
 
