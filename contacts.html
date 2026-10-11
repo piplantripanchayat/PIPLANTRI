@@ -1904,14 +1904,15 @@
 
     function saveVotersState() {
         try {
+            localStorage.removeItem('ac175_voters_db_bilingual_v5');
+            localStorage.removeItem('ac175_voters_db_final_v4');
+            localStorage.removeItem('piplantri_master_voters_unified_v1');
+        } catch(ign) {}
+        try {
             const serialized = JSON.stringify(votersState);
             localStorage.setItem(STORAGE_KEY, serialized);
-            localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
-            localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
-            localStorage.setItem('ac175_voters_db_final_v4', serialized);
-            localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
         } catch (e) {
-            console.error("Save error:", e);
+            console.warn("[Contacts] Quota reached on full array, CloudSync deltas handle persistence.");
         }
     }
 

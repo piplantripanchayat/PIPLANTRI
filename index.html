@@ -1790,11 +1790,51 @@
         }
 
         function saveVoterState() {
-            const serialized = JSON.stringify(voters);
-            localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
-            localStorage.setItem('ac175_voters_db_final_v4', serialized);
-            localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
-            localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
+            // 1. Immediately prune legacy redundant keys to free up ~4.5MB quota!
+            try {
+                localStorage.removeItem('ac175_voters_db_final_v4');
+                localStorage.removeItem('ac175_voters_db_bilingual_v5');
+                localStorage.removeItem('piplantri_master_voters_unified_v1');
+            } catch (ign) {}
+
+            // 2. Safe save to single active key with quota safety
+            try {
+                const serialized = JSON.stringify(voters);
+                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
+            } catch (quotaErr) {
+                console.warn('[Storage] Quota exceeded on full voters array, falling back to delta-only persistence:', quotaErr);
+                try {
+                    const deltaMap = {};
+                    voters.forEach(v => {
+                        const m = VOTERS_MASTER.find(vm => vm.id === v.id);
+                        if (!m) {
+                            deltaMap[v.id] = v;
+                        } else if (
+                            (v.mobile || '') !== (m.mobile || '') ||
+                            v.category !== m.category ||
+                            (v.notes || '') !== (m.notes || '') ||
+                            (v.actual_house || '') !== (m.actual_house || '') ||
+                            Boolean(v.is_mukhiya) !== Boolean(m.is_mukhiya) ||
+                            Boolean(v.voted) !== Boolean(m.voted) ||
+                            v.location_status !== m.location_status
+                        ) {
+                            deltaMap[v.id] = {
+                                mobile: v.mobile,
+                                category: v.category,
+                                notes: v.notes,
+                                actual_house: v.actual_house,
+                                is_mukhiya: v.is_mukhiya,
+                                voted: v.voted,
+                                location_status: v.location_status
+                            };
+                        }
+                    });
+                    localStorage.setItem('piplantri_voters_deltas_v1', JSON.stringify(deltaMap));
+                } catch (deltaErr) {
+                    console.error('[Storage] Delta save error:', deltaErr);
+                }
+            }
+
             populateFamilyIdDatalist();
             updateKPIs();
             if (currentTab === 'voters') renderVotersTable();
@@ -3022,10 +3062,23 @@
                             v.gender || ''
                         ]);
 
-                        // Auto-adjust row height based on content length
-                        const nameLen = (v.name || '').length;
-                        const relNameLen = (v.rel_name || '').length;
-                        row.height = (nameLen > 26 || relNameLen > 26) ? 30 : 23;
+                        // Auto-adjust row height based on maximum content length across all cells
+                        const maxLen = Math.max(
+                            (v.name || '').length,
+                            (v.rel_name || '').length,
+                            (v.actual_house || v.sub_house || '').length,
+                            (v.house || '').length,
+                            (v.mobile || '').length
+                        );
+                        if (maxLen > 55) {
+                            row.height = 54;
+                        } else if (maxLen > 38) {
+                            row.height = 42;
+                        } else if (maxLen > 24) {
+                            row.height = 32;
+                        } else {
+                            row.height = 23;
+                        }
 
                         row.eachCell((cell, colNumber) => {
                             cell.font = { name: 'Mukta', size: 10 };
@@ -3187,16 +3240,76 @@
                         return String(str).split(/[,/]+/).map(s => s.trim().replace(/[^0-9]/g, '').slice(-10)).filter(s => s.length === 10);
                     }
 
-                    // Build maps for fast O(1) matching
+                    function cleanNameKey(name, relName) {
+                        const n = (name || '').trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+                        const r = (relName || '').trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+                        return `${n}__${r}`;
+                    }
+
+                    // Build maps for fast O(1) matching (both by EPIC and by Name+Relative)
                     const byEpic = new Map();
                     const byCleanEpic = new Map();
+                    const byNameAndRel = new Map();
+
                     voters.forEach(v => {
                         if (v.epic) {
                             const raw = v.epic.trim().toUpperCase();
                             byEpic.set(raw, v);
                             byCleanEpic.set(raw.replace(/[^A-Z0-9]/g, ''), v);
                         }
+                        if (v.name && v.rel_name) {
+                            byNameAndRel.set(cleanNameKey(v.name, v.rel_name), v);
+                        }
                     });
+
+                    // Universal Fuzzy Field Extractor (supports any sort order, newlines in headers, Hindi/English keys)
+                    function extractRowFields(r) {
+                        let epic = '';
+                        let mobile = '';
+                        let actualHouse = '';
+                        let mukhiya = '';
+                        let name = '';
+                        let relName = '';
+                        let notes = '';
+
+                        for (const [rawKey, val] of Object.entries(r)) {
+                            if (val === undefined || val === null) continue;
+                            const valStr = String(val).trim();
+                            if (!valStr) continue;
+                            const k = rawKey.replace(/\s+/g, ' ').toLowerCase();
+
+                            // 1. EPIC
+                            if (!epic && (k.includes('epic') || k.includes('पहचान') || k.includes('voter id') || k.includes('card no'))) {
+                                epic = valStr.toUpperCase();
+                            }
+                            // 2. Mobile
+                            else if (!mobile && (k.includes('मोबाइल') || k.includes('mobile') || k.includes('phone') || k.includes('contact') || k.includes('फ़ोन') || k.includes('फोन'))) {
+                                mobile = valStr;
+                            }
+                            // 3. Sub House / Actual House
+                            else if (!actualHouse && (k.includes('उप-मकान') || k.includes('अलग') || k.includes('sub house') || k.includes('actual') || k.includes('वास्तविक'))) {
+                                actualHouse = valStr;
+                            }
+                            // 4. Mukhiya
+                            else if (!mukhiya && (k.includes('मुखिया') || k.includes('head') || k.includes('mukhiya'))) {
+                                mukhiya = valStr;
+                            }
+                            // 5. Voter Name
+                            else if (!name && (k.includes('नाम') || k.includes('name')) && !k.includes('पिता') && !k.includes('पति') && !k.includes('rel')) {
+                                name = valStr;
+                            }
+                            // 6. Relative Name
+                            else if (!relName && (k.includes('पिता') || k.includes('पति') || k.includes('relative') || k.includes('rel_name'))) {
+                                relName = valStr;
+                            }
+                            // 7. Notes / Remarks
+                            else if (!notes && (k.includes('टिप्पणी') || k.includes('रिमार्क') || k.includes('notes') || k.includes('remark'))) {
+                                notes = valStr;
+                            }
+                        }
+
+                        return { epic, mobile, actualHouse, mukhiya, name, relName, notes };
+                    }
 
                     let totalRowsScanned = 0;
                     let votersUpdatedCount = 0;
@@ -3210,24 +3323,32 @@
                         if (!sheet) return;
                         let rows = XLSX.utils.sheet_to_json(sheet);
                         if (!Array.isArray(rows) || rows.length === 0) return;
-                        if (!Object.keys(rows[0]).some(k => k.includes('EPIC') || k.includes('पहचान') || k.includes('नाम'))) {
+                        // Handle Ward Banner on Row 1
+                        if (!Object.keys(rows[0]).some(k => {
+                            const lk = k.toLowerCase();
+                            return lk.includes('epic') || lk.includes('पहचान') || lk.includes('नाम') || lk.includes('voter');
+                        })) {
                             rows = XLSX.utils.sheet_to_json(sheet, { range: 1 });
                         }
                         if (!Array.isArray(rows) || rows.length === 0) return;
 
                         rows.forEach(r => {
                             totalRowsScanned++;
+                            const fields = extractRowFields(r);
 
-                            // 1. Detect EPIC
-                            let epicVal = r['मतदाता पहचान संख्या (EPIC)'] || r['EPIC No'] || r['EPIC'] || r['EPIC नंबर'] || r['पहचान पत्र'] || r['मुखिया का पहचान पत्र (EPIC No.)'] || '';
-                            epicVal = String(epicVal).trim().toUpperCase();
-                            if (!epicVal) return;
-
-                            let target = byEpic.get(epicVal);
-                            if (!target && epicAliases[epicVal]) target = byEpic.get(epicAliases[epicVal]);
-                            if (!target) {
-                                const clean = epicVal.replace(/[^A-Z0-9]/g, '');
-                                target = byCleanEpic.get(clean);
+                            // Match target voter:
+                            let target = null;
+                            if (fields.epic) {
+                                target = byEpic.get(fields.epic);
+                                if (!target && epicAliases[fields.epic]) target = byEpic.get(epicAliases[fields.epic]);
+                                if (!target) {
+                                    const clean = fields.epic.replace(/[^A-Z0-9]/g, '');
+                                    target = byCleanEpic.get(clean);
+                                }
+                            }
+                            // Fallback match by Name + Relative Name (handles sorted/customized sheets)
+                            if (!target && fields.name && fields.relName) {
+                                target = byNameAndRel.get(cleanNameKey(fields.name, fields.relName));
                             }
 
                             if (!target) return;
@@ -3235,11 +3356,9 @@
                             let hasChange = false;
                             const cloudUpdates = {};
 
-                            // 2. Mobile Detection & Merge
-                            let mobVal = r['मोबाइल नंबर (Mobile)'] || r['मोबाइल (Mobile)'] || r['Mobile'] || r['मोबाइल'] || r['Phone'] || r['फोन'] || r['मुखिया का मोबाइल (Mobile)'] || r['Contact'] || '';
-                            mobVal = String(mobVal).trim();
-                            if (mobVal) {
-                                const incomingNums = cleanNums(mobVal);
+                            // 1. Mobile Detection & Merge
+                            if (fields.mobile) {
+                                const incomingNums = cleanNums(fields.mobile);
                                 if (incomingNums.length > 0) {
                                     const currentNums = cleanNums(target.mobile);
                                     const merged = Array.from(new Set([...incomingNums, ...currentNums]));
@@ -3252,21 +3371,18 @@
                                 }
                             }
 
-                            // 3. Sub-House / Actual House Detection
-                            let subHouseVal = r['वास्तविक/अलग मकान सं. (Actual/Sub House)'] || r['वास्तविक मकान'] || r['उप-मकान'] || r['Actual House'] || r['Sub House'] || r['New House'] || r['अलग मकान'] || '';
-                            subHouseVal = String(subHouseVal).trim();
-                            if (subHouseVal && subHouseVal !== (target.actual_house || target.sub_house || '')) {
-                                target.actual_house = subHouseVal;
-                                cloudUpdates.actual_house = subHouseVal;
+                            // 2. Sub-House / Actual House Detection
+                            if (fields.actualHouse && fields.actualHouse !== (target.actual_house || target.sub_house || '')) {
+                                target.actual_house = fields.actualHouse;
+                                cloudUpdates.actual_house = fields.actualHouse;
                                 subHousesUpdatedCount++;
                                 hasChange = true;
                             }
 
-                            // 4. Mukhiya Status Detection
-                            let mukhiyaVal = r['परिवार मुखिया (Head of Family)'] || r['मुखिया'] || r['Mukhiya'] || r['Head of Family'] || r['परिवार मुखिया'] || '';
-                            mukhiyaVal = String(mukhiyaVal).trim().toLowerCase();
-                            if (mukhiyaVal) {
-                                const isMukhiyaBool = ['हाँ', 'मुखिया', 'yes', 'true', '1', 'head', 'y'].includes(mukhiyaVal);
+                            // 3. Mukhiya Status Detection
+                            if (fields.mukhiya) {
+                                const mLower = fields.mukhiya.toLowerCase();
+                                const isMukhiyaBool = ['हाँ', 'मुखिया', 'yes', 'true', '1', 'head', 'y'].includes(mLower);
                                 if (Boolean(target.is_mukhiya) !== isMukhiyaBool) {
                                     target.is_mukhiya = isMukhiyaBool;
                                     cloudUpdates.is_mukhiya = isMukhiyaBool;
@@ -3275,19 +3391,17 @@
                                 }
                             }
 
-                            // 5. Notes / Category if provided
-                            let notesVal = r['टिप्पणी/रिमार्क (Remarks/Notes)'] || r['नोट्स'] || r['Notes'] || '';
-                            notesVal = String(notesVal).trim();
-                            if (notesVal && notesVal !== (target.notes || '')) {
-                                target.notes = notesVal;
-                                cloudUpdates.notes = notesVal;
+                            // 4. Notes / Remarks if provided
+                            if (fields.notes && fields.notes !== (target.notes || '')) {
+                                target.notes = fields.notes;
+                                cloudUpdates.notes = fields.notes;
                                 hasChange = true;
                             }
 
                             if (hasChange) {
                                 votersUpdatedCount++;
                                 if (updatedSampleNames.length < 5) {
-                                    updatedSampleNames.push(`${target.name} (${target.epic}): म.${target.house}${target.actual_house ? ` [अलग: ${target.actual_house}]` : ''}${target.is_mukhiya ? ' 👑मुखिया' : ''} • ${target.mobile || 'बिना फोन'}`);
+                                    updatedSampleNames.push(`${target.name} (${target.epic || 'ID:'+target.id}): म.${target.house}${target.actual_house ? ` [अलग: ${target.actual_house}]` : ''}${target.is_mukhiya ? ' 👑मुखिया' : ''} • ${target.mobile || 'बिना फोन'}`);
                                 }
 
                                 if (window.CloudSync && CloudSync.recordUpdate) {

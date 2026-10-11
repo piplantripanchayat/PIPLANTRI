@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v17-a4-narrow-allborders';
+const CACHE_NAME = 'piplantri-election-v18-dynamic-rowheight-fuzzy-sync';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -64,14 +64,21 @@
         try {
             localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(localDeltas));
             
-            // Apply deltas to master list and save to all unified keys
+            // Prune legacy redundant keys to free up quota
+            try {
+                localStorage.removeItem('ac175_voters_db_bilingual_v5');
+                localStorage.removeItem('ac175_voters_db_final_v4');
+                localStorage.removeItem('piplantri_master_voters_unified_v1');
+            } catch(ign) {}
+
+            // Save single active key safely without exceeding browser 5MB limit
             if (window.PIPLANTRI_DATA && Array.isArray(window.PIPLANTRI_DATA.voters)) {
-                const fullUpdatedList = applyDeltas(window.PIPLANTRI_DATA.voters);
-                const serialized = JSON.stringify(fullUpdatedList);
-                localStorage.setItem('ac175_voters_db_v6_preindexed', serialized);
-                localStorage.setItem('ac175_voters_db_bilingual_v5', serialized);
-                localStorage.setItem('ac175_voters_db_final_v4', serialized);
-                localStorage.setItem('piplantri_master_voters_unified_v1', serialized);
+                try {
+                    const fullUpdatedList = applyDeltas(window.PIPLANTRI_DATA.voters);
+                    localStorage.setItem('ac175_voters_db_v6_preindexed', JSON.stringify(fullUpdatedList));
+                } catch(e) {
+                    console.warn('[CloudSync] Full list storage skipped due to quota, deltas safely preserved in CLOUD_STORAGE_KEY.');
+                }
             }
             
             // Dispatch cross-tab / cross-page custom event
