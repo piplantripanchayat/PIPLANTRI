@@ -130,7 +130,7 @@
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
                     <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400"></i> कुल मतदाता
                 </span>
-                <span class="text-lg font-extrabold text-white mt-0.5" id="kpiTotalVoters">2,607</span>
+                <span class="text-lg font-extrabold text-white mt-0.5" id="kpiTotalVoters">2,707</span>
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -145,7 +145,7 @@
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
                     <i data-lucide="phone-off" class="w-3.5 h-3.5 text-amber-400"></i> शेष (बिना नंबर)
                 </span>
-                <span class="text-lg font-extrabold text-amber-400 mt-0.5" id="kpiRemainingCount">2,607</span>
+                <span class="text-lg font-extrabold text-amber-400 mt-0.5" id="kpiRemainingCount">2,707</span>
             </div>
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                 <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -516,9 +516,12 @@
                         const parsed = JSON.parse(saved);
                         if (Array.isArray(parsed) && parsed.length > 0) {
                             const map = new Map();
-                            parsed.forEach(v => map.set(Number(v.id), v));
+                            parsed.forEach(v => {
+                                if (v.id) map.set(Number(v.id), v);
+                                if (v.epic) map.set(String(v.epic).trim().toUpperCase(), v);
+                            });
                             votersData = INITIAL_VOTERS.map(v => {
-                                const found = map.get(Number(v.id));
+                                const found = map.get(Number(v.id)) || (v.epic ? map.get(String(v.epic).trim().toUpperCase()) : null);
                                 if (found && found.mobile) {
                                     return { ...v, mobile: String(found.mobile).trim() };
                                 }

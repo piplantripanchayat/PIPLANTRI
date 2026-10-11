@@ -875,9 +875,12 @@
                     const parsed = JSON.parse(saved);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         const map = new Map();
-                        parsed.forEach(v => map.set(Number(v.id), v));
+                        parsed.forEach(v => {
+                            if (v.id) map.set(Number(v.id), v);
+                            if (v.epic) map.set(String(v.epic).trim().toUpperCase(), v);
+                        });
                         votersState = VOTERS.map(v => {
-                            const found = map.get(Number(v.id));
+                            const found = map.get(Number(v.id)) || (v.epic ? map.get(String(v.epic).trim().toUpperCase()) : null);
                             if (found && found.mobile) {
                                 return { ...v, mobile: String(found.mobile).trim() };
                             }

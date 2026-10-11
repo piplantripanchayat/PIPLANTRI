@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v9-backup-vault';
+const CACHE_NAME = 'piplantri-election-v10-official-rolls';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -185,7 +185,7 @@
     function applyDeltas(masterVoters) {
         if (!Array.isArray(masterVoters)) return [];
         return masterVoters.map(v => {
-            const d = localDeltas[String(v.id)] || localDeltas[v.id];
+            const d = localDeltas[String(v.id)] || localDeltas[v.id] || (v.epic ? localDeltas[String(v.epic).trim().toUpperCase()] : null);
             if (d) {
                 return {
                     ...v,
@@ -368,7 +368,7 @@
             exported_at: new Date().toISOString(),
             cloud_provider: cloudConfig.cloudProvider,
             volunteer: getVolunteerName(),
-            total_voters: votersList ? votersList.length : 2607,
+            total_voters: votersList ? votersList.length : 2707,
             total_updated: Object.keys(localDeltas).length,
             deltas: localDeltas
         };

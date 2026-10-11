@@ -122,7 +122,7 @@
                         </span>
                     </div>
                     <p class="text-[11px] text-slate-300">
-                        ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) • कुल मतदाता: <span class="font-bold text-amber-300">2,607</span> | वैध: <span id="headerActiveCount" class="font-bold text-emerald-400">2,605</span>
+                        ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) • कुल मतदाता: <span class="font-bold text-amber-300">2,707</span> | वैध: <span id="headerActiveCount" class="font-bold text-emerald-400">2,690</span>
                     </p>
                 </div>
             </div>
@@ -215,8 +215,8 @@
                     <span>वैध वोटर</span>
                     <i data-lucide="users" class="w-3.5 h-3.5 text-blue-500"></i>
                 </div>
-                <div class="text-lg font-extrabold text-slate-900 group-hover:text-blue-600" id="cardActive">2,605</div>
-                <div class="text-[10px] text-slate-400">कुल 2,607</div>
+                <div class="text-lg font-extrabold text-slate-900 group-hover:text-blue-600" id="cardActive">2,690</div>
+                <div class="text-[10px] text-slate-400">कुल 2,707</div>
             </div>
 
             <div onclick="quickFilterCategory('Support')" class="cursor-pointer bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm hover:border-emerald-400 transition group bg-gradient-to-b from-white to-emerald-50/40">
@@ -612,7 +612,7 @@
                 <!-- Controls & Filters -->
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/40 text-xs">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <button onclick="setPollingFilter('all')" id="pollFilter-all" class="px-3 py-1.5 rounded-lg bg-white/20 text-white font-bold transition">सभी (2,607)</button>
+                        <button onclick="setPollingFilter('all')" id="pollFilter-all" class="px-3 py-1.5 rounded-lg bg-white/20 text-white font-bold transition">सभी (2,707)</button>
                         <button onclick="setPollingFilter('voted')" id="pollFilter-voted" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition">वोट डाल चुके ✅</button>
                         <button onclick="setPollingFilter('pending')" id="pollFilter-pending" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold shadow transition">वोट बाकी ⏳</button>
                     </div>
@@ -1741,8 +1741,29 @@
                 if (saved) {
                     try {
                         const parsed = JSON.parse(saved);
-                        if (Array.isArray(parsed) && parsed.length === VOTERS_MASTER.length) {
-                            voters = parsed;
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            const map = new Map();
+                            parsed.forEach(v => {
+                                if (v.id) map.set(Number(v.id), v);
+                                if (v.epic) map.set(String(v.epic).trim().toUpperCase(), v);
+                            });
+                            voters = VOTERS_MASTER.map(v => {
+                                const found = map.get(Number(v.id)) || (v.epic ? map.get(String(v.epic).trim().toUpperCase()) : null);
+                                if (found) {
+                                    return {
+                                        ...v,
+                                        mobile: (found.mobile && String(found.mobile).trim()) ? String(found.mobile).trim() : (v.mobile || ''),
+                                        category: found.category || v.category || 'Unassigned',
+                                        family_group: found.family_group || v.family_group || '',
+                                        location_status: found.location_status || v.location_status || 'Local',
+                                        outstation_city: found.outstation_city || v.outstation_city || '',
+                                        notes: found.notes || v.notes || '',
+                                        custom_group: found.custom_group || v.custom_group || '',
+                                        voted: found.voted !== undefined ? found.voted : v.voted
+                                    };
+                                }
+                                return { ...v };
+                            });
                         } else {
                             voters = JSON.parse(JSON.stringify(VOTERS_MASTER));
                         }
