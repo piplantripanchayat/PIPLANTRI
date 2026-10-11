@@ -9,6 +9,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="cloudSync.js"></script>
+    <!-- SheetJS for Excel Import/Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0b1120; }
@@ -234,12 +236,17 @@
                 </select>
             </div>
 
-            <!-- Export -->
+            <!-- Export & Import -->
             <div class="flex items-center space-x-2">
-                <button onclick="exportToExcel()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                <button onclick="exportToExcel()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition" title="वार्ड-वार 22-शीट एक्सेल डाउनलोड (Pipalantri_Ward_Wise_Summary प्रारूप)">
                     <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>Excel</span>
+                    <span>एक्सेल डाउनलोड</span>
                 </button>
+                <label class="px-3 py-2 bg-teal-800 hover:bg-teal-700 text-white border border-teal-600/50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="अपडेटेड एक्सेल अपलोड करें (मोबाइल नंबर ऑटो-सिंक)">
+                    <i data-lucide="upload" class="w-3.5 h-3.5 text-amber-300"></i>
+                    <span>एक्सेल अपलोड</span>
+                    <input type="file" id="linkerExcelUploadFileInput" accept=".xlsx, .xls" onchange="handleExcelUpload(this)" class="hidden">
+                </label>
             </div>
         </div>
 
@@ -1556,25 +1563,192 @@
         }
 
         function exportToExcel() {
-            const rows = [
-                ["ID", "Part", "Anubhag", "House No", "Voter Name", "Relation", "Relative Name", "Age", "Gender", "EPIC No", "Mobile"]
-            ];
-            votersData.forEach(v => {
-                rows.push([v.id, v.part, v.sec_name || '', v.house || '', v.name, v.rel || '', v.rel_name || '', v.age || '', v.gender || '', v.epic || '', v.mobile || '']);
-            });
+            if (typeof XLSX === 'undefined') {
+                alert('एक्सेल इंजन लोड नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें।');
+                return;
+            }
 
-            let csvContent = "data:text/csv;charset=utf-8,﻿";
-            rows.forEach(r => {
-                csvContent += r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(",") + "\r\n";
-            });
+            const wb = XLSX.utils.book_new();
 
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Piplantri_Voters_Contacts_NavinPaliwal_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Build 22 sheets exactly matching Pipalantri_Ward_Wise_Summary.xls
+            for (let w = 1; w <= 11; w++) {
+                const wardStr = String(w);
+                const wardPad = String(w).padStart(2, '0');
+
+                // 1. Members of Ward w
+                const wardVoters = votersData.filter(v => String(v.ward) === wardStr);
+                wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+
+                const membersData = wardVoters.map((v, idx) => ({
+                    'क्रम सं. (Serial)': Number(v.ward_sr) || (idx + 1),
+                    'मतदाता पहचान संख्या (EPIC)': v.epic || '',
+                    'नाम (Name)': v.name || '',
+                    'संबंध (Relation)': v.rel || '',
+                    'संबंधी का नाम (Relative Name)': v.rel_name || '',
+                    'मकान संख्या (House No.)': v.house || '',
+                    'आयु (Age)': Number(v.age) || '',
+                    'लिंग (Gender)': v.gender || '',
+                    'मोबाइल (Mobile)': v.mobile || '',
+                    'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित (Deleted)' : 'सक्रिय (Active)'
+                }));
+
+                const membersWs = XLSX.utils.json_to_sheet(membersData);
+                XLSX.utils.book_append_sheet(wb, membersWs, `Ward_${wardPad}_Members`);
+
+                // 2. Mukhiya Summary of Ward w
+                const houseMemberCounts = {};
+                wardVoters.forEach(v => {
+                    const h = String(v.house || '').trim();
+                    houseMemberCounts[h] = (houseMemberCounts[h] || 0) + 1;
+                });
+
+                const mukhiyas = wardVoters.filter(v => v.is_mukhiya === true);
+                const mukhiyaData = mukhiyas.map(m => {
+                    const h = String(m.house || '').trim();
+                    return {
+                        'मकान संख्या (House No.)': m.house || '',
+                        'कुल सदस्य (Total Members)': houseMemberCounts[h] || 1,
+                        'मुखिया का नाम (Head of Family)': m.name || '',
+                        'मुखिया का पहचान पत्र (EPIC No.)': m.epic || '',
+                        'मुखिया की क्रम सं. (Serial No.)': Number(m.ward_sr) || '',
+                        'मुखिया की आयु (Age)': Number(m.age) || '',
+                        'मुखिया का लिंग (Gender)': m.gender || '',
+                        'मुखिया का मोबाइल (Mobile)': m.mobile || ''
+                    };
+                });
+
+                const mukhiyaWs = XLSX.utils.json_to_sheet(mukhiyaData);
+                XLSX.utils.book_append_sheet(wb, mukhiyaWs, `Ward_${wardPad}_Mukhiya_Summary`);
+            }
+
+            const fileName = `Pipalantri_Ward_Wise_Summary_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            if (window.CloudSync && CloudSync.showToast) {
+                CloudSync.showToast('📥 22-शीट्स वार्ड-वार एक्सेल फाइल डाउनलोड हो गई!', 'success');
+            }
+        }
+
+        // =========================================================================
+        // 📤 EXCEL IMPORT & MULTI-SHEET AUTO-SYNC ENGINE
+        // =========================================================================
+        function handleExcelUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            if (typeof XLSX === 'undefined') {
+                alert('एक्सेल इंजन लोड नहीं हो सका। कृपया पृष्ठ को रीफ्रेश करें।');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+
+                    const epicAliases = {
+                        'NFW1773076': 'NFW1776871',
+                        'NFW1775212': 'NFW1776889',
+                        'NFW1803824': 'NFW1776897',
+                        'NFW1803683': 'NFW1776855',
+                        'NFW1813765': 'NFW1776913',
+                        'NFW1816941': 'NFW1776905',
+                        'NFW1781368': 'RJ/18/140/094227',
+                        'NFW1796861': 'NFW1776970',
+                        'NFW1797893': 'NFW1776954',
+                        'KOQ1247667': 'KQQ1247667'
+                    };
+
+                    function cleanNums(str) {
+                        if (!str) return [];
+                        return String(str).split(/[,/]+/).map(s => s.trim().replace(/[^0-9]/g, '').slice(-10)).filter(s => s.length === 10);
+                    }
+
+                    // Build maps for fast O(1) matching
+                    const byEpic = new Map();
+                    const byCleanEpic = new Map();
+                    votersData.forEach(v => {
+                        if (v.epic) {
+                            const raw = v.epic.trim().toUpperCase();
+                            byEpic.set(raw, v);
+                            byCleanEpic.set(raw.replace(/[^A-Z0-9]/g, ''), v);
+                        }
+                    });
+
+                    let totalRowsScanned = 0;
+                    let votersUpdatedCount = 0;
+                    let newMobilesAddedCount = 0;
+                    const updatedSampleNames = [];
+
+                    wb.SheetNames.forEach(sheetName => {
+                        const sheet = wb.Sheets[sheetName];
+                        if (!sheet) return;
+                        const rows = XLSX.utils.sheet_to_json(sheet);
+                        if (!Array.isArray(rows) || rows.length === 0) return;
+
+                        rows.forEach(r => {
+                            totalRowsScanned++;
+                            let epicVal = r['मतदाता पहचान संख्या (EPIC)'] || r['EPIC No'] || r['EPIC'] || r['EPIC नंबर'] || r['पहचान पत्र'] || r['मुखिया का पहचान पत्र (EPIC No.)'] || '';
+                            epicVal = String(epicVal).trim().toUpperCase();
+                            if (!epicVal) return;
+
+                            let mobVal = r['मोबाइल (Mobile)'] || r['Mobile'] || r['मोबाइल'] || r['Phone'] || r['फोन'] || r['मुखिया का मोबाइल (Mobile)'] || r['Contact'] || '';
+                            mobVal = String(mobVal).trim();
+                            if (!mobVal) return;
+
+                            let target = byEpic.get(epicVal);
+                            if (!target && epicAliases[epicVal]) target = byEpic.get(epicAliases[epicVal]);
+                            if (!target) {
+                                const clean = epicVal.replace(/[^A-Z0-9]/g, '');
+                                target = byCleanEpic.get(clean);
+                            }
+
+                            if (target) {
+                                const incomingNums = cleanNums(mobVal);
+                                if (incomingNums.length === 0) return;
+
+                                const currentNums = cleanNums(target.mobile);
+                                const merged = Array.from(new Set([...incomingNums, ...currentNums]));
+
+                                if (merged.join(', ') !== currentNums.join(', ')) {
+                                    if (currentNums.length === 0) newMobilesAddedCount++;
+                                    target.mobile = merged.join(', ');
+                                    votersUpdatedCount++;
+                                    if (updatedSampleNames.length < 5) updatedSampleNames.push(`${target.name} (${target.epic}): ${target.mobile}`);
+
+                                    // Persist per-voter via CloudSync
+                                    if (window.CloudSync && CloudSync.recordUpdate) {
+                                        CloudSync.recordUpdate(target.id, { mobile: target.mobile });
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    // Save state locally
+                    saveVotersData();
+                    renderVotersList();
+                    updateKPIs();
+
+                    if (votersUpdatedCount > 0) {
+                        alert(`✅ एक्सेल डेटा सफलतापूर्वक अपडेट हो गया!\n\n` +
+                              `• जाँची गई शीट्स: ${wb.SheetNames.length}\n` +
+                              `• जाँची गई कुल पंक्तियाँ: ${totalRowsScanned}\n` +
+                              `• अपडेट हुए मतदाता: ${votersUpdatedCount}\n` +
+                              `• नए मोबाइल नंबर जुड़े: ${newMobilesAddedCount}\n\n` +
+                              `सैंपल अपडेट्स:\n- ${updatedSampleNames.join('\n- ')}`);
+                    } else {
+                        alert(`ℹ️ एक्सेल फाइल में कोई नया मोबाइल नंबर नहीं मिला। सभी ${totalRowsScanned} पंक्तियाँ पहले से पोर्टल डेटाबेस के साथ सिंक हैं।`);
+                    }
+                } catch (err) {
+                    console.error('Excel upload error:', err);
+                    alert('❌ एक्सेल फाइल प्रोसेस करने में त्रुटि: ' + err.message);
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         
