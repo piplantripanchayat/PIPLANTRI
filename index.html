@@ -781,8 +781,22 @@
                     </div>
                 </div>
 
-                <!-- Custom Family Sub-Group & Mukhiya Field -->
-                <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 space-y-2">
+                <!-- Custom Family Sub-Group, Sub-House & Mukhiya Fields -->
+                <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 space-y-2.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-indigo-950 mb-1">🏠 वास्तविक / अलग मकान सं. (Sub-House)</label>
+                            <input type="text" id="modalActualHouse" placeholder="उदा: 113-A, 113/1, नया मकान..." class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                            <p class="text-[10px] text-indigo-700 mt-0.5">मूल वोटर लिस्ट मकान वही रहेगा। संयुक्त परिवार बंटवारे में अलग मकान दर्ज करें।</p>
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-indigo-200 flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-indigo-950 text-xs">👑 परिवार मुखिया (Head)</span>
+                                <input type="checkbox" id="modalIsMukhiya" class="w-4 h-4 text-indigo-600 rounded cursor-pointer">
+                            </div>
+                            <p class="text-[10px] text-indigo-600 mt-1">1 मूल मकान में 1 से अधिक मुखिया भी हो सकते हैं (अलग-अलग चूल्हा/फैसले)।</p>
+                        </div>
+                    </div>
                     <div>
                         <label class="block font-bold text-indigo-950 mb-1">👨‍👩‍👧‍👦 उप-परिवार समूह ID (Family Group ID)</label>
                         <input type="text" id="modalFamilyGroup" placeholder="उदा: भाग 59 | अनु. 1 | म.12 - परिवार A" class="w-full p-2 bg-white border border-indigo-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
@@ -2021,8 +2035,10 @@
                         </div>
                     </td>
                     <td class="p-2.5">
-                        <div onclick="openVoterModal(${v.id})" class="font-bold text-slate-900 text-xs flex items-center gap-1 cursor-pointer hover:text-indigo-600 transition">
+                        <div onclick="openVoterModal(${v.id})" class="font-bold text-slate-900 text-xs flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition flex-wrap">
                             <span>${v.name}</span>
+                            ${v.is_mukhiya ? '<span class="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] inline-flex items-center gap-0.5 shadow-2xs">👑 मुखिया</span>' : ''}
+                            ${(v.actual_house || v.sub_house) ? `<span class="px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 font-bold text-[10px]" title="अलग/उप-मकान">🏠 अलग: ${v.actual_house || v.sub_house}</span>` : ''}
                         </div>
                         <div class="mt-1 flex items-center gap-1.5 flex-wrap">
                             <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-950 font-extrabold border border-amber-300 text-[10px]">
@@ -2082,8 +2098,10 @@
                         <!-- Name & Father/Husband (Click to open modal) -->
                         <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openVoterModal(${v.id})">
                             <div>
-                                <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 hover:text-indigo-600 transition">
+                                <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 hover:text-indigo-600 transition flex-wrap">
                                     <span>${v.name}</span>
+                                    ${v.is_mukhiya ? '<span class="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] inline-flex items-center gap-0.5 shadow-2xs">👑 मुखिया</span>' : ''}
+                                    ${(v.actual_house || v.sub_house) ? `<span class="px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 font-bold text-[10px]" title="अलग/उप-मकान">🏠 अलग: ${v.actual_house || v.sub_house}</span>` : ''}
                                 </div>
                                 <div class="text-xs text-slate-600 mt-0.5">
                                     <span class="text-slate-400 font-medium">${v.rel || 'पिता'}:</span> <strong class="text-slate-800 font-bold">${v.rel_name || '-'}</strong>
@@ -2693,6 +2711,8 @@
             `;
             document.getElementById('modalMobile').value = v.mobile || '';
             document.getElementById('modalCategory').value = v.category || 'Unassigned';
+            document.getElementById('modalActualHouse').value = v.actual_house || v.sub_house || '';
+            document.getElementById('modalIsMukhiya').checked = Boolean(v.is_mukhiya);
             document.getElementById('modalFamilyGroup').value = v.family_group || '';
             document.getElementById('modalLocationStatus').value = v.location_status || 'Local';
             document.getElementById('modalOutstationCity').value = v.outstation_city || '';
@@ -2721,6 +2741,8 @@
 
             v.mobile = document.getElementById('modalMobile').value.trim();
             v.category = document.getElementById('modalCategory').value;
+            v.actual_house = document.getElementById('modalActualHouse').value.trim();
+            v.is_mukhiya = document.getElementById('modalIsMukhiya').checked;
             v.family_group = document.getElementById('modalFamilyGroup').value.trim();
             v.location_status = document.getElementById('modalLocationStatus').value;
             v.outstation_city = document.getElementById('modalOutstationCity').value.trim();
@@ -2905,66 +2927,45 @@
 
             const wb = XLSX.utils.book_new();
 
-            // Build 22 sheets exactly matching Pipalantri_Ward_Wise_Summary.xls
+            // Build exactly 11 sheets (1 sheet per Ward: Ward_01 to Ward_11)
             for (let w = 1; w <= 11; w++) {
                 const wardStr = String(w);
                 const wardPad = String(w).padStart(2, '0');
 
-                // 1. Members of Ward w
                 const wardVoters = voters.filter(v => String(v.ward) === wardStr);
                 wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
-                const membersData = wardVoters.map((v, idx) => ({
-                    'क्रम सं. (Serial)': Number(v.ward_sr) || (idx + 1),
+                const rows = wardVoters.map((v, idx) => ({
+                    'क्रम सं. (Ward Sr)': Number(v.ward_sr) || (idx + 1),
                     'मतदाता पहचान संख्या (EPIC)': v.epic || '',
-                    'नाम (Name)': v.name || '',
+                    'मतदाता का नाम (Name)': v.name || '',
                     'संबंध (Relation)': v.rel || '',
-                    'संबंधी का नाम (Relative Name)': v.rel_name || '',
-                    'मकान संख्या (House No.)': v.house || '',
+                    'पिता/पति का नाम (Relative Name)': v.rel_name || '',
+                    'मूल वोटर लिस्ट मकान सं. (Roll House)': v.house || '',
+                    'वास्तविक/अलग मकान सं. (Actual/Sub House)': v.actual_house || v.sub_house || '',
+                    'परिवार मुखिया (Head of Family)': v.is_mukhiya ? 'हाँ (मुखिया)' : '',
+                    'मोबाइल नंबर (Mobile)': v.mobile || '',
                     'आयु (Age)': Number(v.age) || '',
                     'लिंग (Gender)': v.gender || '',
-                    'मोबाइल (Mobile)': v.mobile || '',
-                    'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित (Deleted)' : 'सक्रिय (Active)'
+                    'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित (Deleted)' : 'सक्रिय (Active)',
+                    'वोटर श्रेणी/रुझान (Category)': v.category || 'Unassigned',
+                    'टिप्पणी/रिमार्क (Remarks/Notes)': v.notes || ''
                 }));
 
-                const membersWs = XLSX.utils.json_to_sheet(membersData);
-                XLSX.utils.book_append_sheet(wb, membersWs, `Ward_${wardPad}_Members`);
-
-                // 2. Mukhiya Summary of Ward w
-                const houseMemberCounts = {};
-                wardVoters.forEach(v => {
-                    const h = String(v.house || '').trim();
-                    houseMemberCounts[h] = (houseMemberCounts[h] || 0) + 1;
-                });
-
-                const mukhiyas = wardVoters.filter(v => v.is_mukhiya === true);
-                const mukhiyaData = mukhiyas.map(m => {
-                    const h = String(m.house || '').trim();
-                    return {
-                        'मकान संख्या (House No.)': m.house || '',
-                        'कुल सदस्य (Total Members)': houseMemberCounts[h] || 1,
-                        'मुखिया का नाम (Head of Family)': m.name || '',
-                        'मुखिया का पहचान पत्र (EPIC No.)': m.epic || '',
-                        'मुखिया की क्रम सं. (Serial No.)': Number(m.ward_sr) || '',
-                        'मुखिया की आयु (Age)': Number(m.age) || '',
-                        'मुखिया का लिंग (Gender)': m.gender || '',
-                        'मुखिया का मोबाइल (Mobile)': m.mobile || ''
-                    };
-                });
-
-                const mukhiyaWs = XLSX.utils.json_to_sheet(mukhiyaData);
-                XLSX.utils.book_append_sheet(wb, mukhiyaWs, `Ward_${wardPad}_Mukhiya_Summary`);
+                const ws = XLSX.utils.json_to_sheet(rows);
+                XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
             }
 
-            const fileName = `Pipalantri_Ward_Wise_Summary_${new Date().toISOString().slice(0,10)}.xlsx`;
+            const fileName = `Pipalantri_Ward_Wise_Summary_11Wards_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, fileName);
             if (window.CloudSync && CloudSync.showToast) {
-                CloudSync.showToast('📥 22-शीट्स वार्ड-वार एक्सेल फाइल डाउनलोड हो गई!', 'success');
+                CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (मुखिया व वास्तविक मकान कॉलम सहित) डाउनलोड हो गई!', 'success');
             }
         }
 
         // =========================================================================
         // 📤 EXCEL IMPORT & MULTI-SHEET AUTO-SYNC ENGINE
+        // (Supports Mobile, Sub-House / Actual House, and Mukhiya updates)
         // =========================================================================
         function handleExcelUpload(input) {
             if (!input.files || !input.files[0]) return;
@@ -3014,6 +3015,8 @@
                     let totalRowsScanned = 0;
                     let votersUpdatedCount = 0;
                     let newMobilesAddedCount = 0;
+                    let subHousesUpdatedCount = 0;
+                    let mukhiyasUpdatedCount = 0;
                     const updatedSampleNames = [];
 
                     wb.SheetNames.forEach(sheetName => {
@@ -3024,13 +3027,11 @@
 
                         rows.forEach(r => {
                             totalRowsScanned++;
+
+                            // 1. Detect EPIC
                             let epicVal = r['मतदाता पहचान संख्या (EPIC)'] || r['EPIC No'] || r['EPIC'] || r['EPIC नंबर'] || r['पहचान पत्र'] || r['मुखिया का पहचान पत्र (EPIC No.)'] || '';
                             epicVal = String(epicVal).trim().toUpperCase();
                             if (!epicVal) return;
-
-                            let mobVal = r['मोबाइल (Mobile)'] || r['Mobile'] || r['मोबाइल'] || r['Phone'] || r['फोन'] || r['मुखिया का मोबाइल (Mobile)'] || r['Contact'] || '';
-                            mobVal = String(mobVal).trim();
-                            if (!mobVal) return;
 
                             let target = byEpic.get(epicVal);
                             if (!target && epicAliases[epicVal]) target = byEpic.get(epicAliases[epicVal]);
@@ -3039,23 +3040,68 @@
                                 target = byCleanEpic.get(clean);
                             }
 
-                            if (target) {
+                            if (!target) return;
+
+                            let hasChange = false;
+                            const cloudUpdates = {};
+
+                            // 2. Mobile Detection & Merge
+                            let mobVal = r['मोबाइल नंबर (Mobile)'] || r['मोबाइल (Mobile)'] || r['Mobile'] || r['मोबाइल'] || r['Phone'] || r['फोन'] || r['मुखिया का मोबाइल (Mobile)'] || r['Contact'] || '';
+                            mobVal = String(mobVal).trim();
+                            if (mobVal) {
                                 const incomingNums = cleanNums(mobVal);
-                                if (incomingNums.length === 0) return;
-
-                                const currentNums = cleanNums(target.mobile);
-                                const merged = Array.from(new Set([...incomingNums, ...currentNums]));
-
-                                if (merged.join(', ') !== currentNums.join(', ')) {
-                                    if (currentNums.length === 0) newMobilesAddedCount++;
-                                    target.mobile = merged.join(', ');
-                                    votersUpdatedCount++;
-                                    if (updatedSampleNames.length < 5) updatedSampleNames.push(`${target.name} (${target.epic}): ${target.mobile}`);
-
-                                    // Persist per-voter via CloudSync
-                                    if (window.CloudSync && CloudSync.recordUpdate) {
-                                        CloudSync.recordUpdate(target.id, { mobile: target.mobile });
+                                if (incomingNums.length > 0) {
+                                    const currentNums = cleanNums(target.mobile);
+                                    const merged = Array.from(new Set([...incomingNums, ...currentNums]));
+                                    if (merged.join(', ') !== currentNums.join(', ')) {
+                                        if (currentNums.length === 0) newMobilesAddedCount++;
+                                        target.mobile = merged.join(', ');
+                                        cloudUpdates.mobile = target.mobile;
+                                        hasChange = true;
                                     }
+                                }
+                            }
+
+                            // 3. Sub-House / Actual House Detection
+                            let subHouseVal = r['वास्तविक/अलग मकान सं. (Actual/Sub House)'] || r['वास्तविक मकान'] || r['उप-मकान'] || r['Actual House'] || r['Sub House'] || r['New House'] || r['अलग मकान'] || '';
+                            subHouseVal = String(subHouseVal).trim();
+                            if (subHouseVal && subHouseVal !== (target.actual_house || target.sub_house || '')) {
+                                target.actual_house = subHouseVal;
+                                cloudUpdates.actual_house = subHouseVal;
+                                subHousesUpdatedCount++;
+                                hasChange = true;
+                            }
+
+                            // 4. Mukhiya Status Detection
+                            let mukhiyaVal = r['परिवार मुखिया (Head of Family)'] || r['मुखिया'] || r['Mukhiya'] || r['Head of Family'] || r['परिवार मुखिया'] || '';
+                            mukhiyaVal = String(mukhiyaVal).trim().toLowerCase();
+                            if (mukhiyaVal) {
+                                const isMukhiyaBool = ['हाँ', 'मुखिया', 'yes', 'true', '1', 'head', 'y'].includes(mukhiyaVal);
+                                if (Boolean(target.is_mukhiya) !== isMukhiyaBool) {
+                                    target.is_mukhiya = isMukhiyaBool;
+                                    cloudUpdates.is_mukhiya = isMukhiyaBool;
+                                    mukhiyasUpdatedCount++;
+                                    hasChange = true;
+                                }
+                            }
+
+                            // 5. Notes / Category if provided
+                            let notesVal = r['टिप्पणी/रिमार्क (Remarks/Notes)'] || r['नोट्स'] || r['Notes'] || '';
+                            notesVal = String(notesVal).trim();
+                            if (notesVal && notesVal !== (target.notes || '')) {
+                                target.notes = notesVal;
+                                cloudUpdates.notes = notesVal;
+                                hasChange = true;
+                            }
+
+                            if (hasChange) {
+                                votersUpdatedCount++;
+                                if (updatedSampleNames.length < 5) {
+                                    updatedSampleNames.push(`${target.name} (${target.epic}): म.${target.house}${target.actual_house ? ` [अलग: ${target.actual_house}]` : ''}${target.is_mukhiya ? ' 👑मुखिया' : ''} • ${target.mobile || 'बिना फोन'}`);
+                                }
+
+                                if (window.CloudSync && CloudSync.recordUpdate) {
+                                    CloudSync.recordUpdate(target.id, cloudUpdates);
                                 }
                             }
                         });
@@ -3066,14 +3112,16 @@
                     applyFilters();
 
                     if (votersUpdatedCount > 0) {
-                        alert(`✅ एक्सेल डेटा सफलतापूर्वक अपडेट हो गया!\n\n` +
+                        alert(`✅ 11-वार्ड एक्सेल डेटा सफलतापूर्वक सिंक हो गया!\n\n` +
                               `• जाँची गई शीट्स: ${wb.SheetNames.length}\n` +
                               `• जाँची गई कुल पंक्तियाँ: ${totalRowsScanned}\n` +
-                              `• अपडेट हुए मतदाता: ${votersUpdatedCount}\n` +
-                              `• नए मोबाइल नंबर जुड़े: ${newMobilesAddedCount}\n\n` +
+                              `• कुल अपडेट हुए मतदाता: ${votersUpdatedCount}\n` +
+                              `  - नए मोबाइल नंबर जुड़े: ${newMobilesAddedCount}\n` +
+                              `  - अलग/वास्तविक मकान नंबर अपडेट: ${subHousesUpdatedCount}\n` +
+                              `  - मुखिया पद अपडेट: ${mukhiyasUpdatedCount}\n\n` +
                               `सैंपल अपडेट्स:\n- ${updatedSampleNames.join('\n- ')}`);
                     } else {
-                        alert(`ℹ️ एक्सेल फाइल में कोई नया मोबाइल नंबर नहीं मिला। सभी ${totalRowsScanned} पंक्तियाँ पहले से पोर्टल डेटाबेस के साथ सिंक हैं।`);
+                        alert(`ℹ️ एक्सेल फाइल में कोई नया बदलाव नहीं मिला। सभी ${totalRowsScanned} पंक्तियाँ पहले से पोर्टल डेटाबेस के साथ सिंक हैं।`);
                     }
                 } catch (err) {
                     console.error('Excel upload error:', err);

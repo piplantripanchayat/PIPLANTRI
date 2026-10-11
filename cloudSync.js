@@ -197,6 +197,8 @@
                     custom_group: d.custom_group !== undefined ? d.custom_group : v.custom_group,
                     notes: d.notes !== undefined ? d.notes : v.notes,
                     voted: d.voted !== undefined ? d.voted : v.voted,
+                    actual_house: d.actual_house !== undefined ? d.actual_house : v.actual_house,
+                    is_mukhiya: d.is_mukhiya !== undefined ? d.is_mukhiya : v.is_mukhiya,
                     updated_at: d.updated_at || v.updated_at,
                     updated_by: d.updated_by || v.updated_by
                 };
