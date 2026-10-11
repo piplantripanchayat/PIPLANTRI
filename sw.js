@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v14-excel-dropdown-autofilter';
+const CACHE_NAME = 'piplantri-election-v15-excel-print-ready';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

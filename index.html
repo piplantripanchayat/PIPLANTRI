@@ -2924,55 +2924,145 @@
                 for (let w = 1; w <= 11; w++) {
                     const wardStr = String(w);
                     const wardPad = String(w).padStart(2, '0');
-                    const ws = wb.addWorksheet(`Ward_${wardPad}`, {
-                        views: [{ state: 'frozen', ySplit: 1 }]
-                    });
-
-                    ws.columns = [
-                        { header: 'क्रम सं. (Ward Sr)', key: 'ward_sr', width: 14 },
-                        { header: 'मतदाता पहचान संख्या (EPIC)', key: 'epic', width: 22 },
-                        { header: 'मतदाता का नाम (Name)', key: 'name', width: 22 },
-                        { header: 'संबंध (Relation)', key: 'rel', width: 12 },
-                        { header: 'पिता/पति का नाम (Relative Name)', key: 'rel_name', width: 24 },
-                        { header: 'मूल वोटर लिस्ट मकान सं. (Roll House)', key: 'house', width: 22 },
-                        { header: 'वास्तविक/अलग मकान सं. (Actual/Sub House)', key: 'actual_house', width: 26 },
-                        { header: 'परिवार मुखिया (Head of Family)', key: 'is_mukhiya', width: 22 },
-                        { header: 'मोबाइल नंबर (Mobile)', key: 'mobile', width: 20 },
-                        { header: 'आयु (Age)', key: 'age', width: 10 },
-                        { header: 'लिंग (Gender)', key: 'gender', width: 12 },
-                        { header: 'स्थिति (Status)', key: 'status', width: 16 },
-                        { header: 'वोटर श्रेणी/रुझान (Category)', key: 'category', width: 24 },
-                        { header: 'टिप्पणी/रिमार्क (Remarks/Notes)', key: 'notes', width: 26 }
-                    ];
-
                     const wardVoters = voters.filter(v => String(v.ward) === wardStr);
                     wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
+                    const ws = wb.addWorksheet(`Ward_${wardPad}`, {
+                        views: [{ state: 'frozen', ySplit: 2 }] // Freeze Ward Banner & Column Header rows
+                    });
+
+                    // 1. A4 Landscape Print Setup with Repeating Headers on every page
+                    ws.pageSetup = {
+                        paperSize: 9, // A4
+                        orientation: 'landscape',
+                        printTitlesRow: '1:2', // Repeats Ward Title Banner and Column Headers on EVERY page!
+                        fitToPage: true,
+                        fitToWidth: 1,
+                        fitToHeight: 0,
+                        margins: {
+                            left: 0.3,
+                            right: 0.3,
+                            top: 0.4,
+                            bottom: 0.4,
+                            header: 0.2,
+                            footer: 0.2
+                        }
+                    };
+
+                    ws.columns = [
+                        { key: 'ward_sr', width: 11 },
+                        { key: 'epic', width: 19 },
+                        { key: 'name', width: 22 },
+                        { key: 'rel', width: 10 },
+                        { key: 'rel_name', width: 22 },
+                        { key: 'house', width: 15 },
+                        { key: 'actual_house', width: 19 },
+                        { key: 'is_mukhiya', width: 17 },
+                        { key: 'mobile', width: 18 },
+                        { key: 'age', width: 8 },
+                        { key: 'gender', width: 8 },
+                        { key: 'status', width: 13 },
+                        { key: 'category', width: 20 },
+                        { key: 'notes', width: 24 }
+                    ];
+
+                    // 2. Row 1: Ward Title Banner
+                    ws.mergeCells('A1:N1');
+                    const titleCell = ws.getCell('A1');
+                    titleCell.value = `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`;
+                    titleCell.font = { name: 'Mukta', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+                    titleCell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FF1E293B' } // Slate-800
+                    };
+                    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    ws.getRow(1).height = 36;
+
+                    // 3. Row 2: Table Column Headers (Height: 70, wrap text, clear borders)
+                    const headerRow = ws.getRow(2);
+                    headerRow.values = [
+                        'क्रम सं.\n(Ward Sr)',
+                        'मतदाता पहचान संख्या\n(EPIC No)',
+                        'मतदाता का नाम\n(Voter Name)',
+                        'संबंध\n(Rel)',
+                        'पिता / पति का नाम\n(Relative Name)',
+                        'मूल वोटर लिस्ट मकान सं.\n(Roll House)',
+                        'वास्तविक / अलग मकान सं.\n(Actual/Sub House)',
+                        'परिवार मुखिया\n(Mukhiya)',
+                        'मोबाइल नंबर\n(Mobile No)',
+                        'आयु\n(Age)',
+                        'लिंग\n(Gen)',
+                        'स्थिति\n(Status)',
+                        'वोटर श्रेणी / रुझान\n(Category)',
+                        'टिप्पणी / रिमार्क\n(Remarks / Notes)'
+                    ];
+                    headerRow.height = 70; // User specified height 70
+                    headerRow.eachCell((cell) => {
+                        cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFF1F5F9' } // Light slate header
+                        };
+                        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                        cell.border = {
+                            top: { style: 'medium', color: { argb: 'FF475569' } },
+                            bottom: { style: 'medium', color: { argb: 'FF475569' } },
+                            left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                            right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+                        };
+                    });
+
+                    // 4. Data Rows with Height = 25 (Ample space for handwriting & corrections on print)
                     wardVoters.forEach((v, idx) => {
-                        ws.addRow({
-                            ward_sr: Number(v.ward_sr) || (idx + 1),
-                            epic: v.epic || '',
-                            name: v.name || '',
-                            rel: v.rel || '',
-                            rel_name: v.rel_name || '',
-                            house: v.house || '',
-                            actual_house: v.actual_house || v.sub_house || '',
-                            is_mukhiya: v.is_mukhiya ? 'मुखिया' : '',
-                            mobile: v.mobile || '',
-                            age: Number(v.age) || '',
-                            gender: v.gender || '',
-                            status: v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
-                            category: v.category || 'Unassigned',
-                            notes: v.notes || ''
+                        const row = ws.addRow([
+                            Number(v.ward_sr) || (idx + 1),
+                            v.epic || '',
+                            v.name || '',
+                            v.rel || '',
+                            v.rel_name || '',
+                            v.house || '',
+                            v.actual_house || v.sub_house || '',
+                            v.is_mukhiya ? 'मुखिया' : '',
+                            v.mobile || '',
+                            Number(v.age) || '',
+                            v.gender || '',
+                            v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
+                            v.category || 'Unassigned',
+                            v.notes || ''
+                        ]);
+
+                        row.height = 25; // User specified row height 25
+                        row.eachCell((cell, colNumber) => {
+                            cell.font = { name: 'Mukta', size: 10 };
+                            cell.alignment = {
+                                vertical: 'middle',
+                                horizontal: [1, 2, 4, 6, 8, 9, 10, 11, 12].includes(colNumber) ? 'center' : 'left'
+                            };
+                            cell.border = {
+                                top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                                bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                                left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                                right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+                            };
+                            if (colNumber === 8 && cell.value === 'मुखिया') {
+                                cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF92400E' } };
+                                cell.fill = {
+                                    type: 'pattern',
+                                    pattern: 'solid',
+                                    fgColor: { argb: 'FFFEF3C7' } // Light amber highlight
+                                };
+                            }
                         });
                     });
 
-                    const lastRow = wardVoters.length + 1;
-                    // AutoFilter on all headers: enables Sort, Filter, and Search
-                    ws.autoFilter = `A1:N${lastRow}`;
+                    const lastRow = wardVoters.length + 2;
+                    // AutoFilter on row 2 headers: enables Sort, Filter, and Search
+                    ws.autoFilter = `A2:N${lastRow}`;
 
-                    // Add Dropdown Data Validation for Column H (परिवार मुखिया)
-                    for (let r = 2; r <= lastRow + 20; r++) {
+                    // Add Dropdown Data Validation for Column H (परिवार मुखिया), L (स्थिति), M (श्रेणी)
+                    for (let r = 3; r <= lastRow + 20; r++) {
                         ws.getCell(`H${r}`).dataValidation = {
                             type: 'list',
                             allowBlank: true,
@@ -3008,7 +3098,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 if (window.CloudSync && CloudSync.showToast) {
-                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (मुखिया सेल ड्रॉपडाउन व सॉर्ट/फ़िल्टर हेडर सहित) डाउनलोड हो गई!', 'success');
+                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (वार्ड शीर्षक, हेडर 70, रो 25 व प्रिंट सेटअप सहित) डाउनलोड हो गई!', 'success');
                 }
                 return;
             }
@@ -3024,31 +3114,58 @@
                     const wardVoters = voters.filter(v => String(v.ward) === wardStr);
                     wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
-                    const rows = wardVoters.map((v, idx) => ({
-                        'क्रम सं. (Ward Sr)': Number(v.ward_sr) || (idx + 1),
-                        'मतदाता पहचान संख्या (EPIC)': v.epic || '',
-                        'मतदाता का नाम (Name)': v.name || '',
-                        'संबंध (Relation)': v.rel || '',
-                        'पिता/पति का नाम (Relative Name)': v.rel_name || '',
-                        'मूल वोटर लिस्ट मकान सं. (Roll House)': v.house || '',
-                        'वास्तविक/अलग मकान सं. (Actual/Sub House)': v.actual_house || v.sub_house || '',
-                        'परिवार मुखिया (Head of Family)': v.is_mukhiya ? 'मुखिया' : '',
-                        'मोबाइल नंबर (Mobile)': v.mobile || '',
-                        'आयु (Age)': Number(v.age) || '',
-                        'लिंग (Gender)': v.gender || '',
-                        'स्थिति (Status)': v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
-                        'वोटर श्रेणी/रुझान (Category)': v.category || 'Unassigned',
-                        'टिप्पणी/रिमार्क (Remarks/Notes)': v.notes || ''
-                    }));
+                    const rows = [
+                        [`ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`],
+                        [
+                            'क्रम सं. (Ward Sr)',
+                            'मतदाता पहचान संख्या (EPIC)',
+                            'मतदाता का नाम (Name)',
+                            'संबंध (Relation)',
+                            'पिता/पति का नाम (Relative Name)',
+                            'मूल वोटर लिस्ट मकान सं. (Roll House)',
+                            'वास्तविक/अलग मकान सं. (Actual/Sub House)',
+                            'परिवार मुखिया (Head of Family)',
+                            'मोबाइल नंबर (Mobile)',
+                            'आयु (Age)',
+                            'लिंग (Gender)',
+                            'स्थिति (Status)',
+                            'वोटर श्रेणी/रुझान (Category)',
+                            'टिप्पणी/रिमार्क (Remarks/Notes)'
+                        ]
+                    ];
 
-                    const ws = XLSX.utils.json_to_sheet(rows);
-                    ws['!autofilter'] = { ref: `A1:N${rows.length + 1}` };
+                    wardVoters.forEach((v, idx) => {
+                        rows.push([
+                            Number(v.ward_sr) || (idx + 1),
+                            v.epic || '',
+                            v.name || '',
+                            v.rel || '',
+                            v.rel_name || '',
+                            v.house || '',
+                            v.actual_house || v.sub_house || '',
+                            v.is_mukhiya ? 'मुखिया' : '',
+                            v.mobile || '',
+                            Number(v.age) || '',
+                            v.gender || '',
+                            v.status === 'विलोपित' ? 'विलोपित' : 'सक्रिय',
+                            v.category || 'Unassigned',
+                            v.notes || ''
+                        ]);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }];
+                    ws['!rows'] = [{ hpt: 30 }, { hpt: 55 }];
+                    for (let ri = 2; ri < rows.length; ri++) {
+                        ws['!rows'].push({ hpt: 22 });
+                    }
+                    ws['!autofilter'] = { ref: `A2:N${rows.length}` };
                     XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
                 }
 
                 XLSX.writeFile(wb, fileName);
                 if (window.CloudSync && CloudSync.showToast) {
-                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (मुखिया व वास्तविक मकान कॉलम सहित) डाउनलोड हो गई!', 'success');
+                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (वार्ड शीर्षक व रो स्पेसिंग सहित) डाउनलोड हो गई!', 'success');
                 }
                 return;
             }
@@ -3115,7 +3232,11 @@
                     wb.SheetNames.forEach(sheetName => {
                         const sheet = wb.Sheets[sheetName];
                         if (!sheet) return;
-                        const rows = XLSX.utils.sheet_to_json(sheet);
+                        let rows = XLSX.utils.sheet_to_json(sheet);
+                        if (!Array.isArray(rows) || rows.length === 0) return;
+                        if (!Object.keys(rows[0]).some(k => k.includes('EPIC') || k.includes('पहचान') || k.includes('नाम'))) {
+                            rows = XLSX.utils.sheet_to_json(sheet, { range: 1 });
+                        }
                         if (!Array.isArray(rows) || rows.length === 0) return;
 
                         rows.forEach(r => {
