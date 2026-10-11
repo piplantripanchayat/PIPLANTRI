@@ -37,6 +37,18 @@
         try {
             const savedDeltas = localStorage.getItem(CLOUD_STORAGE_KEY);
             if (savedDeltas) localDeltas = JSON.parse(savedDeltas) || {};
+
+            // Auto-correct any accidental cross-ward delta misattribution for duplicate EPICs
+            if (localDeltas['2714'] && localDeltas['2714'].mobile === '7568678427') {
+                delete localDeltas['2714'].mobile;
+                if (Object.keys(localDeltas['2714']).length === 0) delete localDeltas['2714'];
+            }
+            if (localDeltas['2728'] && localDeltas['2728'].mobile === '9920419074') {
+                delete localDeltas['2728'].mobile;
+                if (Object.keys(localDeltas['2728']).length === 0) delete localDeltas['2728'];
+            }
+            if (localDeltas['NFW1790044']) delete localDeltas['NFW1790044'];
+            if (localDeltas['NFW1776814']) delete localDeltas['NFW1776814'];
         } catch (e) {
             console.error('[CloudSync] Delta load error:', e);
             localDeltas = {};
@@ -192,7 +204,7 @@
     function applyDeltas(masterVoters) {
         if (!Array.isArray(masterVoters)) return [];
         return masterVoters.map(v => {
-            const d = localDeltas[String(v.id)] || localDeltas[v.id] || (v.epic ? localDeltas[String(v.epic).trim().toUpperCase()] : null);
+            const d = localDeltas[String(v.id)] || localDeltas[v.id];
             if (d) {
                 return {
                     ...v,

@@ -957,23 +957,18 @@
                         v.gender || ''
                     ]);
 
-                    // Auto-adjust row height based on maximum content length across all cells
-                    const maxLen = Math.max(
-                        (v.name || '').length,
-                        (v.rel_name || '').length,
-                        (v.actual_house || v.sub_house || '').length,
-                        (v.house || '').length,
-                        (v.mobile || '').length
-                    );
-                    if (maxLen > 55) {
-                        row.height = 54;
-                    } else if (maxLen > 38) {
-                        row.height = 42;
-                    } else if (maxLen > 24) {
-                        row.height = 32;
-                    } else {
-                        row.height = 23;
-                    }
+                    // Auto-adjust row height based on exact wrapped lines needed across all cells
+                    const nameLines = Math.ceil((v.name || '').length / 15) || 1;
+                    const relNameLines = Math.ceil((v.rel_name || '').length / 15) || 1;
+                    const houseLines = Math.ceil((v.house || '').length / 9) || 1;
+                    const subHouseLines = Math.ceil((v.actual_house || v.sub_house || '').length / 14) || 1;
+
+                    // Count telephone numbers to prevent multiline clipping
+                    const mobileChunks = (v.mobile || '').split(/[,/\n]+/).map(s => s.trim()).filter(s => s.length > 0);
+                    const mobileLines = Math.max(1, mobileChunks.length);
+
+                    const maxLines = Math.max(nameLines, relNameLines, houseLines, subHouseLines, mobileLines);
+                    row.height = maxLines === 1 ? 18 : (maxLines * 16);
 
                     row.eachCell((cell, colNumber) => {
                         cell.font = { name: 'Mukta', size: 10 };
@@ -1195,9 +1190,17 @@
                         else if (!notes && (k.includes('टिप्पणी') || k.includes('रिमार्क') || k.includes('notes') || k.includes('remark'))) {
                             notes = valStr;
                         }
+                        // 8. Ward
+                        else if (!ward && (k.includes('वार्ड') || k === 'ward' || k.includes('ward no'))) {
+                            ward = String(valStr).replace(/[^0-9]/g, '');
+                        }
+                        // 9. Serial / Ward Serial
+                        else if (!wardSr && (k.includes('क्रम') || k.includes('serial') || k === 'sr' || k.includes('अनुक्रमांक'))) {
+                            wardSr = String(valStr).replace(/[^0-9]/g, '');
+                        }
                     }
 
-                    return { epic, mobile, actualHouse, mukhiya, name, relName, notes };
+                    return { epic, mobile, actualHouse, mukhiya, name, relName, notes, ward, wardSr };
                 }
 
                 let totalRowsScanned = 0;
@@ -1208,6 +1211,10 @@
                 const updatedSampleNames = [];
 
                 wb.SheetNames.forEach(sheetName => {
+                    let sheetWard = '';
+                    const wMatch = sheetName.match(/Ward_?0*(\d+)/i);
+                    if (wMatch) sheetWard = String(Number(wMatch[1]));
+
                     const sheet = wb.Sheets[sheetName];
                     if (!sheet) return;
                     let rows = XLSX.utils.sheet_to_json(sheet);
@@ -1224,20 +1231,54 @@
                     rows.forEach(r => {
                         totalRowsScanned++;
                         const fields = extractRowFields(r);
+                        const rowWard = fields.ward || sheetWard || '';
 
-                        // Match target voter:
+                        // Match target voter with Ward Isolation:
                         let target = null;
-                        if (fields.epic) {
-                            target = byEpic.get(fields.epic);
-                            if (!target && epicAliases[fields.epic]) target = byEpic.get(epicAliases[fields.epic]);
-                            if (!target) {
-                                const clean = fields.epic.replace(/[^A-Z0-9]/g, '');
-                                target = byCleanEpic.get(clean);
+
+                        // 1. Prioritize strict Ward isolation to eliminate cross-ward duplicate EPIC collisions
+                        if (rowWard) {
+                            if (fields.epic) {
+                                target = voters.find(v => String(v.ward) === rowWard && v.epic && (
+                                    v.epic.trim().toUpperCase() === fields.epic ||
+                                    (epicAliases[fields.epic] && v.epic.trim().toUpperCase() === epicAliases[fields.epic]) ||
+                                    v.epic.replace(/[^A-Z0-9]/g, '') === fields.epic.replace(/[^A-Z0-9]/g, '')
+                                ));
+                            }
+                            if (!target && fields.wardSr) {
+                                target = voters.find(v => String(v.ward) === rowWard && (
+                                    Number(v.ward_sr) === Number(fields.wardSr) ||
+                                    Number(v.sr) === Number(fields.wardSr)
+                                ));
+                            }
+                            if (!target && fields.name && fields.relName) {
+                                target = voters.find(v => String(v.ward) === rowWard &&
+                                    cleanNameKey(v.name, v.rel_name) === cleanNameKey(fields.name, fields.relName)
+                                );
                             }
                         }
-                        // Fallback match by Name + Relative Name (handles sorted/customized sheets)
-                        if (!target && fields.name && fields.relName) {
-                            target = byNameAndRel.get(cleanNameKey(fields.name, fields.relName));
+
+                        // 2. Global fallback only if Ward is completely missing
+                        if (!target) {
+                            if (fields.epic) {
+                                const candidates = voters.filter(v => v.epic && (
+                                    v.epic.trim().toUpperCase() === fields.epic ||
+                                    (epicAliases[fields.epic] && v.epic.trim().toUpperCase() === epicAliases[fields.epic]) ||
+                                    v.epic.replace(/[^A-Z0-9]/g, '') === fields.epic.replace(/[^A-Z0-9]/g, '')
+                                ));
+                                if (candidates.length === 1) {
+                                    target = candidates[0];
+                                } else if (candidates.length > 1 && fields.name) {
+                                    target = candidates.find(c => cleanNameKey(c.name, c.rel_name) === cleanNameKey(fields.name, fields.relName)) ||
+                                             candidates.find(c => (c.name || '').trim().toLowerCase() === (fields.name || '').trim().toLowerCase());
+                                }
+                            }
+                            if (!target && fields.name && fields.relName) {
+                                const candidates = voters.filter(v => cleanNameKey(v.name, v.rel_name) === cleanNameKey(fields.name, fields.relName));
+                                if (candidates.length === 1) {
+                                    target = candidates[0];
+                                }
+                            }
                         }
 
                         if (!target) return;
