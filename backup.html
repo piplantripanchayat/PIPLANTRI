@@ -847,17 +847,17 @@
         const fileName = `Pipalantri_Ward_Wise_Summary_11Wards_${new Date().toISOString().slice(0,10)}.xlsx`;
 
         const columnsDef = [
-            { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 8, align: 'center' },
-            { header: 'पहचान पत्र क्र.\n(EPIC No)', key: 'epic', width: 15, align: 'center' },
-            { header: 'मतदाता का नाम\n(Voter Name)', key: 'name', width: 19, align: 'left' },
-            { header: 'संबंध\n(Rel)', key: 'rel', width: 8, align: 'center' },
-            { header: 'पिता / पति का नाम\n(Relative Name)', key: 'rel_name', width: 19, align: 'left' },
-            { header: 'मूल मकान\n(House)', key: 'house', width: 11, align: 'center' },
-            { header: 'अलग/उप-मकान\n(Sub House)', key: 'actual_house', width: 14, align: 'center' },
-            { header: 'परिवार मुखिया\n(Mukhiya)', key: 'is_mukhiya', width: 11, align: 'center' },
-            { header: 'मोबाइल नंबर\n(Mobile No)', key: 'mobile', width: 14, align: 'center' },
-            { header: 'आयु\n(Age)', key: 'age', width: 6, align: 'center' },
-            { header: 'लिंग\n(Gen)', key: 'gender', width: 6, align: 'center' }
+            { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 9, align: 'center' },
+            { header: 'पहचान पत्र क्र.\n(EPIC No)', key: 'epic', width: 18, align: 'center' },
+            { header: 'मतदाता का नाम\n(Voter Name)', key: 'name', width: 26, align: 'left' },
+            { header: 'संबंध\n(Rel)', key: 'rel', width: 10, align: 'center' },
+            { header: 'पिता / पति का नाम\n(Relative Name)', key: 'rel_name', width: 26, align: 'left' },
+            { header: 'मूल मकान\n(House)', key: 'house', width: 14, align: 'center' },
+            { header: 'अलग / उप-मकान\n(Sub House)', key: 'actual_house', width: 17, align: 'center' },
+            { header: 'परिवार मुखिया\n(Mukhiya)', key: 'is_mukhiya', width: 14, align: 'center' },
+            { header: 'मोबाइल नंबर\n(Mobile No)', key: 'mobile', width: 18, align: 'center' },
+            { header: 'आयु\n(Age)', key: 'age', width: 8, align: 'center' },
+            { header: 'लिंग\n(Gen)', key: 'gender', width: 8, align: 'center' }
         ];
 
         if (typeof ExcelJS !== 'undefined') {
@@ -871,10 +871,10 @@
                 wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
                 const ws = wb.addWorksheet(`Ward_${wardPad}`, {
-                    views: [{ state: 'frozen', ySplit: 2 }] // Freeze Ward Banner & Column Header rows
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
                 });
 
-                // 1. A4 Landscape Print Setup with Repeating Headers on every page
+                // 1. Ultra-Narrow Margins + Centered + Fit to Width for full A4 usage (Zero wasted margins)
                 ws.pageSetup = {
                     paperSize: 9, // A4
                     orientation: 'landscape',
@@ -882,19 +882,21 @@
                     fitToPage: true,
                     fitToWidth: 1,
                     fitToHeight: 0,
+                    horizontalCentered: true,
+                    showGridLines: true,
                     margins: {
-                        left: 0.3,
-                        right: 0.3,
-                        top: 0.4,
-                        bottom: 0.4,
-                        header: 0.2,
-                        footer: 0.2
+                        left: 0.2,   // ~5mm narrow margin (no wasted side space)
+                        right: 0.2,  // ~5mm narrow margin (no wasted side space)
+                        top: 0.25,   // ~6mm narrow margin (no wasted top space)
+                        bottom: 0.25,// ~6mm narrow margin (no wasted bottom space)
+                        header: 0.15,
+                        footer: 0.15
                     }
                 };
 
                 ws.columns = columnsDef.map(c => ({ key: c.key, width: c.width }));
 
-                // 2. Row 1: Ward Title Banner (A1:K1)
+                // 2. Row 1: Ward Title Banner (A1:K1) with solid border
                 ws.mergeCells('A1:K1');
                 const titleCell = ws.getCell('A1');
                 titleCell.value = `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`;
@@ -905,12 +907,18 @@
                     fgColor: { argb: 'FF1E293B' } // Slate-800
                 };
                 titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+                titleCell.border = {
+                    top: { style: 'medium', color: { argb: 'FF0F172A' } },
+                    bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+                    left: { style: 'medium', color: { argb: 'FF0F172A' } },
+                    right: { style: 'medium', color: { argb: 'FF0F172A' } }
+                };
                 ws.getRow(1).height = 32;
 
-                // 3. Row 2: Table Column Headers (Height: 44, compact, wrap text, clear borders)
+                // 3. Row 2: Table Column Headers (All-Borders applied)
                 const headerRow = ws.getRow(2);
                 headerRow.values = columnsDef.map(c => c.header);
-                headerRow.height = 44;
+                headerRow.height = 42;
                 headerRow.eachCell((cell) => {
                     cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF0F172A' } };
                     cell.fill = {
@@ -920,14 +928,14 @@
                     };
                     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                     cell.border = {
-                        top: { style: 'medium', color: { argb: 'FF475569' } },
-                        bottom: { style: 'medium', color: { argb: 'FF475569' } },
-                        left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-                        right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+                        top: { style: 'medium', color: { argb: 'FF334155' } },
+                        bottom: { style: 'medium', color: { argb: 'FF334155' } },
+                        left: { style: 'thin', color: { argb: 'FF64748B' } },
+                        right: { style: 'thin', color: { argb: 'FF64748B' } }
                     };
                 });
 
-                // 4. Data Rows with Auto-Adjusting Height (No text clipped or hidden)
+                // 4. Data Rows with All-Borders applied on every row and column
                 wardVoters.forEach((v, idx) => {
                     const row = ws.addRow([
                         Number(v.ward_sr) || (idx + 1),
@@ -946,7 +954,7 @@
                     // Auto-adjust row height based on content length
                     const nameLen = (v.name || '').length;
                     const relNameLen = (v.rel_name || '').length;
-                    row.height = (nameLen > 22 || relNameLen > 22) ? 32 : 24;
+                    row.height = (nameLen > 26 || relNameLen > 26) ? 30 : 23;
 
                     row.eachCell((cell, colNumber) => {
                         cell.font = { name: 'Mukta', size: 10 };
@@ -955,11 +963,12 @@
                             horizontal: columnsDef[colNumber - 1].align,
                             wrapText: true
                         };
+                        // Solid All-Borders on every single cell
                         cell.border = {
-                            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                            right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+                            top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                            bottom: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                            left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                            right: { style: 'thin', color: { argb: 'FF94A3B8' } }
                         };
                         if (colNumber === 8 && cell.value === 'मुखिया') {
                             cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF92400E' } };
