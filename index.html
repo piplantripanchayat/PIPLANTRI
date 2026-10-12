@@ -3316,16 +3316,37 @@
                             else if (!wardSr && (k.includes('क्रम') || k.includes('serial') || k === 'sr' || k.includes('अनुक्रमांक'))) {
                                 wardSr = String(valStr).replace(/[^0-9]/g, '');
                             }
+                            // 10. Outstation City / बाहर रहने वाले
+                            else if (!outstationCity && (
+                                k.includes('बाहर') || k.includes('शहर') || k.includes('city') || 
+                                k.includes('outstation') || k.includes('प्रवासी') || k.includes('स्थान')
+                            )) {
+                                outstationCity = valStr;
+                            }
                         }
 
-                        return { epic, mobile, actualHouse, mukhiya, name, relName, notes, ward, wardSr };
+                        return { epic, mobile, actualHouse, mukhiya, name, relName, notes, ward, wardSr, outstationCity };
                     }
+
+                    // Baseline map before parsing sheets: prevents stale sheet data from overwriting active edits
+                    const baselineMap = new Map();
+                    voters.forEach(v => {
+                        baselineMap.set(v.id, {
+                            mobile: v.mobile || '',
+                            actual_house: v.actual_house || v.sub_house || '',
+                            is_mukhiya: Boolean(v.is_mukhiya),
+                            outstation_city: v.outstation_city || '',
+                            location_status: v.location_status || 'Local',
+                            notes: v.notes || ''
+                        });
+                    });
 
                     let totalRowsScanned = 0;
                     let votersUpdatedCount = 0;
                     let newMobilesAddedCount = 0;
                     let subHousesUpdatedCount = 0;
                     let mukhiyasUpdatedCount = 0;
+                    let outstationUpdatedCount = 0;
                     const updatedSampleNames = [];
 
                     wb.SheetNames.forEach(sheetName => {
@@ -3403,6 +3424,7 @@
 
                             let hasChange = false;
                             const cloudUpdates = {};
+                            const base = baselineMap.get(target.id) || {};
 
                             // 1. Mobile Detection & Merge
                             if (fields.mobile) {
@@ -3420,7 +3442,7 @@
                             }
 
                             // 2. Sub-House / Actual House Detection
-                            if (fields.actualHouse && fields.actualHouse !== (target.actual_house || target.sub_house || '')) {
+                            if (fields.actualHouse && fields.actualHouse !== base.actual_house) {
                                 target.actual_house = fields.actualHouse;
                                 cloudUpdates.actual_house = fields.actualHouse;
                                 subHousesUpdatedCount++;
@@ -3431,7 +3453,7 @@
                             if (fields.mukhiya) {
                                 const mLower = fields.mukhiya.toLowerCase();
                                 const isMukhiyaBool = ['हाँ', 'मुखिया', 'yes', 'true', '1', 'head', 'y'].includes(mLower);
-                                if (Boolean(target.is_mukhiya) !== isMukhiyaBool) {
+                                if (isMukhiyaBool !== base.is_mukhiya) {
                                     target.is_mukhiya = isMukhiyaBool;
                                     cloudUpdates.is_mukhiya = isMukhiyaBool;
                                     mukhiyasUpdatedCount++;
@@ -3439,8 +3461,25 @@
                                 }
                             }
 
-                            // 4. Notes / Remarks if provided
-                            if (fields.notes && fields.notes !== (target.notes || '')) {
+                            // 4. Outstation City / बाहर रहने वाले
+                            if (fields.outstationCity !== undefined && fields.outstationCity !== '') {
+                                const rawCity = String(fields.outstationCity).trim();
+                                const isLocal = ['लोकल', 'स्थानीय', 'local', 'गांव', 'गाँव', '-', 'no', 'nahi'].includes(rawCity.toLowerCase());
+                                const newCity = isLocal ? '' : rawCity;
+                                const newStatus = isLocal ? 'Local' : 'Bahar';
+
+                                if (newCity !== base.outstation_city || newStatus !== base.location_status) {
+                                    target.outstation_city = newCity;
+                                    target.location_status = newStatus;
+                                    cloudUpdates.outstation_city = newCity;
+                                    cloudUpdates.location_status = newStatus;
+                                    outstationUpdatedCount++;
+                                    hasChange = true;
+                                }
+                            }
+
+                            // 5. Notes / Remarks if provided
+                            if (fields.notes && fields.notes !== base.notes) {
                                 target.notes = fields.notes;
                                 cloudUpdates.notes = fields.notes;
                                 hasChange = true;
@@ -3449,7 +3488,7 @@
                             if (hasChange) {
                                 votersUpdatedCount++;
                                 if (updatedSampleNames.length < 5) {
-                                    updatedSampleNames.push(`${target.name} (${target.epic || 'ID:'+target.id}): म.${target.house}${target.actual_house ? ` [अलग: ${target.actual_house}]` : ''}${target.is_mukhiya ? ' 👑मुखिया' : ''} • ${target.mobile || 'बिना फोन'}`);
+                                    updatedSampleNames.push(`${target.name} (${target.epic || 'ID:'+target.id}): म.${target.house}${target.actual_house ? ` [अलग: ${target.actual_house}]` : ''}${target.is_mukhiya ? ' 👑मुखिया' : ''}${target.outstation_city ? ` ✈️${target.outstation_city}` : ''} • ${target.mobile || 'बिना फोन'}`);
                                 }
 
                                 if (window.CloudSync && CloudSync.recordUpdate) {
@@ -3464,13 +3503,14 @@
                     applyFilters();
 
                     if (votersUpdatedCount > 0) {
-                        alert(`✅ 11-वार्ड एक्सेल डेटा सफलतापूर्वक सिंक हो गया!\n\n` +
+                        alert(`✅ एक्सेल डेटा सफलतापूर्वक सिंक हो गया!\n\n` +
                               `• जाँची गई शीट्स: ${wb.SheetNames.length}\n` +
                               `• जाँची गई कुल पंक्तियाँ: ${totalRowsScanned}\n` +
                               `• कुल अपडेट हुए मतदाता: ${votersUpdatedCount}\n` +
                               `  - नए मोबाइल नंबर जुड़े: ${newMobilesAddedCount}\n` +
                               `  - अलग/वास्तविक मकान नंबर अपडेट: ${subHousesUpdatedCount}\n` +
-                              `  - मुखिया पद अपडेट: ${mukhiyasUpdatedCount}\n\n` +
+                              `  - मुखिया पद अपडेट: ${mukhiyasUpdatedCount}\n` +
+                              `  - बाहर रहने वाले / शहर अपडेट: ${outstationUpdatedCount}\n\n` +
                               `सैंपल अपडेट्स:\n- ${updatedSampleNames.join('\n- ')}`);
                     } else {
                         alert(`ℹ️ एक्सेल फाइल में कोई नया बदलाव नहीं मिला। सभी ${totalRowsScanned} पंक्तियाँ पहले से पोर्टल डेटाबेस के साथ सिंक हैं।`);

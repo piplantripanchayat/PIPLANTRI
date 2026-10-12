@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v19-ward-isolated-excel-sync';
+const CACHE_NAME = 'piplantri-election-v20-all-wards-master-city-dropdown';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
