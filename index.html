@@ -157,7 +157,7 @@
                     <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">पर्ची प्रिंट</span>
                 </button>
-                <button onclick="exportToExcel()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer" title="वार्ड-वार 22-शीट एक्सेल डाउनलोड (Pipalantri_Ward_Wise_Summary प्रारूप)">
+                <button onclick="exportToExcel()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer" title="14-शीट एक्सेल डाउनलोड (मास्टर, युवा पुरुष 18-35, प्रवासी मतदाता व 11 वार्ड शीट्स)">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">एक्सेल</span>
                 </button>
@@ -2955,68 +2955,70 @@
         }
 
         async function exportToExcel() {
-            const fileName = `Pipalantri_Ward_Wise_Summary_11Wards_${new Date().toISOString().slice(0,10)}.xlsx`;
+            const fileName = `Pipalantri_Ward_Wise_Summary_14Sheets_${new Date().toISOString().slice(0,10)}.xlsx`;
 
-            const columnsDef = [
-                { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 9, align: 'center' },
-                { header: 'पहचान पत्र क्र.\n(EPIC No)', key: 'epic', width: 18, align: 'center' },
-                { header: 'मतदाता का नाम\n(Voter Name)', key: 'name', width: 26, align: 'left' },
-                { header: 'संबंध\n(Rel)', key: 'rel', width: 10, align: 'center' },
-                { header: 'पिता / पति का नाम\n(Relative Name)', key: 'rel_name', width: 26, align: 'left' },
-                { header: 'मूल मकान\n(House)', key: 'house', width: 14, align: 'center' },
-                { header: 'अलग / उप-मकान\n(Sub House)', key: 'actual_house', width: 17, align: 'center' },
-                { header: 'परिवार मुखिया\n(Mukhiya)', key: 'is_mukhiya', width: 14, align: 'center' },
-                { header: 'मोबाइल नंबर\n(Mobile No)', key: 'mobile', width: 18, align: 'center' },
-                { header: 'आयु\n(Age)', key: 'age', width: 8, align: 'center' },
-                { header: 'लिंग\n(Gen)', key: 'gender', width: 8, align: 'center' }
+            const wardColumnsDef = [
+                { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 8, align: 'center' },
+                { header: 'पहचान पत्र क्र.\n(EPIC No)', key: 'epic', width: 16, align: 'center' },
+                { header: 'मतदाता का नाम\n(Voter Name)', key: 'name', width: 23, align: 'left' },
+                { header: 'संबंध\n(Rel)', key: 'rel', width: 8, align: 'center' },
+                { header: 'पिता / पति का नाम\n(Relative Name)', key: 'rel_name', width: 23, align: 'left' },
+                { header: 'मूल मकान\n(House)', key: 'house', width: 11, align: 'center' },
+                { header: 'अलग / उप-मकान\n(Sub House)', key: 'actual_house', width: 14, align: 'center' },
+                { header: 'परिवार मुखिया\n(Mukhiya)', key: 'is_mukhiya', width: 12, align: 'center' },
+                { header: 'मोबाइल नंबर\n(Mobile No)', key: 'mobile', width: 16, align: 'center' },
+                { header: 'बाहर रहने वाले / शहर\n(Outstation / City)', key: 'outstation_city', width: 16, align: 'center' },
+                { header: 'आयु\n(Age)', key: 'age', width: 7, align: 'center' },
+                { header: 'लिंग\n(Gen)', key: 'gender', width: 7, align: 'center' }
+            ];
+
+            const masterColumnsDef = [
+                { header: 'वार्ड क्र.\n(Ward)', key: 'ward', width: 8, align: 'center' },
+                { header: 'वार्ड क्रम सं.\n(Ward Sr)', key: 'ward_sr', width: 9, align: 'center' },
+                { header: 'पहचान पत्र क्र.\n(EPIC No)', key: 'epic', width: 16, align: 'center' },
+                { header: 'मतदाता का नाम\n(Voter Name)', key: 'name', width: 23, align: 'left' },
+                { header: 'संबंध\n(Rel)', key: 'rel', width: 8, align: 'center' },
+                { header: 'पिता / पति का नाम\n(Relative Name)', key: 'rel_name', width: 23, align: 'left' },
+                { header: 'मूल मकान\n(House)', key: 'house', width: 11, align: 'center' },
+                { header: 'अलग / उप-मकान\n(Sub House)', key: 'actual_house', width: 14, align: 'center' },
+                { header: 'परिवार मुखिया\n(Mukhiya)', key: 'is_mukhiya', width: 12, align: 'center' },
+                { header: 'मोबाइल नंबर\n(Mobile No)', key: 'mobile', width: 16, align: 'center' },
+                { header: 'बाहर रहने वाले / शहर\n(Outstation / City)', key: 'outstation_city', width: 16, align: 'center' },
+                { header: 'आयु\n(Age)', key: 'age', width: 7, align: 'center' },
+                { header: 'लिंग\n(Gen)', key: 'gender', width: 7, align: 'center' }
             ];
 
             if (typeof ExcelJS !== 'undefined') {
                 const wb = new ExcelJS.Workbook();
                 wb.creator = 'Piplantri Election Portal';
 
-                for (let w = 1; w <= 11; w++) {
-                    const wardStr = String(w);
-                    const wardPad = String(w).padStart(2, '0');
-                    const wardVoters = voters.filter(v => String(v.ward) === wardStr);
-                    wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+                function populateWorksheet(ws, sheetTitle, voterList, isMaster) {
+                    const cols = isMaster ? masterColumnsDef : wardColumnsDef;
+                    const mergeEnd = isMaster ? 'M1' : 'L1';
+                    const filterEnd = isMaster ? 'M' : 'L';
+                    const cityColIndex = isMaster ? 11 : 10;
+                    const mukhiyaColIndex = isMaster ? 9 : 8;
 
-                    const ws = wb.addWorksheet(`Ward_${wardPad}`, {
-                        views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
-                    });
-
-                    // 1. Ultra-Narrow Margins + Centered + Fit to Width for full A4 usage (Zero wasted margins)
                     ws.pageSetup = {
                         paperSize: 9, // A4
                         orientation: 'landscape',
-                        printTitlesRow: '1:2', // Repeats Ward Title Banner and Column Headers on EVERY page!
+                        printTitlesRow: '1:2',
                         fitToPage: true,
                         fitToWidth: 1,
                         fitToHeight: 0,
                         horizontalCentered: true,
                         showGridLines: true,
-                        margins: {
-                            left: 0.2,   // ~5mm narrow margin (no wasted side space)
-                            right: 0.2,  // ~5mm narrow margin (no wasted side space)
-                            top: 0.25,   // ~6mm narrow margin (no wasted top space)
-                            bottom: 0.25,// ~6mm narrow margin (no wasted bottom space)
-                            header: 0.15,
-                            footer: 0.15
-                        }
+                        margins: { left: 0.2, right: 0.2, top: 0.25, bottom: 0.25, header: 0.15, footer: 0.15 }
                     };
 
-                    ws.columns = columnsDef.map(c => ({ key: c.key, width: c.width }));
+                    ws.columns = cols.map(c => ({ key: c.key, width: c.width }));
 
-                    // 2. Row 1: Ward Title Banner (A1:K1) with solid border
-                    ws.mergeCells('A1:K1');
+                    // Row 1: Header Banner
+                    ws.mergeCells(`A1:${mergeEnd}`);
                     const titleCell = ws.getCell('A1');
-                    titleCell.value = `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`;
+                    titleCell.value = sheetTitle;
                     titleCell.font = { name: 'Mukta', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
-                    titleCell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: 'FF1E293B' } // Slate-800
-                    };
+                    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
                     titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
                     titleCell.border = {
                         top: { style: 'medium', color: { argb: 'FF0F172A' } },
@@ -3026,17 +3028,13 @@
                     };
                     ws.getRow(1).height = 32;
 
-                    // 3. Row 2: Table Column Headers (All-Borders applied)
+                    // Row 2: Table Column Headers
                     const headerRow = ws.getRow(2);
-                    headerRow.values = columnsDef.map(c => c.header);
+                    headerRow.values = cols.map(c => c.header);
                     headerRow.height = 42;
-                    headerRow.eachCell((cell) => {
+                    headerRow.eachCell(cell => {
                         cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF0F172A' } };
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFF1F5F9' } // Light slate header
-                        };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
                         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                         cell.border = {
                             top: { style: 'medium', color: { argb: 'FF334155' } },
@@ -3046,9 +3044,11 @@
                         };
                     });
 
-                    // 4. Data Rows with All-Borders applied on every row and column
-                    wardVoters.forEach((v, idx) => {
-                        const row = ws.addRow([
+                    // Row 3+: Data Rows
+                    voterList.forEach((v, idx) => {
+                        const cityVal = v.outstation_city || (v.location_status === 'Bahar' ? 'अन्य' : '');
+                        const rowValues = isMaster ? [
+                            v.ward || '',
                             Number(v.ward_sr) || (idx + 1),
                             v.epic || '',
                             v.name || '',
@@ -3058,67 +3058,119 @@
                             v.actual_house || v.sub_house || '',
                             v.is_mukhiya ? 'मुखिया' : '',
                             v.mobile || '',
+                            cityVal,
                             Number(v.age) || '',
                             v.gender || ''
-                        ]);
+                        ] : [
+                            Number(v.ward_sr) || (idx + 1),
+                            v.epic || '',
+                            v.name || '',
+                            v.rel || '',
+                            v.rel_name || '',
+                            v.house || '',
+                            v.actual_house || v.sub_house || '',
+                            v.is_mukhiya ? 'मुखिया' : '',
+                            v.mobile || '',
+                            cityVal,
+                            Number(v.age) || '',
+                            v.gender || ''
+                        ];
 
-                        // Auto-adjust row height based on maximum content length across all cells
-                        const maxLen = Math.max(
-                            (v.name || '').length,
-                            (v.rel_name || '').length,
-                            (v.actual_house || v.sub_house || '').length,
-                            (v.house || '').length,
-                            (v.mobile || '').length
-                        );
-                        if (maxLen > 55) {
-                            row.height = 54;
-                        } else if (maxLen > 38) {
-                            row.height = 42;
-                        } else if (maxLen > 24) {
-                            row.height = 32;
-                        } else {
-                            row.height = 23;
-                        }
+                        const row = ws.addRow(rowValues);
+
+                        // Auto-adjust row height based on content
+                        const nameLines = Math.ceil((v.name || '').length / 15) || 1;
+                        const relNameLines = Math.ceil((v.rel_name || '').length / 15) || 1;
+                        const houseLines = Math.ceil((v.house || '').length / 9) || 1;
+                        const subHouseLines = Math.ceil((v.actual_house || v.sub_house || '').length / 14) || 1;
+                        const cityLines = Math.ceil((cityVal || '').length / 14) || 1;
+                        const mobileChunks = (v.mobile || '').split(/[,/\n]+/).map(s => s.trim()).filter(s => s.length > 0);
+                        const mobileLines = Math.max(1, mobileChunks.length);
+                        const maxLines = Math.max(nameLines, relNameLines, houseLines, subHouseLines, cityLines, mobileLines);
+                        row.height = maxLines === 1 ? 18 : (maxLines * 16);
 
                         row.eachCell((cell, colNumber) => {
                             cell.font = { name: 'Mukta', size: 10 };
                             cell.alignment = {
                                 vertical: 'middle',
-                                horizontal: columnsDef[colNumber - 1].align,
+                                horizontal: cols[colNumber - 1].align,
                                 wrapText: true
                             };
-                            // Solid All-Borders on every single cell
                             cell.border = {
                                 top: { style: 'thin', color: { argb: 'FF94A3B8' } },
                                 bottom: { style: 'thin', color: { argb: 'FF94A3B8' } },
                                 left: { style: 'thin', color: { argb: 'FF94A3B8' } },
                                 right: { style: 'thin', color: { argb: 'FF94A3B8' } }
                             };
-                            if (colNumber === 8 && cell.value === 'मुखिया') {
-                                cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF92400E' } };
-                                cell.fill = {
-                                    type: 'pattern',
-                                    pattern: 'solid',
-                                    fgColor: { argb: 'FFFEF3C7' } // Light amber highlight
+
+                            // Mukhiya Cell Highlight & Dropdown
+                            if (colNumber === mukhiyaColIndex) {
+                                cell.dataValidation = {
+                                    type: 'list',
+                                    allowBlank: true,
+                                    formulae: ['"मुखिया, सदस्य"'],
+                                    showErrorMessage: false
                                 };
+                                if (cell.value === 'मुखिया') {
+                                    cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF92400E' } };
+                                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+                                }
+                            }
+
+                            // Outstation City Cell Dropdown (allows custom cities too!)
+                            if (colNumber === cityColIndex) {
+                                cell.dataValidation = {
+                                    type: 'list',
+                                    allowBlank: true,
+                                    formulae: ['"लोकल, मुंबई, अहमदाबाद, सूरत, इंदौर, कोटा, उदयपुर, जयपुर, अन्य"'],
+                                    showErrorMessage: false,
+                                    errorStyle: 'information',
+                                    errorTitle: 'अन्य शहर',
+                                    error: 'सूची के अलावा अन्य शहर भी लिख सकते हैं।'
+                                };
+                                if (cell.value && cell.value !== 'लोकल') {
+                                    cell.font = { name: 'Mukta', size: 10, bold: true, color: { argb: 'FF1E40AF' } };
+                                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } }; // Light blue highlight
+                                }
                             }
                         });
                     });
 
-                    const lastRow = wardVoters.length + 2;
-                    // AutoFilter on row 2 headers: enables Sort, Filter, and Search
-                    ws.autoFilter = `A2:K${lastRow}`;
+                    ws.autoFilter = `A2:${filterEnd}${voterList.length + 2}`;
+                }
 
-                    // Add Dropdown Data Validation for Column H (परिवार मुखिया)
-                    for (let r = 3; r <= lastRow + 20; r++) {
-                        ws.getCell(`H${r}`).dataValidation = {
-                            type: 'list',
-                            allowBlank: true,
-                            formulae: ['"मुखिया,"'],
-                            showDropDown: true,
-                            showErrorMessage: false
-                        };
-                    }
+                // Sheet 1: All Wards Master Sheet (Total Data across all 11 Wards)
+                const masterWs = wb.addWorksheet('All_Wards_Master', {
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                });
+                const allVotersSorted = [...voters].sort((a, b) => (Number(a.ward) || 0) - (Number(b.ward) || 0) || (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+                populateWorksheet(masterWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — संपूर्ण ग्राम पंचायत मास्टर डेटा • कुल मतदाता: ${allVotersSorted.length} (प्रत्याशी: नविन पालीवाल)`, allVotersSorted, true);
+
+                // Sheet 2: Youth Men <= 35 Years (35 वर्ष तक के सभी युवा पुरुष)
+                const youthWs = wb.addWorksheet('Youth_Men_35', {
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                });
+                const youthMen = allVotersSorted.filter(v => (v.gender === 'पुरुष' || v.gender === 'M') && Number(v.age) <= 35);
+                populateWorksheet(youthWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — युवा पुरुष मतदाता (आयु 18 से 35 वर्ष) • कुल मतदाता: ${youthMen.length} (प्रत्याशी: नविन पालीवाल)`, youthMen, true);
+
+                // Sheet 3: Outstation Voters (बाहर रहने वाले / प्रवासी मतदाता)
+                const outstationWs = wb.addWorksheet('Outstation_Voters', {
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                });
+                const outstationVoters = allVotersSorted.filter(v => v.location_status === 'Bahar' || (v.outstation_city && v.outstation_city.trim() !== '' && v.outstation_city.trim() !== 'लोकल'));
+                populateWorksheet(outstationWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — बाहर रहने वाले (प्रवासी) मतदाता सूची • कुल मतदाता: ${outstationVoters.length} (प्रत्याशी: नविन पालीवाल)`, outstationVoters, true);
+
+                // Sheets 4 to 14: Ward 01 to Ward 11
+                for (let w = 1; w <= 11; w++) {
+                    const wardStr = String(w);
+                    const wardPad = String(w).padStart(2, '0');
+                    const wardVoters = voters.filter(v => String(v.ward) === wardStr).sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+
+                    const ws = wb.addWorksheet(`Ward_${wardPad}`, {
+                        views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                    });
+
+                    populateWorksheet(ws, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`, wardVoters, false);
                 }
 
                 const buf = await wb.xlsx.writeBuffer();
@@ -3132,69 +3184,70 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 if (window.CloudSync && CloudSync.showToast) {
-                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (A4 फुल-फिट, ऑल-बॉर्डर्स व नैरो मार्जिन सहित) डाउनलोड हो गई!', 'success');
+                    CloudSync.showToast('📥 संपूर्ण मास्टर, युवा पुरुष (18-35), प्रवासी मतदाता व 11-वार्ड स्प्रेडशीट (A4 फुल-फिट, ड्रॉपडाउन सहित) डाउनलोड हो गई!', 'success');
                 }
                 return;
             }
 
-            // Fallback to SheetJS
+            // Fallback to SheetJS (Generates all 14 sheets)
             if (typeof XLSX !== 'undefined') {
                 const wb = XLSX.utils.book_new();
+                const allVotersSorted = [...voters].sort((a, b) => (Number(a.ward) || 0) - (Number(b.ward) || 0) || (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
-                for (let w = 1; w <= 11; w++) {
-                    const wardStr = String(w);
-                    const wardPad = String(w).padStart(2, '0');
-
-                    const wardVoters = voters.filter(v => String(v.ward) === wardStr);
-                    wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
-
-                    const rows = [
-                        [`ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`],
-                        [
-                            'क्रम सं. (Sr)',
-                            'पहचान पत्र क्र. (EPIC No)',
-                            'मतदाता का नाम (Name)',
-                            'संबंध (Rel)',
-                            'पिता/पति का नाम (Relative Name)',
-                            'मूल मकान (House)',
-                            'अलग/उप-मकान (Sub House)',
-                            'परिवार मुखिया (Mukhiya)',
-                            'मोबाइल नंबर (Mobile)',
-                            'आयु (Age)',
-                            'लिंग (Gender)'
-                        ]
+                function appendXlsxSheet(sheetName, titleText, list, isMaster) {
+                    const headerCols = isMaster ? [
+                        'वार्ड (Ward)', 'वार्ड क्र. सं. (Sr)', 'पहचान पत्र (EPIC)', 'मतदाता का नाम (Name)',
+                        'संबंध (Rel)', 'पिता/पति (Relative)', 'मूल मकान (House)', 'अलग मकान (Sub House)',
+                        'मुखिया (Mukhiya)', 'मोबाइल (Mobile)', 'शहर (Outstation City)', 'आयु (Age)', 'लिंग (Gender)'
+                    ] : [
+                        'क्रम सं. (Sr)', 'पहचान पत्र (EPIC)', 'मतदाता का नाम (Name)',
+                        'संबंध (Rel)', 'पिता/पति (Relative)', 'मूल मकान (House)', 'अलग मकान (Sub House)',
+                        'मुखिया (Mukhiya)', 'मोबाइल (Mobile)', 'शहर (Outstation City)', 'आयु (Age)', 'लिंग (Gender)'
                     ];
 
-                    wardVoters.forEach((v, idx) => {
-                        rows.push([
-                            Number(v.ward_sr) || (idx + 1),
-                            v.epic || '',
-                            v.name || '',
-                            v.rel || '',
-                            v.rel_name || '',
-                            v.house || '',
-                            v.actual_house || v.sub_house || '',
-                            v.is_mukhiya ? 'मुखिया' : '',
-                            v.mobile || '',
-                            Number(v.age) || '',
-                            v.gender || ''
-                        ]);
+                    const rows = [[titleText], headerCols];
+                    list.forEach((v, idx) => {
+                        const cityVal = v.outstation_city || (v.location_status === 'Bahar' ? 'अन्य' : '');
+                        const r = isMaster ? [
+                            v.ward || '', Number(v.ward_sr) || (idx + 1), v.epic || '', v.name || '',
+                            v.rel || '', v.rel_name || '', v.house || '', v.actual_house || v.sub_house || '',
+                            v.is_mukhiya ? 'मुखिया' : '', v.mobile || '', cityVal, Number(v.age) || '', v.gender || ''
+                        ] : [
+                            Number(v.ward_sr) || (idx + 1), v.epic || '', v.name || '',
+                            v.rel || '', v.rel_name || '', v.house || '', v.actual_house || v.sub_house || '',
+                            v.is_mukhiya ? 'मुखिया' : '', v.mobile || '', cityVal, Number(v.age) || '', v.gender || ''
+                        ];
+                        rows.push(r);
                     });
 
                     const ws = XLSX.utils.aoa_to_sheet(rows);
-                    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
-                    ws['!cols'] = columnsDef.map(c => ({ wch: c.width }));
-                    ws['!rows'] = [{ hpt: 26 }, { hpt: 36 }];
-                    for (let ri = 2; ri < rows.length; ri++) {
-                        ws['!rows'].push({ hpt: 22 });
-                    }
-                    ws['!autofilter'] = { ref: `A2:K${rows.length}` };
-                    XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
+                    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: isMaster ? 12 : 11 } }];
+                    ws['!autofilter'] = { ref: `A2:${isMaster ? 'M' : 'L'}${rows.length}` };
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                }
+
+                // 1. All Wards Master
+                appendXlsxSheet('All_Wards_Master', `ग्राम पंचायत पिपलांत्री — संपूर्ण ग्राम पंचायत मास्टर डेटा • कुल: ${allVotersSorted.length}`, allVotersSorted, true);
+
+                // 2. Youth Men <= 35
+                const youthMen = allVotersSorted.filter(v => (v.gender === 'पुरुष' || v.gender === 'M') && Number(v.age) <= 35);
+                appendXlsxSheet('Youth_Men_35', `ग्राम पंचायत पिपलांत्री — युवा पुरुष (18 से 35 वर्ष) • कुल: ${youthMen.length}`, youthMen, true);
+
+                // 3. Outstation Voters
+                const outstationVoters = allVotersSorted.filter(v => v.location_status === 'Bahar' || (v.outstation_city && v.outstation_city.trim() !== '' && v.outstation_city.trim() !== 'लोकल'));
+                appendXlsxSheet('Outstation_Voters', `ग्राम पंचायत पिपलांत्री — बाहर रहने वाले (प्रवासी) मतदाता • कुल: ${outstationVoters.length}`, outstationVoters, true);
+
+                // 4-14. Ward 01 to Ward 11
+                for (let w = 1; w <= 11; w++) {
+                    const wardStr = String(w);
+                    const wardPad = String(w).padStart(2, '0');
+                    const wardVoters = voters.filter(v => String(v.ward) === wardStr).sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+                    appendXlsxSheet(`Ward_${wardPad}`, `ग्राम पंचायत पिपलांत्री — वार्ड संख्या ${w} • कुल: ${wardVoters.length}`, wardVoters, false);
                 }
 
                 XLSX.writeFile(wb, fileName);
                 if (window.CloudSync && CloudSync.showToast) {
-                    CloudSync.showToast('📥 11-वार्ड स्प्रेडशीट (11 मुख्य कॉलम सहित) डाउनलोड हो गई!', 'success');
+                    CloudSync.showToast('📥 14-शीट स्प्रेडशीट (मास्टर, युवा पुरुष, प्रवासी व 11-वार्ड) डाउनलोड हो गई!', 'success');
                 }
                 return;
             }

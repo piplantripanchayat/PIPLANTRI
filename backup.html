@@ -251,7 +251,7 @@
                     <div>
                         <div class="flex items-center gap-2 text-emerald-400 font-extrabold text-sm mb-1.5">
                             <i data-lucide="sheet" class="w-4 h-4"></i>
-                            <span>2. वार्ड-वार 11-शीट एक्सेल (.XLSX)</span>
+                            <span>2. संपूर्ण ग्राम पंचायत 14-शीट एक्सेल (.XLSX)</span>
                         </div>
                         <p class="text-xs text-slate-400 leading-relaxed">
                             संपूर्ण ग्राम पंचायत मास्टर शीट (2,707), युवा पुरुष (18-35 वर्ष), बाहर रहने वाले (प्रवासी) व सभी 11 वार्डों की अलग-अलग शीट्स। शहर ड्रॉपडाउन, परिवार मुखिया व अलग मकान कॉलम सहित।
@@ -1083,62 +1083,64 @@
             return;
         }
 
+        // Fallback to SheetJS (Generates all 14 sheets)
         if (typeof XLSX !== 'undefined') {
             const wb = XLSX.utils.book_new();
+            const allVotersSorted = [...voters].sort((a, b) => (Number(a.ward) || 0) - (Number(b.ward) || 0) || (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
 
-            for (let w = 1; w <= 11; w++) {
-                const wardStr = String(w);
-                const wardPad = String(w).padStart(2, '0');
-
-                const wardVoters = voters.filter(v => String(v.ward) === wardStr);
-                wardVoters.sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
-
-                const rows = [
-                    [`ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — वार्ड संख्या ${w} • कुल मतदाता: ${wardVoters.length} (प्रत्याशी: नविन पालीवाल)`],
-                    [
-                        'क्रम सं. (Sr)',
-                        'पहचान पत्र क्र. (EPIC No)',
-                        'मतदाता का नाम (Name)',
-                        'संबंध (Rel)',
-                        'पिता/पति का नाम (Relative Name)',
-                        'मूल मकान (House)',
-                        'अलग/उप-मकान (Sub House)',
-                        'परिवार मुखिया (Mukhiya)',
-                        'मोबाइल नंबर (Mobile)',
-                        'आयु (Age)',
-                        'लिंग (Gender)'
-                    ]
+            function appendXlsxSheet(sheetName, titleText, list, isMaster) {
+                const headerCols = isMaster ? [
+                    'वार्ड (Ward)', 'वार्ड क्र. सं. (Sr)', 'पहचान पत्र (EPIC)', 'मतदाता का नाम (Name)',
+                    'संबंध (Rel)', 'पिता/पति (Relative)', 'मूल मकान (House)', 'अलग मकान (Sub House)',
+                    'मुखिया (Mukhiya)', 'मोबाइल (Mobile)', 'शहर (Outstation City)', 'आयु (Age)', 'लिंग (Gender)'
+                ] : [
+                    'क्रम सं. (Sr)', 'पहचान पत्र (EPIC)', 'मतदाता का नाम (Name)',
+                    'संबंध (Rel)', 'पिता/पति (Relative)', 'मूल मकान (House)', 'अलग मकान (Sub House)',
+                    'मुखिया (Mukhiya)', 'मोबाइल (Mobile)', 'शहर (Outstation City)', 'आयु (Age)', 'लिंग (Gender)'
                 ];
 
-                wardVoters.forEach((v, idx) => {
-                    rows.push([
-                        Number(v.ward_sr) || (idx + 1),
-                        v.epic || '',
-                        v.name || '',
-                        v.rel || '',
-                        v.rel_name || '',
-                        v.house || '',
-                        v.actual_house || v.sub_house || '',
-                        v.is_mukhiya ? 'मुखिया' : '',
-                        v.mobile || '',
-                        Number(v.age) || '',
-                        v.gender || ''
-                    ]);
+                const rows = [[titleText], headerCols];
+                list.forEach((v, idx) => {
+                    const cityVal = v.outstation_city || (v.location_status === 'Bahar' ? 'अन्य' : '');
+                    const r = isMaster ? [
+                        v.ward || '', Number(v.ward_sr) || (idx + 1), v.epic || '', v.name || '',
+                        v.rel || '', v.rel_name || '', v.house || '', v.actual_house || v.sub_house || '',
+                        v.is_mukhiya ? 'मुखिया' : '', v.mobile || '', cityVal, Number(v.age) || '', v.gender || ''
+                    ] : [
+                        Number(v.ward_sr) || (idx + 1), v.epic || '', v.name || '',
+                        v.rel || '', v.rel_name || '', v.house || '', v.actual_house || v.sub_house || '',
+                        v.is_mukhiya ? 'मुखिया' : '', v.mobile || '', cityVal, Number(v.age) || '', v.gender || ''
+                    ];
+                    rows.push(r);
                 });
 
                 const ws = XLSX.utils.aoa_to_sheet(rows);
-                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
-                ws['!cols'] = columnsDef.map(c => ({ wch: c.width }));
-                ws['!rows'] = [{ hpt: 26 }, { hpt: 36 }];
-                for (let ri = 2; ri < rows.length; ri++) {
-                    ws['!rows'].push({ hpt: 22 });
-                }
-                ws['!autofilter'] = { ref: `A2:K${rows.length}` };
-                XLSX.utils.book_append_sheet(wb, ws, `Ward_${wardPad}`);
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: isMaster ? 12 : 11 } }];
+                ws['!autofilter'] = { ref: `A2:${isMaster ? 'M' : 'L'}${rows.length}` };
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            }
+
+            // 1. All Wards Master
+            appendXlsxSheet('All_Wards_Master', `ग्राम पंचायत पिपलांत्री — संपूर्ण ग्राम पंचायत मास्टर डेटा • कुल: ${allVotersSorted.length}`, allVotersSorted, true);
+
+            // 2. Youth Men <= 35
+            const youthMen = allVotersSorted.filter(v => (v.gender === 'पुरुष' || v.gender === 'M') && Number(v.age) <= 35);
+            appendXlsxSheet('Youth_Men_35', `ग्राम पंचायत पिपलांत्री — युवा पुरुष (18 से 35 वर्ष) • कुल: ${youthMen.length}`, youthMen, true);
+
+            // 3. Outstation Voters
+            const outstationVoters = allVotersSorted.filter(v => v.location_status === 'Bahar' || (v.outstation_city && v.outstation_city.trim() !== '' && v.outstation_city.trim() !== 'लोकल'));
+            appendXlsxSheet('Outstation_Voters', `ग्राम पंचायत पिपलांत्री — बाहर रहने वाले (प्रवासी) मतदाता • कुल: ${outstationVoters.length}`, outstationVoters, true);
+
+            // 4-14. Ward 01 to Ward 11
+            for (let w = 1; w <= 11; w++) {
+                const wardStr = String(w);
+                const wardPad = String(w).padStart(2, '0');
+                const wardVoters = voters.filter(v => String(v.ward) === wardStr).sort((a, b) => (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
+                appendXlsxSheet(`Ward_${wardPad}`, `ग्राम पंचायत पिपलांत्री — वार्ड संख्या ${w} • कुल: ${wardVoters.length}`, wardVoters, false);
             }
 
             XLSX.writeFile(wb, fileName);
-            recordBackupTaken('Ward Wise 11-Sheet Excel');
+            recordBackupTaken('Master + Youth Men + Outstation + 11-Ward Excel (14 Sheets)');
             return;
         }
 

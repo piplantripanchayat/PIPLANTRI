@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v21-youth-men-outstation-sheets';
+const CACHE_NAME = 'piplantri-election-v22-14sheets-all-pages-sync';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
