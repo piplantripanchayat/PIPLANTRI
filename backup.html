@@ -254,11 +254,11 @@
                             <span>2. वार्ड-वार 11-शीट एक्सेल (.XLSX)</span>
                         </div>
                         <p class="text-xs text-slate-400 leading-relaxed">
-                            सभी 11 वार्डों के 2,707 मतदाताओं की 11 अलग-अलग शीट्स। <b>परिवार मुखिया (हाँ)</b> कॉलम और संयुक्त परिवारों के लिए <b>अलग/वास्तविक मकान संख्या</b> कॉलम सहित।
+                            संपूर्ण ग्राम पंचायत मास्टर शीट (2,707), युवा पुरुष (18-35 वर्ष), बाहर रहने वाले (प्रवासी) व सभी 11 वार्डों की अलग-अलग शीट्स। शहर ड्रॉपडाउन, परिवार मुखिया व अलग मकान कॉलम सहित।
                         </p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                        <span class="text-[11px] text-slate-400">1 वार्ड = 1 शीट (11 शीट्स)</span>
+                        <span class="text-[11px] text-slate-400">मास्टर + युवा + प्रवासी + 11 वार्ड (14 शीट्स)</span>
                         <button onclick="downloadWardWiseExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow">
                             <i data-lucide="download" class="w-3.5 h-3.5"></i>
                             <span>डाउनलोड</span>
@@ -850,7 +850,7 @@
     // 2. WARD-WISE 11-SHEET + ALL-WARDS MASTER EXCEL EXPORT (Total Data Sheet + 11 Ward Sheets with Outstation Dropdown)
     async function downloadWardWiseExcel() {
         const voters = loadCurrentVoters();
-        const fileName = `Pipalantri_Ward_Wise_Summary_12Sheets_${new Date().toISOString().slice(0,10)}.xlsx`;
+        const fileName = `Pipalantri_Ward_Wise_Summary_14Sheets_${new Date().toISOString().slice(0,10)}.xlsx`;
 
         const wardColumnsDef = [
             { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 8, align: 'center' },
@@ -1042,7 +1042,21 @@
             const allVotersSorted = [...voters].sort((a, b) => (Number(a.ward) || 0) - (Number(b.ward) || 0) || (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
             populateWorksheet(masterWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — संपूर्ण ग्राम पंचायत मास्टर डेटा • कुल मतदाता: ${allVotersSorted.length} (प्रत्याशी: नविन पालीवाल)`, allVotersSorted, true);
 
-            // Sheets 2 to 12: Ward 01 to Ward 11
+            // Sheet 2: Youth Men <= 35 Years (35 वर्ष तक के सभी युवा पुरुष)
+            const youthWs = wb.addWorksheet('Youth_Men_35', {
+                views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+            });
+            const youthMen = allVotersSorted.filter(v => (v.gender === 'पुरुष' || v.gender === 'M') && Number(v.age) <= 35);
+            populateWorksheet(youthWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — युवा पुरुष मतदाता (आयु 18 से 35 वर्ष) • कुल मतदाता: ${youthMen.length} (प्रत्याशी: नविन पालीवाल)`, youthMen, true);
+
+            // Sheet 3: Outstation Voters (बाहर रहने वाले / प्रवासी मतदाता)
+            const outstationWs = wb.addWorksheet('Outstation_Voters', {
+                views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+            });
+            const outstationVoters = allVotersSorted.filter(v => v.location_status === 'Bahar' || (v.outstation_city && v.outstation_city.trim() !== '' && v.outstation_city.trim() !== 'लोकल'));
+            populateWorksheet(outstationWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — बाहर रहने वाले (प्रवासी) मतदाता सूची • कुल मतदाता: ${outstationVoters.length} (प्रत्याशी: नविन पालीवाल)`, outstationVoters, true);
+
+            // Sheets 4 to 14: Ward 01 to Ward 11
             for (let w = 1; w <= 11; w++) {
                 const wardStr = String(w);
                 const wardPad = String(w).padStart(2, '0');
@@ -1065,7 +1079,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            recordBackupTaken('Ward Wise 11-Sheet Excel (Print Ready)');
+            recordBackupTaken('Master + Youth Men + Outstation + 11-Ward Excel (14 Sheets)');
             return;
         }
 

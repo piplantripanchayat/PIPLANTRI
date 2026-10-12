@@ -239,7 +239,7 @@
 
             <!-- Export & Import -->
             <div class="flex items-center space-x-2">
-                <button onclick="exportToExcel()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition" title="वार्ड-वार 22-शीट एक्सेल डाउनलोड (Pipalantri_Ward_Wise_Summary प्रारूप)">
+                <button onclick="exportToExcel()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition" title="14-शीट एक्सेल डाउनलोड (मास्टर, युवा पुरुष 18-35, प्रवासी मतदाता व 11 वार्ड शीट्स)">
                     <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
                     <span>एक्सेल डाउनलोड</span>
                 </button>
@@ -1565,7 +1565,7 @@
         }
 
         async function exportToExcel() {
-            const fileName = `Pipalantri_Ward_Wise_Summary_12Sheets_${new Date().toISOString().slice(0,10)}.xlsx`;
+            const fileName = `Pipalantri_Ward_Wise_Summary_14Sheets_${new Date().toISOString().slice(0,10)}.xlsx`;
 
             const wardColumnsDef = [
                 { header: 'क्रम सं.\n(Sr)', key: 'ward_sr', width: 8, align: 'center' },
@@ -1757,7 +1757,21 @@
                 const allVotersSorted = [...votersData].sort((a, b) => (Number(a.ward) || 0) - (Number(b.ward) || 0) || (Number(a.ward_sr) || 0) - (Number(b.ward_sr) || 0));
                 populateWorksheet(masterWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — संपूर्ण ग्राम पंचायत मास्टर डेटा • कुल मतदाता: ${allVotersSorted.length} (प्रत्याशी: नविन पालीवाल)`, allVotersSorted, true);
 
-                // Sheets 2 to 12: Ward 01 to Ward 11
+                // Sheet 2: Youth Men <= 35 Years (35 वर्ष तक के सभी युवा पुरुष)
+                const youthWs = wb.addWorksheet('Youth_Men_35', {
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                });
+                const youthMen = allVotersSorted.filter(v => (v.gender === 'पुरुष' || v.gender === 'M') && Number(v.age) <= 35);
+                populateWorksheet(youthWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — युवा पुरुष मतदाता (आयु 18 से 35 वर्ष) • कुल मतदाता: ${youthMen.length} (प्रत्याशी: नविन पालीवाल)`, youthMen, true);
+
+                // Sheet 3: Outstation Voters (बाहर रहने वाले / प्रवासी मतदाता)
+                const outstationWs = wb.addWorksheet('Outstation_Voters', {
+                    views: [{ showGridLines: true, state: 'frozen', ySplit: 2 }]
+                });
+                const outstationVoters = allVotersSorted.filter(v => v.location_status === 'Bahar' || (v.outstation_city && v.outstation_city.trim() !== '' && v.outstation_city.trim() !== 'लोकल'));
+                populateWorksheet(outstationWs, `ग्राम पंचायत पिपलांत्री (AC 175 राजसमन्द) — बाहर रहने वाले (प्रवासी) मतदाता सूची • कुल मतदाता: ${outstationVoters.length} (प्रत्याशी: नविन पालीवाल)`, outstationVoters, true);
+
+                // Sheets 4 to 14: Ward 01 to Ward 11
                 for (let w = 1; w <= 11; w++) {
                     const wardStr = String(w);
                     const wardPad = String(w).padStart(2, '0');
@@ -1781,7 +1795,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 if (window.CloudSync && CloudSync.showToast) {
-                    CloudSync.showToast('📥 संपूर्ण मास्टर + 11-वार्ड स्प्रेडशीट (A4 फुल-फिट, ड्रॉपडाउन सहित) डाउनलोड हो गई!', 'success');
+                    CloudSync.showToast('📥 संपूर्ण मास्टर, युवा पुरुष (18-35), प्रवासी मतदाता व 11-वार्ड स्प्रेडशीट (A4 फुल-फिट, ड्रॉपडाउन सहित) डाउनलोड हो गई!', 'success');
                 }
                 return;
             }
