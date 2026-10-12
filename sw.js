@@ -1,5 +1,5 @@
 // Piplantri Election PWA Service Worker (Network-First Strategy for Instant Live Updates)
-const CACHE_NAME = 'piplantri-election-v22-14sheets-all-pages-sync';
+const CACHE_NAME = 'piplantri-election-v23-fix-excel-upload-city-var';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
